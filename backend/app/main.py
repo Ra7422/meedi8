@@ -51,4 +51,6 @@ def debug_cors():
         "cors_list_from_settings": settings.cors_list,
         "cors_list_length": len(settings.cors_list),
         "app_env": settings.APP_ENV,
+        "secret_key_first_10": settings.SECRET_KEY[:10] + "...",
+        "secret_key_is_default": settings.SECRET_KEY == "dev-secret-change-me",
     }
