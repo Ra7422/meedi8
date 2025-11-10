@@ -9,18 +9,33 @@ from app.models.subscription import Subscription
 from app.services.subscription_service import get_or_create_subscription, is_admin as check_is_admin
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    import logging
+    logger = logging.getLogger(__name__)
+
     auth = request.headers.get("Authorization")
+    logger.info(f"🔐 Auth header present: {bool(auth)}, Path: {request.url.path}")
+
     if not auth or not auth.lower().startswith("bearer "):
+        logger.warning(f"❌ No valid auth header on {request.url.path}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
     token = auth.split(" ", 1)[1].strip()
+    logger.info(f"🎫 Token (first 20 chars): {token[:20]}...")
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = int(payload.get("sub"))
-    except (JWTError, ValueError, TypeError):
+        logger.info(f"✅ Token decoded successfully, user_id: {user_id}")
+    except (JWTError, ValueError, TypeError) as e:
+        logger.error(f"❌ Token decode failed on {request.url.path}: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
+        logger.error(f"❌ User {user_id} not found in database")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    logger.info(f"✅ User authenticated: {user.email}")
     return user
 
 
