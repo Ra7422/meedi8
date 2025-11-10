@@ -16,20 +16,23 @@ const categories = [
 export default function CreateRoom() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1 = category selection, 2 = describe issue
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [initialIssue, setInitialIssue] = useState("");
+
+  // Restore saved form data if returning from screening
+  const savedData = sessionStorage.getItem('pendingRoomCreation');
+  const initialData = savedData ? JSON.parse(savedData) : {};
+
+  const [step, setStep] = useState(initialData.step || 1); // 1 = category selection, 2 = describe issue
+  const [title, setTitle] = useState(initialData.title || "");
+  const [category, setCategory] = useState(initialData.category || "");
+  const [initialIssue, setInitialIssue] = useState(initialData.initialIssue || "");
   const [loading, setLoading] = useState(false);
 
-  // Redirect to screening if user hasn't completed it yet
+  // Clear saved data after restoring
   useEffect(() => {
-    if (user && !user.has_completed_screening) {
-      // Save current form data to sessionStorage before redirecting
-      sessionStorage.setItem('pendingRoomCreation', JSON.stringify({ title, category, initialIssue, step }));
-      navigate('/screening-carousel');
+    if (savedData) {
+      sessionStorage.removeItem('pendingRoomCreation');
     }
-  }, [user, navigate]);
+  }, []);
 
   const handleNext = () => {
     if (step === 1) {
@@ -41,6 +44,15 @@ export default function CreateRoom() {
         alert("Please choose a topic category");
         return;
       }
+
+      // Check screening before proceeding to step 2
+      if (user && !user.has_completed_screening) {
+        // Save current form data to sessionStorage before redirecting
+        sessionStorage.setItem('pendingRoomCreation', JSON.stringify({ title, category, initialIssue, step: 1 }));
+        navigate('/screening-carousel');
+        return;
+      }
+
       setStep(2);
     } else {
       handleCreate();
