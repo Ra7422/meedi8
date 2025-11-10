@@ -40,7 +40,7 @@ export default function LoginNew() {
         sessionStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/rooms');
+        navigate('/');
       }
     } catch (e) {
       setError(e.message || "Login failed. Please check your credentials.");
@@ -61,7 +61,7 @@ export default function LoginNew() {
         sessionStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/rooms');
+        navigate('/');
       }
     } catch (e) {
       setError(e.message || "Google login failed.");
@@ -86,7 +86,7 @@ export default function LoginNew() {
         sessionStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/rooms');
+        navigate('/');
       }
     } catch (e) {
       setError(e.message || "Facebook login failed.");
@@ -111,7 +111,7 @@ export default function LoginNew() {
         sessionStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/rooms');
+        navigate('/');
       }
     } catch (e) {
       setError(e.message || "Telegram login failed.");
