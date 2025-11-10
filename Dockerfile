@@ -9,14 +9,14 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend requirements
-COPY backend/requirements.txt .
+# Copy entire repo (dockerignore will filter)
+COPY . .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies from backend
+RUN cd backend && pip install --no-cache-dir -r requirements.txt
 
-# Copy backend code
-COPY backend/ .
+# Set working directory to backend
+WORKDIR /app/backend
 
 # Expose port (Railway will set this via $PORT env var)
 EXPOSE 8000
