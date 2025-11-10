@@ -94,7 +94,7 @@ export default function ScreeningCarousel() {
   // Form data state
   const [formData, setFormData] = useState({
     // Slide 2: Mental Health
-    has_mental_health_condition: null, // Can be true, false, or 'not_sure'
+    has_mental_health_condition: false, // Default to false instead of null
     mental_health_conditions: [],
     currently_in_treatment: false,
     treatment_types: [],
@@ -1088,23 +1088,7 @@ export default function ScreeningCarousel() {
         Step {currentSlide + 1} of {slides.length}
       </div>
 
-      {/* Carousel */}
-      <div style={styles.carouselContainer}>
-        <div
-          style={{
-            ...styles.slidesWrapper,
-            transform: `translateX(-${currentSlide * 100}%)`,
-          }}
-        >
-          {slides.map((slide, index) => (
-            <div key={slide.id} style={styles.slide}>
-              {slide.content}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Navigation */}
+      {/* Navigation - Moved to top */}
       <div style={styles.navigation}>
         <button
           onClick={prevSlide}
@@ -1129,6 +1113,22 @@ export default function ScreeningCarousel() {
         >
           {loading ? 'Submitting...' : currentSlide === slides.length - 1 ? 'Submit' : 'Continue →'}
         </button>
+      </div>
+
+      {/* Carousel */}
+      <div style={styles.carouselContainer}>
+        <div
+          style={{
+            ...styles.slidesWrapper,
+            transform: `translateX(-${currentSlide * 100}%)`,
+          }}
+        >
+          {slides.map((slide, index) => (
+            <div key={slide.id} style={styles.slide}>
+              {slide.content}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
