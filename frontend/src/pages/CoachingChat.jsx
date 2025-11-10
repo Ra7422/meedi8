@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiRequest } from "../api/client";
+import { apiRequest, API_URL } from "../api/client";
 import VoiceRecorder from "../components/VoiceRecorder";
 import FileUpload from "../components/FileUpload";
 import SimpleBreathing from "../components/SimpleBreathing";
@@ -159,8 +159,7 @@ export default function CoachingChat() {
       formData.append("audio", audioBlob, "recording.webm");
 
       // Upload to voice endpoint
-      const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-      const endpoint = `${apiUrl}/rooms/${roomId}/coach/voice-respond`;
+      const endpoint = `${API_URL}/rooms/${roomId}/coach/voice-respond`;
 
       console.log("Uploading voice recording to:", endpoint);
       console.log("Audio blob size:", audioBlob.size, "bytes");
@@ -214,8 +213,8 @@ export default function CoachingChat() {
       let errorMsg = "Voice recording failed: ";
       if (error.message === "Load failed" || error.message === "Failed to fetch") {
         errorMsg += "Cannot connect to server. ";
-        errorMsg += `Trying to reach: ${import.meta.env.VITE_API_URL || "localhost:8000"}. `;
-        errorMsg += "Check that VITE_API_URL is set in Vercel environment variables.";
+        errorMsg += `Trying to reach: ${API_URL}. `;
+        errorMsg += "Check that the backend is running and accessible.";
       } else {
         errorMsg += error.message;
       }
@@ -275,8 +274,7 @@ export default function CoachingChat() {
         formData.append(`files`, file);
       });
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-      const response = await fetch(`${apiUrl}/rooms/${roomId}/upload-evidence`, {
+      const response = await fetch(`${API_URL}/rooms/${roomId}/upload-evidence`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`

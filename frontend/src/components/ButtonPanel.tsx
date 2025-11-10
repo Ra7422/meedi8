@@ -1,15 +1,8 @@
 import React, { useState } from "react";
+import { API_URL } from "../api/client";
 
 type SignalType = "break" | "hurt" | "agree" | "sorry" | "hear_you" | "disagree";
 type ButtonPanelProps = { roomId: string; onSignalSent?: () => void };
-
-const API_BASE: string =
-  // Vite
-  ((typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) as string) ||
-  // Next
-  ((typeof process !== "undefined" && (process as any).env?.NEXT_PUBLIC_API_BASE) as string) ||
-  // Fallback for local dev
-  "http://localhost:8000";
 
 const SIGNALS: { type: SignalType; label: string; emoji: string; classes: string }[] = [
   { type: "break",     label: "Need a Break", emoji: "⏸️", classes: "bg-gray-700 hover:bg-gray-800" },
@@ -31,7 +24,7 @@ export default function ButtonPanel({ roomId, onSignalSent }: ButtonPanelProps) 
     if (!roomId) return;
     setPending(type);
     try {
-      const res = await fetch(`${API_BASE}/rooms/${roomId}/signal`, {
+      const res = await fetch(`${API_URL}/rooms/${roomId}/signal`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

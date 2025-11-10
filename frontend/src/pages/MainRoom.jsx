@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiRequest } from "../api/client";
+import { apiRequest, API_URL } from "../api/client";
 import VoiceRecorder from "../components/VoiceRecorder";
 import FloatingMenu from "../components/FloatingMenu";
 import SimpleBreathing from "../components/SimpleBreathing";
@@ -257,8 +257,7 @@ export default function MainRoom() {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-      const endpoint = `${apiUrl}/rooms/${roomId}/main-room/voice-respond`;
+      const endpoint = `${API_URL}/rooms/${roomId}/main-room/voice-respond`;
 
       console.log("Uploading voice recording to main room:", endpoint);
       console.log("Audio blob size:", audioBlob.size, "bytes");
@@ -324,8 +323,8 @@ export default function MainRoom() {
       let errorMsg = "Voice recording failed: ";
       if (error.message === "Load failed" || error.message === "Failed to fetch") {
         errorMsg += "Cannot connect to server. ";
-        errorMsg += `Trying to reach: ${import.meta.env.VITE_API_URL || "localhost:8000"}. `;
-        errorMsg += "Check that VITE_API_URL is set in Vercel environment variables.";
+        errorMsg += `Trying to reach: ${API_URL}. `;
+        errorMsg += "Check that the backend is running and accessible.";
       } else {
         errorMsg += error.message;
       }

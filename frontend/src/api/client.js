@@ -7,6 +7,9 @@ if (API_URL.startsWith("http://") && !API_URL.includes("localhost") && !API_URL.
 }
 console.log(`🔗 API_URL: ${API_URL}`);
 
+// Export the converted API_URL so other files can use it
+export { API_URL };
+
 export async function apiRequest(path, method = "GET", body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
