@@ -84,7 +84,7 @@ function CustomDropdown({ value, onChange, options, label, styles }) {
 
 export default function ScreeningCarousel() {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, setUser } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [completedSlides, setCompletedSlides] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -568,6 +568,10 @@ export default function ScreeningCarousel() {
       }
 
       const response = await apiRequest('/screening/complete', 'POST', payload, token);
+
+      // Refresh user data to update has_completed_screening flag
+      const updatedUser = await apiRequest('/auth/me', 'GET', null, token);
+      setUser(updatedUser);
 
       // Successfully completed screening - navigate to CreateRoom page
       navigate('/create');
