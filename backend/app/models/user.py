@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, func, Index
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Index
 from sqlalchemy.orm import relationship
 from ..db import Base
 
@@ -12,6 +12,7 @@ class User(Base):
     is_admin = Column(Integer, default=0, nullable=False)  # 0 = regular user, 1 = admin
     stripe_customer_id = Column(String(255), nullable=True, unique=True, index=True)  # Stripe customer ID
     profile_picture_url = Column(String(500), nullable=True)  # Google OAuth profile picture URL
+    has_completed_screening = Column(Boolean, default=False, nullable=False)  # First-time screening gate
 
     # Relationships
     rooms = relationship('Room', secondary='room_participants', back_populates='participants')
