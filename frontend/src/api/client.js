@@ -21,6 +21,7 @@ export async function apiRequest(path, method = "GET", body, token) {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include', // Required for Safari/Firefox CORS with credentials
       signal: controller.signal,
     });
 
