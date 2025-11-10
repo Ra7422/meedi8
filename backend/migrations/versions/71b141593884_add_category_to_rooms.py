@@ -20,9 +20,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Drop existing enum types if they exist (handles duplicate enum issue)
+    # Drop existing tables and enum types if they exist (handles duplicate issue)
     from sqlalchemy import text
     conn = op.get_bind()
+
+    # Drop tables first (CASCADE will handle foreign keys)
+    conn.execute(text("DROP TABLE IF EXISTS api_costs CASCADE"))
+    conn.execute(text("DROP TABLE IF EXISTS turns CASCADE"))
+    conn.execute(text("DROP TABLE IF EXISTS subscriptions CASCADE"))
+
+    # Drop enum types
     conn.execute(text("DROP TYPE IF EXISTS subscriptiontier CASCADE"))
     conn.execute(text("DROP TYPE IF EXISTS subscriptionstatus CASCADE"))
 
