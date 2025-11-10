@@ -26,6 +26,28 @@ export default function LoginNew() {
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Helper function to handle post-login redirect
+  const handlePostLoginRedirect = () => {
+    // Check for pending invite (highest priority)
+    const pendingInvite = sessionStorage.getItem('pendingInvite');
+    if (pendingInvite) {
+      sessionStorage.removeItem('pendingInvite');
+      navigate(`/join/${pendingInvite}`);
+      return;
+    }
+
+    // Check for post-login redirect (e.g., from Home page button click)
+    const postLoginRedirect = sessionStorage.getItem('postLoginRedirect');
+    if (postLoginRedirect) {
+      sessionStorage.removeItem('postLoginRedirect');
+      navigate(postLoginRedirect);
+      return;
+    }
+
+    // Default redirect to home
+    navigate('/');
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -33,15 +55,7 @@ export default function LoginNew() {
 
     try {
       await login(email, password);
-
-      // Check if user was trying to join via invite link
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite) {
-        sessionStorage.removeItem('pendingInvite');
-        navigate(`/join/${pendingInvite}`);
-      } else {
-        navigate('/');
-      }
+      handlePostLoginRedirect();
     } catch (e) {
       setError(e.message || "Login failed. Please check your credentials.");
     } finally {
@@ -54,15 +68,7 @@ export default function LoginNew() {
     setLoading(true);
     try {
       await googleLogin(credentialResponse.credential);
-
-      // Check if user was trying to join via invite link
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite) {
-        sessionStorage.removeItem('pendingInvite');
-        navigate(`/join/${pendingInvite}`);
-      } else {
-        navigate('/');
-      }
+      handlePostLoginRedirect();
     } catch (e) {
       setError(e.message || "Google login failed.");
     } finally {
@@ -79,15 +85,7 @@ export default function LoginNew() {
     setLoading(true);
     try {
       await facebookLogin(response.accessToken, response.userID);
-
-      // Check if user was trying to join via invite link
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite) {
-        sessionStorage.removeItem('pendingInvite');
-        navigate(`/join/${pendingInvite}`);
-      } else {
-        navigate('/');
-      }
+      handlePostLoginRedirect();
     } catch (e) {
       setError(e.message || "Facebook login failed.");
     } finally {
@@ -104,15 +102,7 @@ export default function LoginNew() {
     setLoading(true);
     try {
       await telegramLogin(response);
-
-      // Check if user was trying to join via invite link
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite) {
-        sessionStorage.removeItem('pendingInvite');
-        navigate(`/join/${pendingInvite}`);
-      } else {
-        navigate('/');
-      }
+      handlePostLoginRedirect();
     } catch (e) {
       setError(e.message || "Telegram login failed.");
     } finally {

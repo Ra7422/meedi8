@@ -26,6 +26,28 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Helper function to handle post-signup redirect
+  const handlePostSignupRedirect = () => {
+    // Check for pending invite (highest priority)
+    const pendingInvite = sessionStorage.getItem('pendingInvite');
+    if (pendingInvite) {
+      sessionStorage.removeItem('pendingInvite');
+      navigate(`/join/${pendingInvite}`);
+      return;
+    }
+
+    // Check for post-login redirect (e.g., from Home page button click)
+    const postLoginRedirect = sessionStorage.getItem('postLoginRedirect');
+    if (postLoginRedirect) {
+      sessionStorage.removeItem('postLoginRedirect');
+      navigate(postLoginRedirect);
+      return;
+    }
+
+    // Default redirect to onboarding for new users
+    navigate('/onboarding');
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -40,16 +62,7 @@ export default function Signup() {
     try {
       const fullName = `${firstName} ${lastName}`.trim();
       await register(fullName, email, password);
-
-      // Check if user was trying to join via invite link
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite) {
-        sessionStorage.removeItem('pendingInvite');
-        navigate(`/join/${pendingInvite}`);
-      } else {
-        // Successful registration - navigate to onboarding
-        navigate('/onboarding');
-      }
+      handlePostSignupRedirect();
     } catch (e) {
       setError(e.message || "Signup failed. Please try again.");
     } finally {

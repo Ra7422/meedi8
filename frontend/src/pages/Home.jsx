@@ -4,7 +4,27 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+
+  const handleMediationClick = () => {
+    if (!token) {
+      // Save intent to sessionStorage so we can redirect after login
+      sessionStorage.setItem('postLoginRedirect', '/create');
+      navigate('/login');
+    } else {
+      navigate('/create');
+    }
+  };
+
+  const handleSoloClick = () => {
+    if (!token) {
+      // Save intent to sessionStorage so we can redirect after login
+      sessionStorage.setItem('postLoginRedirect', '/solo-session');
+      navigate('/login');
+    } else {
+      navigate('/solo-session');
+    }
+  };
 
   const styles = {
     container: {
@@ -180,7 +200,7 @@ export default function Home() {
           {/* Mediation Card */}
           <div
             style={{ ...styles.card, ...styles.cardMediation }}
-            onClick={() => navigate('/create')}
+            onClick={handleMediationClick}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-8px)';
               e.currentTarget.style.boxShadow = '0 8px 30px rgba(125, 211, 192, 0.3)';
@@ -220,7 +240,7 @@ export default function Home() {
           {/* Solo Session Card */}
           <div
             style={{ ...styles.card, ...styles.cardSolo }}
-            onClick={() => navigate('/solo-session')}
+            onClick={handleSoloClick}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-8px)';
               e.currentTarget.style.boxShadow = '0 8px 30px rgba(211, 193, 255, 0.3)';
