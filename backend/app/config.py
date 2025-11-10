@@ -34,6 +34,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5174,"
         "http://127.0.0.1:5175,"
         "http://localhost:3000,"
+        "https://meedi8.vercel.app,"
         "https://clean-air-med.vercel.app,"
         "https://clean-air-med-git-main-adams-projects-16943c9b.vercel.app,"
         "https://clean-air-pf59n9qld-adams-projects-16943c9b.vercel.app"
