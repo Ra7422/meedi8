@@ -48,28 +48,35 @@ export default function Profile() {
     setLoading(true);
     try {
       // Fetch sessions
+      console.log('📊 Fetching sessions...');
       const sessionsData = await apiRequest('/rooms', 'GET', null, token);
+      console.log('📊 Sessions received:', sessionsData?.length || 0, 'rooms');
       setSessions(sessionsData || []);
 
       // Fetch subscription
       try {
+        console.log('💳 Fetching subscription...');
         const subData = await apiRequest('/subscriptions/me', 'GET', null, token);
+        console.log('💳 Subscription received:', subData?.tier || 'N/A');
         setSubscription(subData);
       } catch (err) {
-        console.log('No subscription found');
+        console.log('⚠️ No subscription found:', err.message);
       }
 
       // Fetch health profile
       try {
+        console.log('🏥 Fetching health profile...');
         const healthData = await apiRequest('/screening/profile', 'GET', null, token);
+        console.log('🏥 Health profile received:', healthData ? 'Yes' : 'No');
         setHealthProfile(healthData);
       } catch (err) {
-        console.log('No health profile found');
+        console.log('⚠️ No health profile found:', err.message);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('❌ Error fetching user data:', error);
     } finally {
       setLoading(false);
+      console.log('✅ Profile data fetch complete');
     }
   }
 
