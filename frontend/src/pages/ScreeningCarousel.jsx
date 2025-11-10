@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 
@@ -82,6 +83,7 @@ function CustomDropdown({ value, onChange, options, label, styles }) {
  */
 
 export default function ScreeningCarousel() {
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [completedSlides, setCompletedSlides] = useState([]);
@@ -568,13 +570,14 @@ export default function ScreeningCarousel() {
       }
 
       const response = await apiRequest('/screening/complete', 'POST', payload, token);
-      setResults(response);
-      setShowResults(true);
+
+      // Successfully completed screening - navigate to CreateRoom page
+      navigate('/create');
     } catch (error) {
       console.error('Error submitting screening:', error);
       alert('Error: ' + error.message);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Keyboard navigation
