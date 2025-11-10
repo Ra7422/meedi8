@@ -30,6 +30,8 @@ export default function MainRoom() {
   
   useEffect(() => {
     const loadRoom = async () => {
+      if (!user) return; // Wait for user to load
+
       try {
         const summariesData = await apiRequest(`/rooms/${roomId}/main-room/summaries`, "GET", null, token);
         setSummaries(summariesData);
@@ -122,12 +124,14 @@ export default function MainRoom() {
     };
     
     loadRoom();
-  }, [roomId, token]);
+  }, [roomId, token, user]);
   
   useEffect(() => {
     if (loading || !summaries) return;
 
     const pollMessages = async () => {
+      if (!user) return; // Wait for user to load
+
       try {
         // Poll for presence updates
         const summariesData = await apiRequest(`/rooms/${roomId}/main-room/summaries`, "GET", null, token);
@@ -173,7 +177,7 @@ export default function MainRoom() {
 
     const interval = setInterval(pollMessages, 3000);
     return () => clearInterval(interval);
-  }, [roomId, token, messages, loading, summaries]);
+  }, [roomId, token, messages, loading, summaries, user]);
   
   // Redirect to celebration when session completes
   useEffect(() => {
@@ -335,10 +339,15 @@ export default function MainRoom() {
     }
   };
 
+  // CRITICAL: Guard against null user - must be first check
+  if (!user) {
+    return <div style={{ textAlign: "center", padding: "60px" }}>Loading user...</div>;
+  }
+
   if (loading) {
     return <div style={{ textAlign: "center", padding: "60px" }}>Loading conversation...</div>;
   }
-  
+
   if (startError) {
     return (
       <div style={{ textAlign: "center", padding: "60px" }}>
@@ -349,9 +358,9 @@ export default function MainRoom() {
       </div>
     );
   }
-  
+
   if (!summaries) {
-    return <div style={{ textAlign: "center", padding: "60px" }}>Error loading room</div>;
+    return <div style={{ textAlign: "center", padding: "60px" }}>Loading...</div>;
   }
 
   const isMyTurn = currentSpeakerId === user.id;
