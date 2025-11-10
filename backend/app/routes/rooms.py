@@ -791,7 +791,11 @@ def finalize_coaching(
         # Return invite link (frontend URL)
         # Use localhost for local development, Vercel for production
         from app.config import settings
-        frontend_url = "http://localhost:5173" if settings.APP_ENV == "dev" else "https://meedi8.vercel.app"
+        import os
+
+        # Check if running in production (Railway has DATABASE_URL env var)
+        is_production = "railway" in os.getenv("DATABASE_URL", "").lower() or settings.APP_ENV == "prod"
+        frontend_url = "https://meedi8.vercel.app" if is_production else "http://localhost:5173"
         invite_link = f"{frontend_url}/join/{room.invite_token}"
 
         return FinalizeCoachingResponse(
