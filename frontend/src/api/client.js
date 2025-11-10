@@ -1,8 +1,11 @@
 // Force https:// in production to avoid mixed content errors
 let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+// Convert http to https for any non-localhost URL (production deployments)
 if (API_URL.startsWith("http://") && !API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
+  console.warn(`⚠️ API_URL is using HTTP in production. Converting to HTTPS: ${API_URL}`);
   API_URL = API_URL.replace("http://", "https://");
 }
+console.log(`🔗 API_URL: ${API_URL}`);
 
 export async function apiRequest(path, method = "GET", body, token) {
   const headers = { "Content-Type": "application/json" };
