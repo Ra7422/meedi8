@@ -12,8 +12,11 @@ RUN apt-get update && apt-get install -y \
 # Copy entire repo (dockerignore will filter)
 COPY . .
 
+# Debug: List what was copied
+RUN ls -la && echo "=== Checking for backend ===" && ls -la backend/ || echo "Backend directory not found!"
+
 # Install Python dependencies from backend
-RUN cd backend && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Set working directory to backend
 WORKDIR /app/backend
