@@ -28,11 +28,14 @@ def health():
 def debug_env():
     """Debug endpoint to check if AWS env vars are loaded"""
     import os
+    # Get all env vars that contain 'AWS' to debug what Railway actually has
+    aws_vars = {k: v[:10] + "..." if v else "EMPTY" for k, v in os.environ.items() if "AWS" in k}
     return {
         "AWS_ACCESS_KEY_ID": "present" if os.getenv("AWS_ACCESS_KEY_ID") else "missing",
         "AWS_SECRET_ACCESS_KEY": "present" if os.getenv("AWS_SECRET_ACCESS_KEY") else "missing",
         "AWS_S3_BUCKET": os.getenv("AWS_S3_BUCKET", "missing"),
         "AWS_REGION": os.getenv("AWS_REGION", "missing"),
         "OPENAI_API_KEY": "present" if os.getenv("OPENAI_API_KEY") else "missing",
-        "ANTHROPIC_API_KEY": "present" if os.getenv("ANTHROPIC_API_KEY") else "missing"
+        "ANTHROPIC_API_KEY": "present" if os.getenv("ANTHROPIC_API_KEY") else "missing",
+        "all_aws_vars": aws_vars  # Shows all AWS-related variables Railway has
     }
