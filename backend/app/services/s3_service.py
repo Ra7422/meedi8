@@ -7,19 +7,26 @@ from datetime import datetime
 import hashlib
 from botocore.exceptions import ClientError
 
-# AWS Configuration
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET", "clean-air-voice-recordings")
-AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+# AWS Configuration - Read at runtime, not import time
+def get_s3_client():
+    """
+    Lazy-initialize S3 client to ensure environment variables are loaded.
+    Railway injects env vars after module import, so we need to read them at runtime.
+    """
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    aws_s3_bucket = os.getenv("AWS_S3_BUCKET", "clean-air-voice-recordings")
+    aws_region = os.getenv("AWS_REGION", "us-east-1")
 
-# Initialize S3 client
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
-)
+    if not aws_access_key_id or not aws_secret_access_key:
+        raise Exception(f"AWS credentials missing. Access Key: {'present' if aws_access_key_id else 'missing'}, Secret Key: {'present' if aws_secret_access_key else 'missing'}")
+
+    return boto3.client(
+        's3',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region
+    ), aws_s3_bucket, aws_region
 
 
 def upload_file_to_s3(file_bytes: bytes, room_id: int, user_id: int, filename: str, content_type: str = "application/octet-stream") -> str:
@@ -40,6 +47,9 @@ def upload_file_to_s3(file_bytes: bytes, room_id: int, user_id: int, filename: s
         Exception: If upload fails
     """
     try:
+        # Get S3 client at runtime
+        s3_client, aws_s3_bucket, aws_region = get_s3_client()
+
         # Generate unique filename
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         file_hash = hashlib.md5(file_bytes).hexdigest()[:8]
@@ -50,14 +60,14 @@ def upload_file_to_s3(file_bytes: bytes, room_id: int, user_id: int, filename: s
 
         # Upload to S3
         s3_client.put_object(
-            Bucket=AWS_S3_BUCKET,
+            Bucket=aws_s3_bucket,
             Key=s3_key,
             Body=file_bytes,
             ContentType=content_type
         )
 
         # Generate public URL
-        url = f"https://{AWS_S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+        url = f"https://{aws_s3_bucket}.s3.{aws_region}.amazonaws.com/{s3_key}"
 
         print(f"File uploaded successfully to S3: {url}")
         return url
@@ -89,6 +99,9 @@ def upload_audio_to_s3(audio_bytes: bytes, room_id: int, user_id: int, filename:
         Exception: If upload fails
     """
     try:
+        # Get S3 client at runtime
+        s3_client, aws_s3_bucket, aws_region = get_s3_client()
+
         # Generate unique filename
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         file_hash = hashlib.md5(audio_bytes).hexdigest()[:8]
@@ -97,14 +110,14 @@ def upload_audio_to_s3(audio_bytes: bytes, room_id: int, user_id: int, filename:
 
         # Upload to S3
         s3_client.put_object(
-            Bucket=AWS_S3_BUCKET,
+            Bucket=aws_s3_bucket,
             Key=s3_key,
             Body=audio_bytes,
             ContentType='audio/webm'
         )
 
         # Generate public URL
-        url = f"https://{AWS_S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
+        url = f"https://{aws_s3_bucket}.s3.{aws_region}.amazonaws.com/{s3_key}"
 
         print(f"Audio uploaded successfully to S3: {url}")
         return url
@@ -130,17 +143,20 @@ def delete_audio_from_s3(audio_url: str) -> bool:
         bool: True if deleted successfully, False otherwise
     """
     try:
+        # Get S3 client at runtime
+        s3_client, aws_s3_bucket, aws_region = get_s3_client()
+
         # Extract S3 key from URL
         # URL format: https://bucket-name.s3.region.amazonaws.com/key
-        if f"s3.{AWS_REGION}.amazonaws.com" not in audio_url:
+        if f"s3.{aws_region}.amazonaws.com" not in audio_url:
             print(f"Invalid S3 URL: {audio_url}")
             return False
 
-        s3_key = audio_url.split(f"s3.{AWS_REGION}.amazonaws.com/")[1]
+        s3_key = audio_url.split(f"s3.{aws_region}.amazonaws.com/")[1]
 
         # Delete from S3
         s3_client.delete_object(
-            Bucket=AWS_S3_BUCKET,
+            Bucket=aws_s3_bucket,
             Key=s3_key
         )
 
