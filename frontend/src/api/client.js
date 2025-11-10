@@ -1,11 +1,15 @@
 // Force https:// in production to avoid mixed content errors
+console.log(`📋 Raw VITE_API_URL from env: "${import.meta.env.VITE_API_URL}"`);
 let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+console.log(`📍 Initial API_URL: "${API_URL}"`);
+
 // Convert http to https for any non-localhost URL (production deployments)
 if (API_URL.startsWith("http://") && !API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
   console.warn(`⚠️ API_URL is using HTTP in production. Converting to HTTPS: ${API_URL}`);
   API_URL = API_URL.replace("http://", "https://");
+  console.log(`✅ Converted API_URL to: "${API_URL}"`);
 }
-console.log(`🔗 API_URL: ${API_URL}`);
+console.log(`🔗 Final API_URL: ${API_URL}`);
 
 // Export the converted API_URL so other files can use it
 export { API_URL };
