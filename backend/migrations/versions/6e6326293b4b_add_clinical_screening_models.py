@@ -90,26 +90,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_session_screenings_id'), 'session_screenings', ['id'], unique=False)
     op.create_index(op.f('ix_session_screenings_room_id'), 'session_screenings', ['room_id'], unique=False)
     op.create_index(op.f('ix_session_screenings_user_id'), 'session_screenings', ['user_id'], unique=False)
-    op.create_table('api_costs',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('room_id', sa.Integer(), nullable=True),
-    sa.Column('turn_id', sa.Integer(), nullable=True),
-    sa.Column('service_type', sa.String(length=50), nullable=False),
-    sa.Column('input_tokens', sa.Integer(), nullable=True),
-    sa.Column('output_tokens', sa.Integer(), nullable=True),
-    sa.Column('audio_seconds', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('cost_usd', sa.Numeric(precision=10, scale=6), nullable=False),
-    sa.Column('model', sa.String(length=100), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
-    sa.ForeignKeyConstraint(['room_id'], ['rooms.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['turn_id'], ['turns.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_api_costs_created_at'), 'api_costs', ['created_at'], unique=False)
-    op.create_index(op.f('ix_api_costs_id'), 'api_costs', ['id'], unique=False)
-    op.create_index(op.f('ix_api_costs_service_type'), 'api_costs', ['service_type'], unique=False)
+    # Note: api_costs table already exists from earlier migration, not creating it here
     op.alter_column('room_participants', 'room_id',
                existing_type=sa.INTEGER(),
                nullable=True)
@@ -282,10 +263,7 @@ def downgrade() -> None:
     op.alter_column('room_participants', 'room_id',
                existing_type=sa.INTEGER(),
                nullable=False)
-    op.drop_index(op.f('ix_api_costs_service_type'), table_name='api_costs')
-    op.drop_index(op.f('ix_api_costs_id'), table_name='api_costs')
-    op.drop_index(op.f('ix_api_costs_created_at'), table_name='api_costs')
-    op.drop_table('api_costs')
+    # Note: api_costs table was not created in this migration, so not dropping it here
     op.drop_index(op.f('ix_session_screenings_user_id'), table_name='session_screenings')
     op.drop_index(op.f('ix_session_screenings_room_id'), table_name='session_screenings')
     op.drop_index(op.f('ix_session_screenings_id'), table_name='session_screenings')
