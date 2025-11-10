@@ -210,6 +210,11 @@ def complete_screening(
     session_screening.resources_provided = [r["name"] for r in resources]
 
     db.add(session_screening)
+
+    # Mark user as having completed screening (first-time user gate)
+    if not current_user.has_completed_screening:
+        current_user.has_completed_screening = True
+
     db.commit()
     db.refresh(session_screening)
 
