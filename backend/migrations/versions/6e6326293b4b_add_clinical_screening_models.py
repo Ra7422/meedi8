@@ -139,8 +139,9 @@ def upgrade() -> None:
     # Note: These indexes already exist from add_subscriptions_and_api_costs migration
     # op.create_index(op.f('ix_subscriptions_id'), 'subscriptions', ['id'], unique=False)
     # op.create_index(op.f('ix_subscriptions_stripe_subscription_id'), 'subscriptions', ['stripe_subscription_id'], unique=True)
-    op.drop_column('subscriptions', 'current_period_end')
-    op.drop_column('subscriptions', 'current_period_start')
+    # Note: These columns were never created, so can't drop them
+    # op.drop_column('subscriptions', 'current_period_end')
+    # op.drop_column('subscriptions', 'current_period_start')
     op.alter_column('turns', 'id',
                existing_type=sa.INTEGER(),
                nullable=False,
