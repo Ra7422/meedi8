@@ -49,7 +49,7 @@ export default function Profile() {
     try {
       // Fetch sessions
       console.log('📊 Fetching sessions...');
-      const sessionsData = await apiRequest('/rooms', 'GET', null, token);
+      const sessionsData = await apiRequest('/rooms/', 'GET', null, token);
       console.log('📊 Sessions received:', sessionsData?.length || 0, 'rooms');
       setSessions(sessionsData || []);
 
