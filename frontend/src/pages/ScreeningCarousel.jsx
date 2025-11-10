@@ -363,8 +363,6 @@ export default function ScreeningCarousel() {
       maxWidth: '600px',
       margin: '0 auto',
       width: '100%',
-      borderTop: '1px solid rgba(125, 211, 192, 0.2)',
-      backgroundColor: '#ffffff',
     },
     button: {
       padding: '16px 32px',
