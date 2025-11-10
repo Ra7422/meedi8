@@ -108,7 +108,7 @@ class HealthProfileResponse(BaseModel):
 
 class SessionScreeningCreate(BaseModel):
     """Quick check before each session"""
-    room_id: int
+    room_id: Optional[int] = None  # None for first-time screening before room creation
 
     # For returning users
     is_returning_user: bool = False
@@ -171,7 +171,7 @@ class ScreeningCheckResponse(BaseModel):
 
 class CompleteScreeningRequest(BaseModel):
     """Combined request for creating/updating profile + session screening"""
-    room_id: int
+    room_id: Optional[int] = None  # None for first-time screening before room creation
 
     # Full profile (for new users) OR updates (for returning users)
     profile_data: Optional[HealthProfileCreate] = None
