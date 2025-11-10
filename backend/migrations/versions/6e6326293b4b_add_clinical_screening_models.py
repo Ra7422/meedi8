@@ -136,8 +136,9 @@ def upgrade() -> None:
                type_=sa.Enum('active', 'cancelled', 'expired', 'trial', name='subscriptionstatus'),
                nullable=False,
                existing_server_default=sa.text("'active'"))
-    op.create_index(op.f('ix_subscriptions_id'), 'subscriptions', ['id'], unique=False)
-    op.create_index(op.f('ix_subscriptions_stripe_subscription_id'), 'subscriptions', ['stripe_subscription_id'], unique=True)
+    # Note: These indexes already exist from add_subscriptions_and_api_costs migration
+    # op.create_index(op.f('ix_subscriptions_id'), 'subscriptions', ['id'], unique=False)
+    # op.create_index(op.f('ix_subscriptions_stripe_subscription_id'), 'subscriptions', ['stripe_subscription_id'], unique=True)
     op.drop_column('subscriptions', 'current_period_end')
     op.drop_column('subscriptions', 'current_period_start')
     op.alter_column('turns', 'id',
@@ -222,8 +223,9 @@ def downgrade() -> None:
                autoincrement=True)
     op.add_column('subscriptions', sa.Column('current_period_start', sa.DATETIME(), nullable=True))
     op.add_column('subscriptions', sa.Column('current_period_end', sa.DATETIME(), nullable=True))
-    op.drop_index(op.f('ix_subscriptions_stripe_subscription_id'), table_name='subscriptions')
-    op.drop_index(op.f('ix_subscriptions_id'), table_name='subscriptions')
+    # Note: These indexes were not created in this migration, skipping drop in downgrade
+    # op.drop_index(op.f('ix_subscriptions_stripe_subscription_id'), table_name='subscriptions')
+    # op.drop_index(op.f('ix_subscriptions_id'), table_name='subscriptions')
     op.alter_column('subscriptions', 'status',
                existing_type=sa.Enum('active', 'cancelled', 'expired', 'trial', name='subscriptionstatus'),
                type_=sa.VARCHAR(length=50),
