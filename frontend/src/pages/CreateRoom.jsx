@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
@@ -14,13 +14,22 @@ const categories = [
 ];
 
 export default function CreateRoom() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1 = category selection, 2 = describe issue
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [initialIssue, setInitialIssue] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect to screening if user hasn't completed it yet
+  useEffect(() => {
+    if (user && !user.has_completed_screening) {
+      // Save current form data to sessionStorage before redirecting
+      sessionStorage.setItem('pendingRoomCreation', JSON.stringify({ title, category, initialIssue, step }));
+      navigate('/screening-carousel');
+    }
+  }, [user, navigate]);
 
   const handleNext = () => {
     if (step === 1) {
