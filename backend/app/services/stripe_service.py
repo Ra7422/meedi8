@@ -1,0 +1,193 @@
+"""
+Stripe Integration Service
+Handles checkout, subscriptions, and webhooks
+"""
+import stripe
+from sqlalchemy.orm import Session
+from app.config import settings
+from app.models.user import User
+from app.models.subscription import Subscription, SubscriptionTier, SubscriptionStatus
+from datetime import datetime
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def get_price_id(tier: str, interval: str) -> str:
+    """Get Stripe price ID for tier and billing interval"""
+    if tier == "plus":
+        return settings.STRIPE_PRICE_PLUS_MONTHLY if interval == "monthly" else settings.STRIPE_PRICE_PLUS_YEARLY
+    elif tier == "pro":
+        return settings.STRIPE_PRICE_PRO_MONTHLY if interval == "monthly" else settings.STRIPE_PRICE_PRO_YEARLY
+    else:
+        raise ValueError(f"Invalid tier: {tier}")
+
+
+def get_tier_from_price_id(price_id: str) -> SubscriptionTier:
+    """Determine subscription tier from Stripe price ID"""
+    if price_id in [settings.STRIPE_PRICE_PLUS_MONTHLY, settings.STRIPE_PRICE_PLUS_YEARLY]:
+        return SubscriptionTier.PLUS
+    elif price_id in [settings.STRIPE_PRICE_PRO_MONTHLY, settings.STRIPE_PRICE_PRO_YEARLY]:
+        return SubscriptionTier.PRO
+    else:
+        return SubscriptionTier.FREE
+
+
+def get_or_create_stripe_customer(db: Session, user: User) -> str:
+    """Get existing Stripe customer ID or create new customer"""
+    if user.stripe_customer_id:
+        return user.stripe_customer_id
+
+    # Create new Stripe customer
+    customer = stripe.Customer.create(
+        email=user.email,
+        name=user.name,
+        metadata={
+            "user_id": user.id
+        }
+    )
+
+    # Save customer ID
+    user.stripe_customer_id = customer.id
+    db.commit()
+
+    return customer.id
+
+
+def create_checkout_session(db: Session, user: User, tier: str, interval: str, success_url: str, cancel_url: str) -> dict:
+    """
+    Create Stripe Checkout session for subscription.
+
+    Args:
+        db: Database session
+        user: User object
+        tier: "plus" or "pro"
+        interval: "monthly" or "yearly"
+        success_url: URL to redirect after successful payment
+        cancel_url: URL to redirect if user cancels
+
+    Returns:
+        dict with checkout_url and session_id
+    """
+    customer_id = get_or_create_stripe_customer(db, user)
+    price_id = get_price_id(tier, interval)
+
+    checkout_session = stripe.checkout.Session.create(
+        customer=customer_id,
+        payment_method_types=['card'],
+        line_items=[{
+            'price': price_id,
+            'quantity': 1,
+        }],
+        mode='subscription',
+        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=cancel_url,
+        metadata={
+            "user_id": user.id,
+            "tier": tier,
+            "interval": interval
+        },
+        subscription_data={
+            "metadata": {
+                "user_id": user.id
+            }
+        }
+    )
+
+    return {
+        "checkout_url": checkout_session.url,
+        "session_id": checkout_session.id
+    }
+
+
+def create_portal_session(customer_id: str, return_url: str) -> str:
+    """
+    Create Stripe Customer Portal session for managing subscription.
+
+    Returns:
+        Portal URL
+    """
+    portal_session = stripe.billing_portal.Session.create(
+        customer=customer_id,
+        return_url=return_url,
+    )
+
+    return portal_session.url
+
+
+def handle_checkout_complete(db: Session, session: dict):
+    """Handle successful checkout completion"""
+    user_id = int(session.get("metadata", {}).get("user_id"))
+    subscription_id = session.get("subscription")
+
+    if not user_id or not subscription_id:
+        print("Missing user_id or subscription_id in checkout session")
+        return
+
+    # Get Stripe subscription details
+    stripe_subscription = stripe.Subscription.retrieve(subscription_id)
+    price_id = stripe_subscription["items"]["data"][0]["price"]["id"]
+    tier = get_tier_from_price_id(price_id)
+
+    # Update user's subscription
+    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+    if subscription:
+        subscription.tier = tier
+        subscription.status = SubscriptionStatus.ACTIVE
+        subscription.stripe_subscription_id = subscription_id
+        subscription.stripe_price_id = price_id
+        subscription.updated_at = datetime.utcnow()
+
+        # Update limits for paid tiers
+        if tier in [SubscriptionTier.PLUS, SubscriptionTier.PRO]:
+            subscription.voice_conversations_limit = 999999  # Unlimited
+
+        db.commit()
+        print(f"✅ Subscription activated for user {user_id}: {tier.value}")
+
+
+def handle_subscription_updated(db: Session, subscription_data: dict):
+    """Handle subscription update (renewal, change, etc.)"""
+    stripe_sub_id = subscription_data.get("id")
+    status = subscription_data.get("status")
+
+    subscription = db.query(Subscription).filter(
+        Subscription.stripe_subscription_id == stripe_sub_id
+    ).first()
+
+    if not subscription:
+        print(f"Subscription not found: {stripe_sub_id}")
+        return
+
+    # Map Stripe status to our status
+    if status == "active":
+        subscription.status = SubscriptionStatus.ACTIVE
+    elif status == "canceled":
+        subscription.status = SubscriptionStatus.CANCELLED
+    elif status == "past_due" or status == "unpaid":
+        subscription.status = SubscriptionStatus.EXPIRED
+
+    subscription.updated_at = datetime.utcnow()
+    db.commit()
+    print(f"✅ Subscription updated: {stripe_sub_id} -> {status}")
+
+
+def handle_subscription_deleted(db: Session, subscription_data: dict):
+    """Handle subscription cancellation"""
+    stripe_sub_id = subscription_data.get("id")
+
+    subscription = db.query(Subscription).filter(
+        Subscription.stripe_subscription_id == stripe_sub_id
+    ).first()
+
+    if not subscription:
+        print(f"Subscription not found: {stripe_sub_id}")
+        return
+
+    # Downgrade to free tier
+    subscription.tier = SubscriptionTier.FREE
+    subscription.status = SubscriptionStatus.CANCELLED
+    subscription.voice_conversations_limit = 1  # Back to trial
+    subscription.updated_at = datetime.utcnow()
+
+    db.commit()
+    print(f"✅ Subscription cancelled: {stripe_sub_id}")

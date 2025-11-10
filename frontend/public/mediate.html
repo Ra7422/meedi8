@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Mediation Console</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: ui-sans-serif, -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial; margin:0; background:#0b1220; color:#e8eefb; }
+    .wrap { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 24px; margin: 0 0 16px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0; }
+    .input { padding:10px 12px; border-radius:8px; border:1px solid #2a3a5a; background:#0f172a; color:#e8eefb; }
+    .btn { padding:10px 14px; border-radius:10px; border:1px solid #3a4a6a; background:#273554; color:#e8eefb; font-weight:600; cursor:pointer; }
+    .card { border:1px solid #223355; border-radius:12px; padding:12px; background:#0f172a; }
+    pre { white-space:pre-wrap; word-break:break-word; }
+    .muted { color:#a5b4cf; font-size:12px; }
+    .pill { font-size:12px; background:#13203e; border:1px solid #28365c; padding:3px 8px; border-radius:999px; margin-left:8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Mediation Console <span class="pill" id="api-pill"></span></h1>
+
+    <div class="row">
+      <input id="email" class="input" style="min-width:250px" placeholder="email" value="alex@example.com"/>
+      <input id="pwd" class="input" type="password" placeholder="password" value="test1234"/>
+      <button class="btn" id="btnLogin">Login</button>
+      <input id="room" class="input" style="width:110px" placeholder="room id"/>
+      <button class="btn" id="btnJoin">Join Room</button>
+      <span class="muted" id="status"></span>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="btnLoad">Load Thread</button>
+      <button class="btn" id="btnRefresh">Refresh Feed</button>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="muted">Last 5 feed items</div>
+      <pre id="raw">[]</pre>
+    </div>
+  </div>
+
+  <script>
+    // Base API
+    const API_BASE = (localStorage.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+    document.getElementById('api-pill').textContent = 'API: ' + API_BASE;
+
+    // Helpers
+    const $ = (id) => document.getElementById(id);
+    const token = () => localStorage.getItem('access_token') || '';
+
+    async function api(path, options) {
+      const res = await fetch(API_BASE + path, {
+        method: (options && options.method) || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token() ? { Authorization: 'Bearer ' + token() } : {}),
+          ...(options && options.headers ? options.headers : {})
+        },
+        body: options && options.body ? options.body : null
+      });
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      try { return await res.json(); } catch { return {}; }
+    }
+
+    async function loadFeed(roomId) {
+      try { return await api('/rooms/' + roomId + '/feed'); } catch { return []; }
+    }
+    async function loadThread(roomId) {
+      try { return await api('/rooms/' + roomId + '/thread'); } catch { return { messages: [] }; }
+    }
+
+    // Actions
+    $('btnLogin').onclick = async () => {
+      const email = $('email').value.trim() || 'alex@example.com';
+      const password = $('pwd').value || 'test1234';
+      try {
+        const d = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+        if (d && d.access_token) {
+          localStorage.setItem('access_token', d.access_token);
+          $('status').textContent = 'Logged in as ' + email;
+        } else {
+          $('status').textContent = 'Login failed';
+        }
+      } catch (e) {
+        $('status').textContent = 'Login error: ' + e.message;
+      }
+    };
+
+    $('btnJoin').onclick = async () => {
+      const id = Number(($('room').value || '').trim());
+      if (!id) { alert('Enter room id'); return; }
+      try {
+        await api('/rooms/' + id + '/join', { method: 'POST' });
+        $('status').textContent = 'Joined room ' + id;
+        await refresh(id);
+      } catch (e) {
+        alert('Join failed: ' + e.message);
+      }
+    };
+
+    async function refresh(id) {
+      const feed = await loadFeed(id);
+      $('raw').textContent = JSON.stringify(feed.slice(-5), null, 2);
+    }
+
+    $('btnLoad').onclick = async () => {
+      const id = Number(($('room').value || '').trim());
+      if (!id) { alert('Enter room id'); return; }
+      const t = await loadThread(id);
+      $('raw').textContent = JSON.stringify(t.messages ? t.messages.slice(-3) : t, null, 2);
+    };
+
+    $('btnRefresh').onclick = async () => {
+      const id = Number(($('room').value || '').trim());
+      if (!id) { alert('Enter room id'); return; }
+      await refresh(id);
+    };
+
+    // URL params: ?room=123&email=alex@example.com
+    window.addEventListener('DOMContentLoaded', async () => {
+      const qs = new URLSearchParams(location.search);
+      const roomParam = Number(qs.get('room') || '0');
+      const emailParam = (qs.get('email') || '').trim();
+
+      if (roomParam) $('room').value = String(roomParam);
+      if (emailParam) $('email').value = emailParam;
+
+      // Auto-login if email was provided via link
+      if (emailParam) {
+        try {
+          const d = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: emailParam, password: 'test1234' }) });
+          if (d && d.access_token) {
+            localStorage.setItem('access_token', d.access_token);
+            $('status').textContent = 'Logged in as ' + emailParam;
+          }
+        } catch (e) {
+          $('status').textContent = 'Auto-login failed: ' + e.message;
+        }
+      }
+
+      // Auto-join if we have both room and token
+      if (roomParam && token()) {
+        try {
+          await api('/rooms/' + roomParam + '/join', { method: 'POST' });
+          $('status').textContent += ' • joined room ' + roomParam;
+          await refresh(roomParam);
+        } catch (e) {
+          // ignore
+        }
+      }
+    });
+  </script>
+</body>
+</html>

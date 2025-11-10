@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Clean Air — Quick Start</title>
+<style>
+  :root { color-scheme: light dark; }
+  body{margin:0;background:#0b1220;color:#e8eefb;font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+  .wrap{max-width:760px;margin:28px auto;padding:0 16px}
+  h1{font-size:26px;margin:0 0 10px}
+  .card{background:#0f172a;border:1px solid #1e2a44;border-radius:12px;padding:16px;margin:12px 0}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{background:#273554;border:1px solid #38476a;color:#e8eefb;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .ghost{background:transparent;border:1px dashed #33415c;color:#b9c7e1}
+  .input,.ta{width:100%;background:#0b1220;color:#e8eefb;border:1px solid #1f2a44;border-radius:10px;padding:10px 12px}
+  .muted{color:#a5b4cf;font-size:13px}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #2a3b61;background:#13203e;font-size:12px;margin-left:8px}
+  .ok{color:#93e29b}
+  .err{color:#ff8b8b}
+  pre{background:#0b1220;border:1px dashed #354566;border-radius:10px;padding:10px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Clean Air — Quick Start <span id="api-pill" class="pill">API: …</span></h1>
+
+  <div class="card" id="step1">
+    <div class="row">
+      <button id="btnStart" class="btn">Start new mediation</button>
+      <span class="muted">Logs in as Charlie & creates a room for you.</span>
+    </div>
+    <div class="muted" id="roomLine" style="margin-top:8px;display:none">
+      Room <code id="roomIdOut"></code> created.
+    </div>
+  </div>
+
+  <div class="card" id="step2" style="display:none">
+    <div class="muted" style="margin-bottom:6px">Describe the issue (User 1)</div>
+    <textarea id="issue" class="ta" rows="5" placeholder="What's going on? Be specific but brief."></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="btnReword" class="btn">Reword & save</button>
+      <span id="rwStatus" class="muted"></span>
+    </div>
+    <div id="rwBox" style="display:none;margin-top:12px">
+      <div class="muted" style="margin-bottom:6px">AI reword (neutral)</div>
+      <textarea id="rwText" class="ta" rows="4"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="btnAccept" class="btn">Looks right — accept</button>
+        <button id="btnEdit" class="btn ghost">Edit original & try again</button>
+        <span id="acceptStatus" class="muted"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="step3" style="display:none">
+    <div class="muted" style="margin-bottom:6px">Invite User 2 (Alex)</div>
+    <div class="row">
+      <button id="btnCopyInvite" class="btn">Copy invite link</button>
+      <a id="openAsAlex" class="btn ghost" href="#" target="_blank" rel="noopener">Open as Alex (demo)</a>
+    </div>
+    <div class="muted" style="margin-top:8px">Share the link with Alex. When they join, you’ll both see the same room.</div>
+  </div>
+
+  <div id="dev" class="card" style="display:none">
+    <div class="row"><span class="muted">Debug</span><span id="presence" class="pill">presence: unknown</span></div>
+    <pre id="debugBox">{}</pre>
+  </div>
+</div>
+
+<script>
+  // ---------- Config ----------
+  const API_BASE = (localStorage.API_BASE || 'http://localhost:8000').replace(/\/$/,'');
+  document.getElementById('api-pill').textContent = 'API: ' + API_BASE;
+
+  // Optional: store an OpenAI key once in DevTools console:
+  // localStorage.OPENAI_API_KEY = 'sk-proj-...'
+  const OPENAI_KEY = localStorage.OPENAI_API_KEY || '';
+
+  // ---------- Helpers ----------
+  const $ = id => document.getElementById(id);
+  const token = () => localStorage.getItem('access_token') || '';
+  const setToken = t => localStorage.setItem('access_token', t || '');
+  async function api(path, opts={}) {
+    const res = await fetch(API_BASE + path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token()? { Authorization: 'Bearer ' + token() } : {}),
+        ...(opts.headers || {})
+      }
+    });
+    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+    return res.json().catch(()=> ({}));
+  }
+  function showDebug(obj){ const box = $('debugBox'); if (box) box.textContent = JSON.stringify(obj,null,2); }
+
+  // Robust parser for OpenAI responses API and older chat formats
+  function pickText(j) {
+    try {
+      // responses API (2024+)
+      const out = j.output && j.output[0] && j.output[0].content && j.output[0].content[0] && j.output[0].content[0].text;
+      if (out) return out;
+    } catch {}
+    try {
+      // chat.completions fallback
+      const c = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+      if (c) return c;
+    } catch {}
+    return '';
+  }
+
+  async function rewordViaOpenAI(text) {
+    if (!OPENAI_KEY) return { error: 'no-key' };
+    try {
+      const res = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_KEY },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          input: [
+            { role: 'system', content: 'You are a neutral mediator. Rewrite the user text as a concise, nonjudgmental summary (max 2 sentences). Do not add advice.' },
+            { role: 'user', content: text }
+          ]
+        })
+      });
+      const j = await res.json();
+      const neutral = pickText(j).trim();
+      if (!neutral) return { error: j.error?.message || 'no-output' };
+      return { neutral };
+    } catch (e) {
+      return { error: String(e) };
+    }
+  }
+
+  // ---------- Flow ----------
+  let roomId = null;
+
+  $('btnStart').onclick = async () => {
+    try {
+      // login as Charlie
+      const login = await api('/auth/login', { method:'POST', body: JSON.stringify({ email:'charlie@example.com', password:'test1234' })});
+      setToken(login.access_token || '');
+      // create room
+      const room = await api('/rooms/', { method:'POST', body: JSON.stringify({ title: 'Signals E2E Room' })});
+      roomId = room.id;
+      $('roomIdOut').textContent = roomId;
+      $('roomLine').style.display = '';
+      // show step 2
+      $('step2').style.display = '';
+      // small debug
+      try {
+        const feed = await api(`/rooms/${roomId}/feed`);
+        const ids = Array.from(new Set((feed||[]).map(t=>t.user_id).filter(Boolean)));
+        $('presence').textContent = 'presence: ' + (ids.length>=2 ? 'both' : ids.length? 'one':'unknown');
+        showDebug({ feed: feed.slice(-3) });
+      } catch {}
+    } catch (e) {
+      alert('Start failed: ' + e.message);
+    }
+  };
+
+  $('btnReword').onclick = async () => {
+    const text = ($('issue').value || '').trim();
+    if (!roomId || !text) { alert('Write a short description first.'); return; }
+    $('rwStatus').textContent = 'Saving…';
+    try {
+      // Save original (as intake)
+      await api(`/rooms/${roomId}/intake`, { method:'POST', body: JSON.stringify({ summary: text }) });
+      // Try reword (if key available); otherwise just echo the text back
+      $('rwStatus').textContent = 'Rewording…';
+      const rw = await rewordViaOpenAI(text);
+      const neutral = rw.neutral || text;
+      if (rw.error && rw.error !== 'no-key') $('rwStatus').textContent = 'Reword error (using original): ' + rw.error;
+      else $('rwStatus').textContent = rw.error === 'no-key' ? 'No OpenAI key; using your text.' : 'Reworded.';
+      $('rwText').value = neutral;
+      $('rwBox').style.display = '';
+    } catch (e) {
+      $('rwStatus').textContent = '';
+      alert('Save/reword failed: ' + e.message);
+    }
+  };
+
+  $('btnEdit').onclick = () => {
+    $('issue').focus();
+    $('rwBox').style.display = 'none';
+  };
+
+  $('btnAccept').onclick = async () => {
+    const neutral = ($('rwText').value || '').trim();
+    if (!roomId || !neutral) return;
+    $('acceptStatus').textContent = 'Saving…';
+    try {
+      await api(`/rooms/${roomId}/intake`, { method:'POST', body: JSON.stringify({ summary: neutral }) });
+      $('acceptStatus').textContent = 'Saved.';
+      // show invite section
+      $('step3').style.display = '';
+      const invite = `${location.origin}/mediate.html?room=${roomId}`;
+      $('btnCopyInvite').onclick = () => navigator.clipboard.writeText(invite).then(()=>alert('Invite copied'));
+      $('openAsAlex').href = `${location.origin}/mediate.html?room=${roomId}&email=alex@example.com`;
+    } catch (e) {
+      $('acceptStatus').textContent = '';
+      alert('Accept failed: ' + e.message);
+    }
+  };
+</script>
+</body>
+</html>

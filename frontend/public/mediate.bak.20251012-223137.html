@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Clean Air – Mediation Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:40px auto;padding:0 16px}
+    header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+    input,textarea,button{font:inherit}
+    input,textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px}
+    textarea{min-height:90px}
+    button{padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer}
+    button.primary{background:#111;color:#fff;border-color:#111}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+    .row > *{flex:1 1 250px}
+    .muted{color:#666}
+    .pill{font-size:12px;border:1px solid #ddd;border-radius:999px;padding:2px 8px;margin-left:6px;background:#f9f9f9}
+    .list{margin-top:16px}
+    .item{border:1px solid #eee;border-radius:10px;padding:10px;margin:8px 0;background:#fafafa}
+    .kind{font-weight:600}
+    .ai{background:#f3f7ff}
+    .me{background:#f7fff3}
+    .err{color:#b00020;white-space:pre-wrap}
+    .ok{color:#0a7}
+    .bar{display:flex;gap:8px;flex-wrap:wrap}
+    .right{margin-left:auto}
+    small{color:#666}
+  </style>
+</head>
+<body>
+  <h1>Mediation Console</h1>
+
+  <header>
+    <div class="row">
+      <div>
+        <label>API Base</label>
+        <input id="apiBase" value="http://localhost:8000" />
+        <small class="muted">Change if your backend isn’t on localhost.</small>
+      </div>
+      <div>
+        <label>Room ID</label>
+        <input id="roomId" placeholder="e.g. 23" />
+      </div>
+      <div>
+        <label>Bearer Token</label>
+        <input id="token" placeholder="paste JWT (or I'll try localStorage)" />
+        <small class="muted">Uses localStorage.access_token if left blank.</small>
+      </div>
+    </div>
+
+    <div class="bar">
+      <button id="btnLoad" class="primary">Load Thread</button>
+      <button id="btnStart">Start Mediation</button>
+      <span id="status" class="pill">idle</span>
+      <span class="right muted">This is a dev-only helper UI.</span>
+    </div>
+  </header>
+
+  <section>
+    <label>Your Response</label>
+    <textarea id="reply" placeholder="Type your answer to the mediator..."></textarea>
+    <div class="bar">
+      <button id="btnRespond">Send Response</button>
+      <button id="btnRefresh">Refresh</button>
+      <span id="flash" class="muted"></span>
+    </div>
+  </section>
+
+  <section class="list" id="list"></section>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const apiBase = () => el('apiBase').value.trim().replace(/\/+$/,'');
+    const roomId = () => el('roomId').value.trim();
+    const bearer = () => (el('token').value.trim() || localStorage.getItem('access_token') || '').trim();
+
+    function setStatus(t, ok=true){ const s = el('status'); s.textContent = t; s.className = 'pill ' + (ok ? 'ok':''); }
+    function flash(t){ el('flash').textContent = t; setTimeout(()=>el('flash').textContent='', 1500); }
+
+    function headers(){
+      const tok = bearer();
+      const h = { 'Content-Type': 'application/json' };
+      if(tok) h['Authorization'] = 'Bearer ' + tok;
+      return h;
+    }
+
+    async function jsonFetch(path, opts={}){
+      const res = await fetch(apiBase() + path, { ...opts, headers: { ...headers(), ...(opts.headers||{}) }});
+      if(!res.ok){
+        const txt = await res.text();
+        throw new Error(res.status + ' ' + res.statusText + '\\n' + txt);
+      }
+      const ct = res.headers.get('content-type')||'';
+      if(ct.includes('application/json')) return res.json();
+      return res.text();
+    }
+
+    function render(items){
+      const list = el('list');
+      list.innerHTML = '';
+      items.forEach(it=>{
+        const div = document.createElement('div');
+        div.className = 'item ' + (it.kind === 'ai_question' ? 'ai' : (it.kind === 'user_response' ? 'me':'' ));
+        const when = it.created_at ? new Date(it.created_at).toLocaleString() : '';
+        div.innerHTML = \`
+          <div><span class="kind">\${it.kind}</span> <small class="muted">\${when}</small></div>
+          <div>\${(it.text || it.summary || '').replace(/</g,'&lt;')}</div>
+          \${it.author_name ? '<div class="muted">By: '+it.author_name+'</div>' : ''}
+        \`;
+        list.appendChild(div);
+      });
+    }
+
+    async function loadThread(){
+      const id = roomId();
+      if(!id){ alert('Enter Room ID'); return; }
+      setStatus('loading…', true);
+      try{
+        const data = await jsonFetch('/rooms/'+id+'/thread', { method:'GET' });
+        render(Array.isArray(data) ? data : (data.items || []));
+        setStatus('loaded ✓', true);
+      }catch(err){
+        setStatus('error', false);
+        document.querySelector('.list').innerHTML = '<pre class="err">'+err.message+'</pre>';
+      }
+    }
+
+    async function startMediation(){
+      const id = roomId();
+      if(!id){ alert('Enter Room ID'); return; }
+      setStatus('starting…', true);
+      try{
+        const data = await jsonFetch('/rooms/'+id+'/mediate', { method:'POST', body: JSON.stringify({}) });
+        flash('Mediator started');
+        await loadThread();
+        setStatus('ready ✓', true);
+      }catch(err){
+        setStatus('error', false);
+        document.querySelector('.list').innerHTML = '<pre class="err">'+err.message+'</pre>';
+      }
+    }
+
+    async function sendResponse(){
+      const id = roomId();
+      const text = el('reply').value.trim();
+      if(!id){ alert('Enter Room ID'); return; }
+      if(!text){ alert('Type a response'); return; }
+      setStatus('sending…', true);
+      try{
+        const data = await jsonFetch('/rooms/'+id+'/respond', { method:'POST', body: JSON.stringify({ text }) });
+        if(data.halted){ flash('Halted: '+(data.reason||'')); }
+        else if(data.resolution){ flash('Resolution proposed'); }
+        else if(data.next_question){ flash('Next question posted'); }
+        el('reply').value = '';
+        await loadThread();
+        setStatus('ready ✓', true);
+      }catch(err){
+        setStatus('error', false);
+        document.querySelector('.list').innerHTML = '<pre class="err">'+err.message+'</pre>';
+      }
+    }
+
+    el('btnLoad').onclick = loadThread;
+    el('btnRefresh').onclick = loadThread;
+    el('btnStart').onclick = startMediation;
+    el('btnRespond').onclick = sendResponse;
+
+    // Try to prefill last room id (if your React app saved it)
+    el('roomId').value = localStorage.getItem('lastRoomId') || '';
+  </script>
+</body>
+</html>

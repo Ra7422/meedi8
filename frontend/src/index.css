@@ -1,0 +1,80 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap');
+
+/* Design Tokens from Figma Designs */
+@theme {
+  /* Colors - extracted from your UI designs */
+  --color-primary: #4cd3c2;
+  --color-primary-light: #e8f5f3;
+  --color-accent: #8b5cf6;
+  --color-accent-light: #f3e8ff;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-background: #ffffff;
+  --color-background-subtle: #f9fafb;
+
+  /* Spacing scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Border radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Typography */
+  --font-sans: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Utilities from your designs */
+.page-background {
+  background: linear-gradient(180deg, #e8f5f3 0%, #ffffff 100%);
+}
+
+.chat-bubble-user {
+  background-color: var(--color-accent);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.chat-bubble-ai {
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}

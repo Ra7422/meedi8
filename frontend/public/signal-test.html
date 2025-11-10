@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Signal Test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#fafafa; }
+    .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin:20px; max-width:820px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    input, textarea { border:1px solid #ccc; border-radius:8px; padding:8px 10px; }
+    button { border:0; border-radius:10px; padding:10px 14px; color:#fff; font-weight:600; cursor:pointer; }
+    .btn { background:#6b7280; }
+    .w { width:260px; }
+    .b-break { background:#2d3748; } .b-hear { background:#7c3aed; }
+    .b-sorry { background:#d97706; } .b-agree { background:#059669; }
+    .b-disagree { background:#dc2626; } .b-hurt { background:#db2777; }
+    .muted { color:#666; font-size:12px; }
+    pre { background:#f6f8fa; padding:12px; border-radius:10px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="margin:0 0 10px 0;">Signal Test</h1>
+
+    <div class="row" style="margin-top:8px;">
+      <label>Email: <input id="email" class="w" value="charlie@example.com" autocomplete="username email" /></label>
+      <label>Password: <input id="password" type="password" class="w" value="test1234" autocomplete="current-password" /></label>
+      <button id="login" class="btn">Login & Save Token</button>
+      <div class="muted">Saves token to localStorage as "access_token"</div>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <label>Room ID:
+        <input id="room-id" class="w" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="e.g. 42" />
+      </label>
+      <button id="create" class="btn">Create Room</button>
+      <button id="join" class="btn">Join Room</button>
+      <button id="invite" class="btn">Copy Invite</button>
+      <span class="muted" id="copied" style="display:none;">Copied!</span>
+    </div>
+
+    <div class="row" style="margin-top:12px; gap:14px;">
+      <button class="b-break">⏸ Break</button>
+      <button class="b-hear">🟣 Hear You</button>
+      <button class="b-sorry">🙏 Sorry</button>
+      <button class="b-agree">🤝 Agree</button>
+      <button class="b-disagree">⚖️ Disagree</button>
+      <button class="b-hurt">💔 Hurt</button>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <button id="feed" class="btn">Load Feed</button>
+    </div>
+
+    <pre id="out" style="margin-top:12px;">(no output yet)</pre>
+  </div>
+
+<script>
+  const API_BASE = (new URLSearchParams(location.search).get('api')) || 'http://localhost:8000';
+  const $ = (s)=>document.querySelector(s);
+  const out=$('#out'), emailEl=$('#email'), passEl=$('#password'), roomEl=$('#room-id'), copied=$('#copied');
+  const tok=()=>localStorage.getItem('access_token')||'';
+  const show=(v)=>{ out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2); };
+  const getRoomId=()=> (roomEl.value||'').trim();
+  const ensureNum=()=>{ const id=getRoomId(); if(!/^\d+$/.test(id)){ show('Room ID must be a number'); return null;} return id; };
+
+  // Autofill Room ID from ?room=123
+  (function initFromQuery(){
+    const room = new URLSearchParams(location.search).get('room');
+    if(room && /^\d+$/.test(room)) roomEl.value = room;
+  })();
+
+  async function login(){
+    try{
+      const r=await fetch(API_BASE+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:emailEl.value.trim(),password:passEl.value})});
+      const d=await r.json();
+      if(r.ok && d && d.access_token){ localStorage.setItem('access_token',d.access_token); show({saved_token:true,len:d.access_token.length}); }
+      else show(d);
+    }catch(e){ show(String(e)); }
+  }
+  async function createRoom(){
+    try{
+      const r=await fetch(API_BASE+'/rooms/',{method:'POST',headers:{'Content-Type':'application/json',...(tok()?{Authorization:'Bearer '+tok()}: {})},body:JSON.stringify({title:'Signals Test'})});
+      const d=await r.json(); if(r.ok && d && d.id){ roomEl.value=String(d.id); } show(d);
+    }catch(e){ show(String(e)); }
+  }
+  async function joinRoom(){
+    const id=ensureNum(); if(!id) return;
+    try{ const r=await fetch(API_BASE+`/rooms/${id}/join`,{method:'POST',headers:{...(tok()?{Authorization:'Bearer '+tok()}: {})}});
+      const d=await r.json(); show(d);
+    }catch(e){ show(String(e)); }
+  }
+  async function sendSignal(type){
+    const id=ensureNum(); if(!id) return;
+    try{
+      const r=await fetch(API_BASE+`/rooms/${id}/signal`,{method:'POST',headers:{'Content-Type':'application/json',...(tok()?{Authorization:'Bearer '+tok()}: {})},body:JSON.stringify({signal_type:type})});
+      const d=await r.json().catch(()=>({status:r.status})); show(d);
+    }catch(e){ show(String(e)); }
+  }
+  async function loadFeed(){
+    const id=ensureNum(); if(!id) return;
+    try{ const r=await fetch(API_BASE+`/rooms/${id}/feed`,{headers:{...(tok()?{Authorization:'Bearer '+tok()}: {})}});
+      const d=await r.json(); show(d);
+    }catch(e){ show(String(e)); }
+  }
+  async function copyInvite(){
+    const id = ensureNum(); if(!id) return;
+    const url = `${location.origin}/signal-test.html?room=${id}`;
+    await navigator.clipboard.writeText(url).catch(()=>{});
+    copied.style.display='inline';
+    setTimeout(()=>copied.style.display='none', 1200);
+    show({invite:url});
+  }
+
+  $('#login').addEventListener('click',login);
+  $('#create').addEventListener('click',createRoom);
+  $('#join').addEventListener('click',joinRoom);
+  $('#feed').addEventListener('click',loadFeed);
+  document.querySelector('.b-break').addEventListener('click',()=>sendSignal('break'));
+  document.querySelector('.b-hear').addEventListener('click',()=>sendSignal('hear_you'));
+  document.querySelector('.b-sorry').addEventListener('click',()=>sendSignal('sorry'));
+  document.querySelector('.b-agree').addEventListener('click',()=>sendSignal('agree'));
+  document.querySelector('.b-disagree').addEventListener('click',()=>sendSignal('disagree'));
+  document.querySelector('.b-hurt').addEventListener('click',()=>sendSignal('hurt'));
+  $('#invite').addEventListener('click',copyInvite);
+</script>
+</body>
+</html>

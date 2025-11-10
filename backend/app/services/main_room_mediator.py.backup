@@ -1,0 +1,202 @@
+"""
+Main Room AI Mediator
+Guides turn-based conversation between both users after pre-mediation coaching
+"""
+import os
+from typing import Dict, List, Optional
+from anthropic import Anthropic
+
+client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+MAIN_ROOM_MEDIATOR_PROMPT = """You are facilitating a mediation session between two people who have completed pre-mediation coaching.
+
+CONTEXT: Both people have:
+- Identified their observations, feelings, and needs (using NVC)
+- Developed some empathy for each other's perspective
+- Been prepared separately by AI coaching
+
+YOUR ROLE IN MAIN ROOM:
+1. Guide structured conversation toward resolution
+2. Keep them focused on needs, not positions
+3. Prevent escalation (detect Four Horsemen)
+4. Build on empathy they already developed
+5. Generate concrete, actionable agreements
+
+CONVERSATION STRUCTURE:
+
+**Opening:** Acknowledge both perspectives, set respectful tone
+
+**Phase 1: SHARED UNDERSTANDING**
+- Each person shares their polished perspective (from coaching)
+- Ask: "What did you hear them say?" (active listening)
+- Validate both experiences
+
+**Phase 2: FIND COMMON GROUND**
+- "What do both of you need?" (overlapping needs)
+- "Where do your needs align?"
+- Focus on shared goals (both want functional home, respect, etc.)
+
+**Phase 3: GENERATE SOLUTIONS**
+- Brainstorm options that meet BOTH needs
+- "What would work for both of you?"
+- Avoid either/or thinking, look for both/and
+
+**Phase 4: CONCRETE AGREEMENTS**
+- Who does what, by when?
+- How will you know it's working?
+- What happens if someone can't follow through?
+- Schedule check-in (1 week)
+
+RESPONSE STYLE:
+- One strategic question or reflection at a time
+- Under 40 words
+- Direct to specific person when needed: "[Name], ..."
+- Celebrate progress: "I'm hearing movement toward..."
+- Name patterns: "I notice both of you need..."
+
+WHEN TO HALT:
+- Criticism escalates to contempt
+- Threats or violence mentioned
+- Stonewalling (one person shuts down)
+- Stuck in loop after 15+ exchanges
+
+WHEN RESOLUTION ACHIEVED:
+Respond with: RESOLUTION: [Summarize concrete agreement]
+
+
+"""
+
+def start_main_room(user1_summary: str, user2_summary: str, user1_name: str, user2_name: str) -> Dict:
+    """
+    Start main room with opening message that acknowledges both perspectives.
+    
+    Returns:
+        Dict with opening_message and who speaks first
+    """
+    
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=600,
+            system=MAIN_ROOM_MEDIATOR_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""Two people are entering mediation. Here are their prepared perspectives:
+
+**{user1_name}:** {user1_summary}
+
+**{user2_name}:** {user2_summary}
+
+Create an opening (80-100 words) with:
+1. Brief welcome: "Welcome, [names]. You've both prepared thoughtfully."
+2. Process: "We'll share perspectives, find common ground, and create solutions."
+3. **AI INSIGHT:** Identify something one person might not realize about the other's experience. Look for:
+   - Unspoken fears or needs
+   - Efforts that went unnoticed
+   - Different interpretations of the same events
+   - A question that invites empathy
+4. Ask {user1_name} to start, incorporating your insight
+
+Example: "{user1_name}, I notice {user2_name} mentioned trying but feeling criticized. Could it be they're unsure what 'done right' looks like for you? Would you share your thoughts?"
+
+The insight should help them see each other differently."""
+                }
+            ]
+        )
+        
+        opening = response.content[0].text
+        
+        return {
+            "opening_message": opening + "\n\n— Mediation support, not therapy or legal advice.",
+            "first_speaker": "user1"
+        }
+        
+    except Exception as e:
+        print(f"Main room start error: {e}")
+        return {
+            "opening_message": f"Welcome to the conversation. {user1_name}, would you like to start by sharing your perspective?\n\n— Mediation support, not therapy or legal advice.",
+            "first_speaker": "user1"
+        }
+
+
+def process_main_room_response(
+    conversation_history: List[Dict],
+    user_message: str,
+    user_name: str,
+    other_user_name: str,
+    exchange_count: int
+) -> Dict:
+    """
+    Process user response in main room and generate AI guidance.
+    
+    Args:
+        conversation_history: Full conversation [{role, content}]
+        user_message: Current user's message
+        user_name: Name of current speaker
+        other_user_name: Name of other person
+        exchange_count: Number of exchanges so far
+        
+    Returns:
+        Dict with ai_response, resolution (if reached), or halt signal
+    """
+    
+    # Add current message to history
+    messages = conversation_history + [
+        {"role": "user", "content": f"{user_name}: {user_message}"}
+    ]
+    
+    # Add instruction for AI
+    messages.append({
+        "role": "user",
+        "content": f"""Exchange {exchange_count}.
+
+Guide the conversation forward. Options:
+1. Ask {other_user_name} to respond
+2. Reflect what you heard and probe deeper
+3. Highlight common ground
+4. Suggest concrete solution
+5. If agreement reached: RESOLUTION: [summary]
+6. If stuck/escalating after 15+ exchanges: HALT: [reason]
+
+Respond in under 40 words."""
+    })
+    
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=500,
+            system=MAIN_ROOM_MEDIATOR_PROMPT,
+            messages=messages
+        )
+        
+        ai_message = response.content[0].text
+        
+        # Check for resolution
+        if ai_message.startswith("RESOLUTION:"):
+            resolution = ai_message.replace("RESOLUTION:", "").strip()
+            return {
+                "resolution": resolution + "\n\n— Mediation support, not therapy or legal advice.",
+                "session_complete": True
+            }
+        
+        # Check for halt
+        if ai_message.startswith("HALT:"):
+            reason = ai_message.replace("HALT:", "").strip()
+            return {
+                "ai_response": f"Let's pause here. {reason}\n\n— Mediation support, not therapy or legal advice.",
+                "session_complete": True
+            }
+        
+        # Continue conversation
+        return {
+            "ai_response": ai_message + "\n\n— Mediation support, not therapy or legal advice.",
+            "session_complete": False
+        }
+        
+    except Exception as e:
+        print(f"Main room response error: {e}")
+        return {
+            "ai_response": f"{other_user_name}, how do you respond to what {user_name} shared?\n\n— Mediation support, not therapy or legal advice.",
+            "session_complete": False
+        }

@@ -1,0 +1,33 @@
+# Python
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+backend/.pytest_cache/
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# Node
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/dist/
+
+# OS
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Backups
+*.bak
+
+# Vercel
+.vercel
+
+# Railway
+railway.json

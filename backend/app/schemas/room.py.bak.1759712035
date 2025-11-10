@@ -1,0 +1,47 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import datetime
+
+class RoomCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+
+class RoomResponse(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+
+class IntakeRequest(BaseModel):
+    # allow either text or summary; backend will fold text->summary
+    text: Optional[str] = None
+    summary: Optional[str] = None
+    desired_outcome: str = ""
+    nonnegotiables: str = ""
+    timeline: str = ""
+    evidence_urls: List[str] = []
+
+class IntakeResponse(BaseModel):
+    turn_id: int
+    room_id: int
+    user_id: int
+    kind: str
+    text: str
+    tags: List[str]
+    created_at: datetime
+
+class TurnResponse(BaseModel):
+    id: int
+    room_id: int
+    user_id: int
+    kind: str
+    text: str
+    tags: List[str]
+    created_at: datetime
+
+class TurnFeedItem(BaseModel):
+    id: int
+    room_id: int
+    user_id: int
+    author_name: str
+    text: str
+    tags: List[str]
+    created_at: datetime

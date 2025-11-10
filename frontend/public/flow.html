@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Clean Air — End-to-End Flow (dev)</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji; margin: 0; background: #0b1220; color: #e8eefb; }
+    .wrap { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+    h1 { font-size: 28px; margin: 0 0 16px; }
+    h2 { font-size: 18px; margin: 24px 0 8px; opacity: .9; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .input { background: #0f172a; color: #e8eefb; border: 1px solid #1f2a44; border-radius: 8px; padding: 10px 12px; }
+    .btn { background: #273554; border: 1px solid #38476a; color: #e8eefb; border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .card { background: #0f172a; border: 1px solid #1e2a44; border-radius: 12px; padding: 14px; }
+    .muted { color: #a5b4cf; font-size: 12px; }
+    .ok { color: #93e29b; }
+    .warn { color: #f0c36a; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pill { font-size: 12px; background:#13203e; border:1px solid #28365c; padding:4px 8px; border-radius:999px; display:inline-block; }
+    .msgs { display: grid; gap: 10px; }
+    .msg { border:1px solid #1e2a44; border-radius: 12px; padding: 12px; background:#0f172a; }
+    .from-ai { border-color:#395fb7; background:#0e1a36; }
+    .from-you { border-color:#2d6a4f; background:#0f2a22; }
+    .from-other { border-color:#4b5563; background:#111827; }
+    pre.json { background:#0b1220; border:1px dashed #354566; border-radius:10px; padding:10px; overflow:auto; }
+    .topbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .ghost { background: transparent; border: 1px dashed #33415c; color:#b9c7e1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1 style="flex:1 1 auto;">Clean Air — End-to-End Flow</h1>
+      <span class="pill" id="api-pill">API: http://localhost:8000</span>
+      <span class="pill" id="presence-pill">presence: unknown</span>
+    </div>
+
+    <h2>1) Login</h2>
+    <div class="row">
+      <input id="email" class="input" style="min-width:260px" placeholder="email (e.g., charlie@example.com)" value="charlie@example.com"/>
+      <input id="pwd" class="input" type="password" placeholder="password" value="test1234"/>
+      <button class="btn" id="btnLogin">Login & Save Token</button>
+      <span class="muted">JWT saved to <code>localStorage.access_token</code>.</span>
+    </div>
+
+    <h2>2) Create / Join Room</h2>
+    <div class="row">
+      <input id="title" class="input" style="min-width:260px" placeholder="Title" value="Signals E2E Room"/>
+      <button class="btn" id="btnCreate">Create Room</button>
+      <input id="roomId" class="input" style="width:120px" placeholder="room id"/>
+      <button class="btn" id="btnJoin">Join Room</button>
+      <button class="btn ghost" id="btnInvite" disabled>Copy Invite (after accept)</button>
+    </div>
+
+    <h2>3) Intake summary (User 1 & User 2)</h2>
+    <div class="grid2">
+      <div class="card" id="intake-u1">
+        <div class="muted">User 1 intake</div>
+        <div id="intakeU1Body" style="margin-top:6px; white-space:pre-wrap;"></div>
+      </div>
+      <div class="card" id="intake-u2">
+        <div class="muted">User 2 intake</div>
+        <div id="intakeU2Body" style="margin-top:6px; white-space:pre-wrap;"></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:24px;">4) Conversation</h2>
+    <div id="conv" class="msgs"></div>
+
+    <div class="row" style="margin-top:10px;">
+      <input id="reply" class="input" style="flex:1 1 auto;" placeholder="Type your message…"/>
+      <button class="btn" id="btnSend">Send</button>
+      <button class="btn ghost" id="btnRefresh">Refresh</button>
+    </div>
+
+    <h2 style="margin-top:24px;">Raw</h2>
+    <pre class="json" id="raw"></pre>
+  </div>
+
+  <script>
+    const API_BASE = (localStorage.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+    document.getElementById('api-pill').textContent = 'API: ' + API_BASE;
+    const $ = (id) => document.getElementById(id);
+    const token = () => localStorage.getItem('access_token') || '';
+
+    async function api(path, options={}) {
+      const res = await fetch(API_BASE + path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token() ? { Authorization: 'Bearer ' + token() } : {}),
+          ...(options.headers || {})
+        }
+      });
+      if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+      return res.json().catch(() => ({}));
+    }
+    function showRaw(obj) { $('raw').textContent = JSON.stringify(obj, null, 2); }
+
+    $('btnLogin').onclick = async () => {
+      const email = $('email').value.trim(); const password = $('pwd').value;
+      try {
+        const d = await api('/auth/login', { method:'POST', body: JSON.stringify({ email, password }) });
+        if (d && d.access_token) { localStorage.setItem('access_token', d.access_token); alert('Logged in'); }
+        else alert('Login failed');
+      } catch(e){ alert('Login error: ' + e.message); }
+    };
+
+    $('btnCreate').onclick = async () => {
+      try {
+        const d = await api('/rooms/', { method:'POST', body: JSON.stringify({ title: $('title').value.trim() || 'Signals Room' }) });
+        $('roomId').value = d.id; await refreshAll();
+      } catch(e){ alert('Create failed: ' + e.message); }
+    };
+
+    $('btnJoin').onclick = async () => {
+      const id = +($('roomId').value || 0); if (!id) return alert('room id required');
+      try { const d = await api(`/rooms/${id}/join`, { method:'POST' }); await refreshAll(); alert(d.message || 'Joined'); }
+      catch(e){ alert('Join failed: ' + e.message); }
+    };
+
+    $('btnInvite').onclick = () => {
+      const id = +($('roomId').value || 0); if (!id) return;
+      const url = `${location.origin}/flow.html?room=${id}`;
+      navigator.clipboard.writeText(url).then(() => alert('Copied: ' + url));
+    };
+
+    $('btnRefresh').onclick = refreshAll;
+    $('btnSend').onclick = async () => {
+      const id = +($('roomId').value || 0);
+      const text = $('reply').value.trim();
+      if (!id || !text) return;
+      try { await api(`/rooms/${id}/respond`, { method:'POST', body: JSON.stringify({ text }) }); $('reply').value=''; await refreshAll(); }
+      catch(e){ alert('Send failed: ' + e.message); }
+    };
+
+    async function loadFeed(id){ try { return await api(`/rooms/${id}/feed`); } catch { return []; } }
+    async function loadThread(id){ try { return await api(`/rooms/${id}/thread`); } catch { return { messages: [] }; } }
+
+    function pickIntakes(feed){
+      const byUser = new Map();
+      for (const t of feed || []) {
+        if (t.kind === 'intake' && t.user_id != null) {
+          const text = (t.text || t.summary || '').trim();
+          if (text) byUser.set(t.user_id, { user_id: t.user_id, text, at: t.created_at });
+        }
+      }
+      return [...byUser.values()];
+    }
+
+    function computePresence(feed){
+      const u = new Set(); for (const t of feed || []) { if (t.user_id != null) u.add(t.user_id); }
+      return { count: u.size, both: u.size >= 2 };
+    }
+
+    function labelForMessage(turn, youId, firstOtherId){
+      const k = (turn.kind || '').toLowerCase();
+      const text = (turn.text || turn.summary || '').trim();
+      if (k.startsWith('ai') || /^my perspective\b/i.test(text)) return '🤖 AI Mediator';
+      if (turn.user_id === youId) return 'You';
+      if (turn.user_id === firstOtherId) return 'Other person';
+      return 'Participant';
+    }
+
+    function renderIntakeCards(intakes, youId){
+      let u1 = '', u2 = '';
+      if (intakes.length){
+        const you = intakes.find(x => x.user_id === youId);
+        const other = intakes.find(x => x.user_id !== youId);
+        u1 = (you && you.text) || '';
+        u2 = (other && other.text) || '';
+      }
+      $('intakeU1Body').textContent = u1 || '—';
+      $('intakeU2Body').textContent = u2 || '—';
+    }
+
+    function renderMessages(threadMsgs, youId, firstOtherId){
+      const box = $('conv'); box.innerHTML = '';
+      for (const m of (threadMsgs || [])){
+        const text = (m.text || m.summary || '').trim();
+        const who = labelForMessage(m, youId, firstOtherId);
+        const div = document.createElement('div');
+        const cls = who === '🤖 AI Mediator' ? 'from-ai' : who === 'You' ? 'from-you' : 'from-other';
+        div.className = 'msg ' + cls;
+        div.innerHTML = `<div class="muted" style="margin-bottom:6px">${who}</div>${text ? text.replace(/\n/g,'<br/>') : '<i class="muted">[no text]</i>'}`;
+        box.appendChild(div);
+      }
+    }
+
+    async function refreshAll(){
+      const id = +($('roomId').value || 0); if (!id) return;
+      const [feed, thread] = await Promise.all([ loadFeed(id), loadThread(id) ]);
+      const presence = computePresence(feed);
+      $('presence-pill').textContent = 'presence: ' + (presence.both ? 'both' : presence.count ? 'one' : 'unknown');
+      $('presence-pill').className = 'pill ' + (presence.both ? 'ok' : presence.count ? 'warn' : '');
+
+      const myLast = (feed || []).slice().reverse().find(t => t.user_is_me === true || t.is_me === true);
+      const youId = myLast ? myLast.user_id : undefined;
+
+      const ids = Array.from(new Set((feed || []).map(t => t.user_id).filter(v => v != null)));
+      const firstOtherId = ids.find(v => v !== youId);
+
+      const intakes = pickIntakes(feed);
+      renderIntakeCards(intakes, youId);
+
+      const msgs = (thread && thread.messages) ? thread.messages : (Array.isArray(thread) ? thread : []);
+      renderMessages(msgs, youId, firstOtherId);
+
+      showRaw({ presence, intakes, thread: msgs.slice(-5) });
+    }
+
+    const rid = new URL(location.href).searchParams.get('room');
+    if (rid) { $('roomId').value = rid; }
+    setInterval(() => {
+      const id = +($('roomId').value || 0);
+      if (id) refreshAll().catch(()=>{});
+    }, 4000);
+  </script>
+</body>
+</html>
