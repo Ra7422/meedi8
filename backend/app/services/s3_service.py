@@ -14,7 +14,8 @@ def get_s3_client():
     Railway injects env vars after module import, so we need to read them at runtime.
     """
     aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    # Try both variable names - Railway sometimes has issues with AWS_SECRET_ACCESS_KEY
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY") or os.getenv("AWS_SECRET_KEY")
     aws_s3_bucket = os.getenv("AWS_S3_BUCKET", "clean-air-voice-recordings")
     aws_region = os.getenv("AWS_REGION", "us-east-1")
 

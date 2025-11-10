@@ -33,6 +33,7 @@ def debug_env():
     return {
         "AWS_ACCESS_KEY_ID": "present" if os.getenv("AWS_ACCESS_KEY_ID") else "missing",
         "AWS_SECRET_ACCESS_KEY": "present" if os.getenv("AWS_SECRET_ACCESS_KEY") else "missing",
+        "AWS_SECRET_KEY": "present" if os.getenv("AWS_SECRET_KEY") else "missing",  # Alternative name
         "AWS_S3_BUCKET": os.getenv("AWS_S3_BUCKET", "missing"),
         "AWS_REGION": os.getenv("AWS_REGION", "missing"),
         "OPENAI_API_KEY": "present" if os.getenv("OPENAI_API_KEY") else "missing",
