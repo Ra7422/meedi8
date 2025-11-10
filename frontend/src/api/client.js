@@ -16,6 +16,7 @@ export async function apiRequest(path, method = "GET", body, token) {
   const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds
 
   try {
+    console.log(`🌐 API Request: ${method} ${path}`, token ? '(with token)' : '(no token)');
     const res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
@@ -28,6 +29,7 @@ export async function apiRequest(path, method = "GET", body, token) {
     if (!res.ok) {
       // Handle 401 Unauthorized - token expired or invalid
       if (res.status === 401) {
+        console.error(`🚫 401 Unauthorized on ${path} - redirecting to login`);
         // Clear invalid token and redirect to login
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
@@ -37,8 +39,10 @@ export async function apiRequest(path, method = "GET", body, token) {
       }
 
       let msg = await res.text().catch(() => "");
+      console.error(`❌ API Error ${res.status} on ${path}:`, msg);
       throw new Error(msg || `API ${res.status}`);
     }
+    console.log(`✅ API Success: ${method} ${path}`);
     return res.json();
   } catch (error) {
     clearTimeout(timeoutId);
