@@ -1,4 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+// Force https:// in production to avoid mixed content errors
+let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+if (API_URL.startsWith("http://") && !API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
+  API_URL = API_URL.replace("http://", "https://");
+}
 
 export async function apiRequest(path, method = "GET", body, token) {
   const headers = { "Content-Type": "application/json" };
