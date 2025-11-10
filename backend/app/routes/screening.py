@@ -102,13 +102,16 @@ def complete_screening(
 
     This is the main endpoint called by the screening form.
     """
-    # Verify room exists and user is participant
-    room = db.query(Room).filter(Room.id == request.room_id).first()
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+    # Verify room exists and user is participant (only if room_id is provided)
+    # For first-time screening, room_id can be None
+    room = None
+    if request.room_id:
+        room = db.query(Room).filter(Room.id == request.room_id).first()
+        if not room:
+            raise HTTPException(status_code=404, detail="Room not found")
 
-    if current_user not in room.participants:
-        raise HTTPException(status_code=403, detail="Not a participant in this room")
+        if current_user not in room.participants:
+            raise HTTPException(status_code=403, detail="Not a participant in this room")
 
     # Get or create health profile
     profile = db.query(UserHealthProfile).filter(

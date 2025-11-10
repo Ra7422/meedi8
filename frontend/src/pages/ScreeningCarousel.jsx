@@ -527,12 +527,12 @@ export default function ScreeningCarousel() {
     setLoading(true);
 
     try {
-      const testRoomId = 1; // Replace with real room ID
-
+      // For first-time screening (no room yet), don't send room_id
+      // Room will be created later when user proceeds to create a mediation
       const payload = {
-        room_id: testRoomId,
+        room_id: null, // First-time screening has no room yet
         session_data: {
-          room_id: testRoomId,
+          room_id: null,
           is_returning_user: hasProfile,
           profile_still_accurate: hasProfile ? true : null,
           reported_changes: false,
