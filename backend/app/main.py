@@ -23,3 +23,16 @@ app.include_router(screening.router)
 @app.get("/health")
 def health():
     return {"ok": True}
+
+@app.get("/debug/env")
+def debug_env():
+    """Debug endpoint to check if AWS env vars are loaded"""
+    import os
+    return {
+        "AWS_ACCESS_KEY_ID": "present" if os.getenv("AWS_ACCESS_KEY_ID") else "missing",
+        "AWS_SECRET_ACCESS_KEY": "present" if os.getenv("AWS_SECRET_ACCESS_KEY") else "missing",
+        "AWS_S3_BUCKET": os.getenv("AWS_S3_BUCKET", "missing"),
+        "AWS_REGION": os.getenv("AWS_REGION", "missing"),
+        "OPENAI_API_KEY": "present" if os.getenv("OPENAI_API_KEY") else "missing",
+        "ANTHROPIC_API_KEY": "present" if os.getenv("ANTHROPIC_API_KEY") else "missing"
+    }
