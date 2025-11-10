@@ -160,10 +160,11 @@ def upgrade() -> None:
                existing_nullable=True)
     op.drop_index(op.f('ix_turns_room_id'), table_name='turns')
     op.create_index(op.f('ix_turns_id'), 'turns', ['id'], unique=False)
-    op.drop_constraint(None, 'turns', type_='foreignkey')
-    op.drop_constraint(None, 'turns', type_='foreignkey')
-    op.create_foreign_key(None, 'turns', 'users', ['user_id'], ['id'], ondelete='CASCADE')
-    op.create_foreign_key(None, 'turns', 'users', ['addressed_user_id'], ['id'], ondelete='SET NULL')
+    # Note: Can't drop/recreate foreign key constraints with None as name
+    # op.drop_constraint(None, 'turns', type_='foreignkey')
+    # op.drop_constraint(None, 'turns', type_='foreignkey')
+    # op.create_foreign_key(None, 'turns', 'users', ['user_id'], ['id'], ondelete='CASCADE')
+    # op.create_foreign_key(None, 'turns', 'users', ['addressed_user_id'], ['id'], ondelete='SET NULL')
     op.alter_column('users', 'id',
                existing_type=sa.INTEGER(),
                nullable=False,
@@ -200,10 +201,11 @@ def downgrade() -> None:
                existing_type=sa.INTEGER(),
                nullable=True,
                autoincrement=True)
-    op.drop_constraint(None, 'turns', type_='foreignkey')
-    op.drop_constraint(None, 'turns', type_='foreignkey')
-    op.create_foreign_key(None, 'turns', 'users', ['addressed_user_id'], ['id'])
-    op.create_foreign_key(None, 'turns', 'users', ['user_id'], ['id'])
+    # Note: Can't drop/recreate foreign key constraints with None as name
+    # op.drop_constraint(None, 'turns', type_='foreignkey')
+    # op.drop_constraint(None, 'turns', type_='foreignkey')
+    # op.create_foreign_key(None, 'turns', 'users', ['addressed_user_id'], ['id'])
+    # op.create_foreign_key(None, 'turns', 'users', ['user_id'], ['id'])
     op.drop_index(op.f('ix_turns_id'), table_name='turns')
     op.create_index(op.f('ix_turns_room_id'), 'turns', ['room_id'], unique=False)
     op.alter_column('turns', 'model',
