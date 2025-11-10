@@ -1,14 +1,20 @@
-// Force https:// in production to avoid mixed content errors (v0.0.3)
-console.log(`📋 Raw VITE_API_URL from env: "${import.meta.env.VITE_API_URL}"`);
-let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-console.log(`📍 Initial API_URL: "${API_URL}"`);
+// Hardcoded production URL to avoid any environment variable issues
+const isProduction = typeof window !== 'undefined' && (
+  window.location.hostname === 'meedi8.vercel.app' ||
+  window.location.hostname.includes('vercel.app')
+);
 
-// FORCE HTTPS - Strip protocol and rebuild with HTTPS for production
-if (!API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
-  const urlWithoutProtocol = API_URL.replace(/^https?:\/\//, '');
-  API_URL = `https://${urlWithoutProtocol}`;
-  console.log(`🔒 Forced HTTPS: ${API_URL}`);
+let API_URL;
+if (isProduction) {
+  // Production: Always use HTTPS Railway URL
+  API_URL = "https://meedi8-production.up.railway.app";
+  console.log(`🚀 Production mode - using hardcoded HTTPS: ${API_URL}`);
+} else {
+  // Development: Use env variable or localhost
+  API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  console.log(`💻 Development mode - using: ${API_URL}`);
 }
+
 console.log(`🔗 Final API_URL: ${API_URL}`);
 
 // Export the converted API_URL so other files can use it
