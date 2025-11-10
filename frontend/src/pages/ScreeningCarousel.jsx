@@ -576,8 +576,15 @@ export default function ScreeningCarousel() {
       // Set a flag to indicate screening was just completed (prevents loop)
       sessionStorage.setItem('screeningJustCompleted', 'true');
 
-      // Successfully completed screening - navigate to CreateRoom page
-      navigate('/create');
+      // Check if there's a return destination (e.g., from profile page)
+      const returnTo = sessionStorage.getItem('screeningReturnTo');
+      if (returnTo) {
+        sessionStorage.removeItem('screeningReturnTo');
+        navigate(returnTo);
+      } else {
+        // Default: navigate to CreateRoom page
+        navigate('/create');
+      }
     } catch (error) {
       console.error('Error submitting screening:', error);
       alert('Error: ' + error.message);
