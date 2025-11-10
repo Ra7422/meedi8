@@ -3,11 +3,11 @@ console.log(`📋 Raw VITE_API_URL from env: "${import.meta.env.VITE_API_URL}"`)
 let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 console.log(`📍 Initial API_URL: "${API_URL}"`);
 
-// Convert http to https for any non-localhost URL (production deployments)
-if (API_URL.startsWith("http://") && !API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
-  console.warn(`⚠️ API_URL is using HTTP in production. Converting to HTTPS: ${API_URL}`);
-  API_URL = API_URL.replace("http://", "https://");
-  console.log(`✅ Converted API_URL to: "${API_URL}"`);
+// FORCE HTTPS - Strip protocol and rebuild with HTTPS for production
+if (!API_URL.includes("localhost") && !API_URL.includes("127.0.0.1")) {
+  const urlWithoutProtocol = API_URL.replace(/^https?:\/\//, '');
+  API_URL = `https://${urlWithoutProtocol}`;
+  console.log(`🔒 Forced HTTPS: ${API_URL}`);
 }
 console.log(`🔗 Final API_URL: ${API_URL}`);
 
