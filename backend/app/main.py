@@ -40,3 +40,15 @@ def debug_env():
         "ANTHROPIC_API_KEY": "present" if os.getenv("ANTHROPIC_API_KEY") else "missing",
         "all_aws_vars": aws_vars  # Shows all AWS-related variables Railway has
     }
+
+@app.get("/debug/cors")
+def debug_cors():
+    """Debug endpoint to check CORS configuration"""
+    import os
+    cors_origins_raw = os.getenv("CORS_ORIGINS", "NOT_SET")
+    return {
+        "cors_origins_raw": cors_origins_raw,
+        "cors_list_from_settings": settings.cors_list,
+        "cors_list_length": len(settings.cors_list),
+        "app_env": settings.APP_ENV,
+    }
