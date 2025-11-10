@@ -45,6 +45,14 @@ export default function CreateRoom() {
         return;
       }
 
+      // Check if screening was just completed (prevents redirect loop)
+      const screeningJustCompleted = sessionStorage.getItem('screeningJustCompleted');
+      if (screeningJustCompleted) {
+        sessionStorage.removeItem('screeningJustCompleted');
+        setStep(2);
+        return;
+      }
+
       // Check screening before proceeding to step 2
       if (user && !user.has_completed_screening) {
         // Save current form data to sessionStorage before redirecting

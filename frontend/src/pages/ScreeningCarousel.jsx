@@ -573,6 +573,9 @@ export default function ScreeningCarousel() {
       const updatedUser = await apiRequest('/auth/me', 'GET', null, token);
       setUser(updatedUser);
 
+      // Set a flag to indicate screening was just completed (prevents loop)
+      sessionStorage.setItem('screeningJustCompleted', 'true');
+
       // Successfully completed screening - navigate to CreateRoom page
       navigate('/create');
     } catch (error) {
