@@ -166,10 +166,9 @@ export default function Home() {
             Transform Conflict into <span style={styles.titleAccent}>Understanding</span>
           </h1>
           <img
-            src="/src/assets/illustrations/hero-illustration.png"
+            src="data:image/svg+xml,%3Csvg width='300' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='50' fill='%237DD3C0' opacity='0.3'/%3E%3Ccircle cx='200' cy='100' r='50' fill='%236750A4' opacity='0.3'/%3E%3Cpath d='M 150 60 Q 150 100 150 140' stroke='%237DD3C0' stroke-width='4' fill='none'/%3E%3C/svg%3E"
             alt="Conflict Resolution"
             style={styles.heroImage}
-            onError={(e) => { e.target.style.display = 'none'; }}
           />
           <p style={styles.subtitle}>
             Choose how you'd like Meedi to help you today
@@ -192,12 +191,9 @@ export default function Home() {
             }}
           >
             <img
-              src="/src/assets/illustrations/mediation-duo.png"
+              src="data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='70' cy='100' r='30' fill='%237DD3C0'/%3E%3Ccircle cx='130' cy='100' r='30' fill='%237DD3C0'/%3E%3Cpath d='M 100 100 Q 100 50 100 100' stroke='%236750A4' stroke-width='3' fill='none'/%3E%3C/svg%3E"
               alt="Two People in Mediation"
               style={styles.cardImage}
-              onError={(e) => {
-                e.target.src = 'data:image/svg+xml,%3Csvg width="200" height="200" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="70" cy="100" r="30" fill="%237DD3C0"/%3E%3Ccircle cx="130" cy="100" r="30" fill="%237DD3C0"/%3E%3Cpath d="M 100 100 Q 100 50 100 100" stroke="%236750A4" stroke-width="3" fill="none"/%3E%3C/svg%3E';
-              }}
             />
             <h2 style={{ ...styles.cardTitle, ...styles.cardTitleMediation }}>
               Start a Mediation
@@ -235,12 +231,9 @@ export default function Home() {
             }}
           >
             <img
-              src="/src/assets/illustrations/solo-conversation.png"
+              src="data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='40' fill='%23D3C1FF'/%3E%3Cpath d='M 100 100 Q 60 80 50 60' stroke='%237DD3C0' stroke-width='3' fill='none'/%3E%3Cpath d='M 100 100 Q 140 80 150 60' stroke='%237DD3C0' stroke-width='3' fill='none'/%3E%3C/svg%3E"
               alt="Individual Conversation"
               style={styles.cardImage}
-              onError={(e) => {
-                e.target.src = 'data:image/svg+xml,%3Csvg width="200" height="200" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="100" cy="100" r="40" fill="%23D3C1FF"/%3E%3Cpath d="M 100 100 Q 60 80 50 60" stroke="%237DD3C0" stroke-width="3" fill="none"/%3E%3Cpath d="M 100 100 Q 140 80 150 60" stroke="%237DD3C0" stroke-width="3" fill="none"/%3E%3C/svg%3E';
-              }}
             />
             <h2 style={{ ...styles.cardTitle, ...styles.cardTitleSolo }}>
               Talk to Meedi Solo
