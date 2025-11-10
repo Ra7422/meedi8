@@ -791,7 +791,7 @@ def finalize_coaching(
         # Return invite link (frontend URL)
         # Use localhost for local development, Vercel for production
         from app.config import settings
-        frontend_url = "http://localhost:5173" if settings.APP_ENV == "dev" else "https://clean-air-med.vercel.app"
+        frontend_url = "http://localhost:5173" if settings.APP_ENV == "dev" else "https://meedi8.vercel.app"
         invite_link = f"{frontend_url}/join/{room.invite_token}"
 
         return FinalizeCoachingResponse(
