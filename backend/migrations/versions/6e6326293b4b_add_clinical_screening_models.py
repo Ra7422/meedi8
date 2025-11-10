@@ -115,12 +115,13 @@ def upgrade() -> None:
     # op.create_foreign_key(None, 'rooms', 'users', ['break_requested_by_id'], ['id'], ondelete='SET NULL')
     # Note: current_speaker_id column was already removed in an earlier migration
     # op.drop_column('rooms', 'current_speaker_id')
-    op.add_column('subscriptions', sa.Column('start_date', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False))
-    op.add_column('subscriptions', sa.Column('end_date', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('subscriptions', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True))
-    op.add_column('subscriptions', sa.Column('stripe_price_id', sa.String(length=255), nullable=True))
-    op.add_column('subscriptions', sa.Column('voice_conversations_used', sa.Integer(), nullable=False))
-    op.add_column('subscriptions', sa.Column('voice_conversations_limit', sa.Integer(), nullable=False))
+    # Note: These columns already exist from add_subscriptions_and_api_costs migration
+    # op.add_column('subscriptions', sa.Column('start_date', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False))
+    # op.add_column('subscriptions', sa.Column('end_date', sa.DateTime(timezone=True), nullable=True))
+    # op.add_column('subscriptions', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True))
+    # op.add_column('subscriptions', sa.Column('stripe_price_id', sa.String(length=255), nullable=True))
+    # op.add_column('subscriptions', sa.Column('voice_conversations_used', sa.Integer(), nullable=False))
+    # op.add_column('subscriptions', sa.Column('voice_conversations_limit', sa.Integer(), nullable=False))
     op.alter_column('subscriptions', 'id',
                existing_type=sa.INTEGER(),
                nullable=False,
@@ -237,12 +238,13 @@ def downgrade() -> None:
                existing_type=sa.INTEGER(),
                nullable=True,
                autoincrement=True)
-    op.drop_column('subscriptions', 'voice_conversations_limit')
-    op.drop_column('subscriptions', 'voice_conversations_used')
-    op.drop_column('subscriptions', 'stripe_price_id')
-    op.drop_column('subscriptions', 'updated_at')
-    op.drop_column('subscriptions', 'end_date')
-    op.drop_column('subscriptions', 'start_date')
+    # Note: These columns were not added in this migration, skipping removal in downgrade
+    # op.drop_column('subscriptions', 'voice_conversations_limit')
+    # op.drop_column('subscriptions', 'voice_conversations_used')
+    # op.drop_column('subscriptions', 'stripe_price_id')
+    # op.drop_column('subscriptions', 'updated_at')
+    # op.drop_column('subscriptions', 'end_date')
+    # op.drop_column('subscriptions', 'start_date')
     # Note: current_speaker_id was already removed earlier, not re-adding in downgrade
     # op.add_column('rooms', sa.Column('current_speaker_id', sa.INTEGER(), nullable=True))
     # Note: Foreign key constraints not touched in upgrade, skipping in downgrade
