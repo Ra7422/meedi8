@@ -6,21 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Meedi8** is an AI-powered mediation platform that guides users through conflict resolution using Nonviolent Communication (NVC) principles. The system consists of a React frontend and FastAPI backend that orchestrates a multi-phase mediation flow.
 
-## Recent Updates (Last Updated: 2025-11-09)
+## Recent Updates (Last Updated: 2025-11-10)
 
 **Critical Changes** - Read these first when working on the codebase:
 
-1. **User1/User2 Identification Fix** - Fixed bug where User1/User2 were determined by participant database ID order instead of chronological coaching start time. Now correctly identifies User1 as whoever has the earliest `pre_mediation` turn. Applied to `/main-room/summaries`, `/main-room/start`, and `/main-room/messages` endpoints.
+1. **Trailing Slash CORS Fix (Safari/Firefox)** - Safari 16.3+ and Firefox 112+ strip Authorization headers on cross-origin redirects per 2024 Fetch Standard. ALL frontend API calls must match backend route definitions EXACTLY (including trailing slashes) to avoid 308 redirects that strip auth headers. Chrome hasn't adopted this standard yet. See "Trailing Slash Pattern" section below.
 
-2. **SSR Safety Required** - All components must guard browser APIs (`window`, `document`, `localStorage`) with `typeof window !== 'undefined'` checks. Vercel build WILL crash without this. See "SSR Safety" section below.
+2. **User1/User2 Identification Fix** - Fixed bug where User1/User2 were determined by participant database ID order instead of chronological coaching start time. Now correctly identifies User1 as whoever has the earliest `pre_mediation` turn. Applied to `/main-room/summaries`, `/main-room/start`, and `/main-room/messages` endpoints.
 
-3. **Deep Exploration Mode** - Main room mediator now detects harsh language and stays with same speaker for up to 2 follow-up questions before switching. Tracked via `Room.last_speaker_id` and `consecutive_questions_to_same` fields.
+3. **SSR Safety Required** - All components must guard browser APIs (`window`, `document`, `localStorage`) with `typeof window !== 'undefined'` checks. Vercel build WILL crash without this. See "SSR Safety" section below.
 
-4. **Break/Pause Feature** - Users can request breathing breaks that sync in real-time to both participants via polling. Uses `Room.break_requested_by_id` and `break_requested_at` fields.
+4. **Deep Exploration Mode** - Main room mediator now detects harsh language and stays with same speaker for up to 2 follow-up questions before switching. Tracked via `Room.last_speaker_id` and `consecutive_questions_to_same` fields.
 
-5. **Invite Link Redirect** - Unauthenticated users clicking invite links are redirected back after login/signup via `sessionStorage.pendingInvite` pattern.
+5. **Break/Pause Feature** - Users can request breathing breaks that sync in real-time to both participants via polling. Uses `Room.break_requested_by_id` and `break_requested_at` fields.
 
-6. **OAuth Conditional Rendering** - OAuth components only render if valid credentials exist to prevent crashes. Check main.jsx and LoginNew.jsx for pattern.
+6. **Invite Link Redirect** - Unauthenticated users clicking invite links are redirected back after login/signup via `sessionStorage.pendingInvite` pattern.
+
+7. **OAuth Conditional Rendering** - OAuth components only render if valid credentials exist to prevent crashes. Check main.jsx and LoginNew.jsx for pattern.
 
 ## Development Commands
 
@@ -380,7 +382,48 @@ if (pendingInvite) {
 **Why sessionStorage not localStorage**: Session-specific data that shouldn't persist across browser sessions. Automatically cleared when tab closes.
 
 ### API Request Pattern
-Frontend uses `apiRequest` helper (`api/client.js`) that automatically includes JWT token from AuthContext. Don't use fetch/axios directly - use this wrapper for consistent error handling.
+Frontend uses `apiRequest` helper (`api/client.js`) that automatically includes JWT token from AuthContext and `credentials: 'include'` for CORS. Don't use fetch/axios directly - use this wrapper for consistent error handling.
+
+### Trailing Slash Pattern (CRITICAL for Safari/Firefox)
+
+**The Problem**: Safari 16.3+ and Firefox 112+ implement the 2024 Fetch Standard which **strips Authorization headers on cross-origin redirects** for security. Chrome hasn't adopted this yet, causing Chrome vs Safari/Firefox inconsistencies.
+
+**How It Breaks**:
+1. Frontend calls: `/rooms` (no trailing slash)
+2. Backend route: `@router.get("/")` → registered as `/rooms/` (with slash)
+3. FastAPI sends **308 Permanent Redirect**: `/rooms` → `/rooms/`
+4. Safari/Firefox **strip the Authorization header** on the redirect
+5. Second request arrives without auth → **401 Unauthorized**
+6. Chrome: Doesn't strip header (not yet spec-compliant) → works fine
+
+**The Solution**: Frontend API calls MUST match backend route definitions EXACTLY:
+
+```javascript
+// ❌ WRONG - Missing trailing slash when backend has one
+await apiRequest('/rooms', 'GET', null, token);  // Backend: @router.get("/")
+
+// ✅ CORRECT - Matches backend route exactly
+await apiRequest('/rooms/', 'GET', null, token);  // Backend: @router.get("/")
+```
+
+**How to Check**:
+1. Look at backend route: `@router.get("/")` under `router = APIRouter(prefix="/rooms")`
+   - This creates route: `/rooms/` (WITH trailing slash)
+2. Frontend call MUST use: `/rooms/` (with slash)
+
+**Common Patterns**:
+- List endpoint: `/rooms/` (with slash because route is `@router.get("/")`)
+- Detail endpoint: `/rooms/{id}` (no slash because route is `@router.get("/{id}")`)
+- Nested endpoint: `/rooms/{id}/coach/turns` (no trailing slash)
+
+**Debugging**:
+- Check browser Network tab for 308 redirects
+- Safari/Firefox will show two requests: 308 then 401
+- Chrome will show single 200 (masks the redirect)
+
+**Prevention**:
+- When adding new routes, decide on trailing slash convention and be consistent
+- Or configure FastAPI with `redirect_slashes=False` to fail fast instead of silent redirects
 
 ### User1/User2 Identification Pattern (CRITICAL)
 
@@ -622,6 +665,19 @@ cost_usd = (input_tokens * INPUT_COST) + (output_tokens * OUTPUT_COST)
       user2_summary = (SELECT user1_summary FROM rooms WHERE id = X)
   WHERE id = X;
   ```
+
+**Safari/Firefox 401 errors but Chrome works**:
+- **Error**: `/auth/me` succeeds but other endpoints return 401 in Safari/Firefox
+- **Root Cause**: Trailing slash mismatch causing 308 redirect that strips Authorization header (Safari/Firefox follow 2024 Fetch Standard, Chrome doesn't)
+- **Debug**:
+  - Check Network tab for 308 redirects before the 401
+  - Look for mismatched URLs: frontend `/rooms` vs backend `/rooms/`
+- **Solution**: Match frontend API calls to backend route definitions exactly (including trailing slashes)
+  ```javascript
+  // If backend has: @router.get("/")  → use '/rooms/' (with slash)
+  await apiRequest('/rooms/', 'GET', null, token);
+  ```
+- **Prevention**: See "Trailing Slash Pattern" section for full details
 
 ## Key Files Reference
 
