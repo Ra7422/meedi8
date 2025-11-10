@@ -810,12 +810,67 @@ export default function Profile() {
                 </div>
 
                 {healthProfile.needs_update && (
-                  <div style={{ ...styles.infoGroup, backgroundColor: '#FFF4E6', padding: '12px', borderRadius: '8px' }}>
+                  <div style={{ ...styles.infoGroup, backgroundColor: '#FFF4E6', padding: '12px', borderRadius: '8px', marginTop: '12px' }}>
                     <div style={{ color: '#F59E0B', fontWeight: '600' }}>
                       ⚠️ Profile needs updating (90+ days old)
                     </div>
                   </div>
                 )}
+
+                {/* Detailed Health Information */}
+                <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#6750A4' }}>
+                    Screening Summary
+                  </h4>
+
+                  {healthProfile.has_mental_health_condition && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Mental Health Conditions:</div>
+                      <div style={{ fontSize: '14px', color: '#111827' }}>
+                        {healthProfile.mental_health_conditions?.join(', ') || 'None specified'}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Currently in Treatment:</div>
+                    <div style={{ fontSize: '14px', color: '#111827' }}>
+                      {healthProfile.currently_in_treatment ? 'Yes' : 'No'}
+                      {healthProfile.currently_in_treatment && healthProfile.treatment_types?.length > 0 &&
+                        ` (${healthProfile.treatment_types.join(', ')})`
+                      }
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Safety Status:</div>
+                    <div style={{ fontSize: '14px', color: '#111827' }}>
+                      {healthProfile.feels_generally_safe ? '✓ Feels generally safe' : '⚠️ Has safety concerns'}
+                      {healthProfile.has_safety_plan && ' • Has safety plan'}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Substance Use:</div>
+                    <div style={{ fontSize: '14px', color: '#111827' }}>
+                      Alcohol: {healthProfile.alcohol_use || 'none'} •
+                      Drugs: {healthProfile.drug_use || 'none'}
+                    </div>
+                  </div>
+
+                  {healthProfile.risk_factors && healthProfile.risk_factors.length > 0 && (
+                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#FEF3C7', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400E', marginBottom: '6px' }}>
+                        Risk Factors Identified:
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#92400E' }}>
+                        {healthProfile.risk_factors.map((factor, idx) => (
+                          <li key={idx}>{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div style={styles.emptyState}>
