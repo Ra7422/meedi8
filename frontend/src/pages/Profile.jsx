@@ -37,7 +37,11 @@ export default function Profile() {
   }, [user]);
 
   useEffect(() => {
-    fetchUserData();
+    // Add small delay for Safari to ensure token is properly set
+    const timer = setTimeout(() => {
+      fetchUserData();
+    }, 100);
+    return () => clearTimeout(timer);
   }, [token]);
 
   async function fetchUserData() {
