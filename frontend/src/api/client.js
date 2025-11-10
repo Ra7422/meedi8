@@ -1,4 +1,4 @@
-// Force https:// in production to avoid mixed content errors
+// Force https:// in production to avoid mixed content errors (v0.0.3)
 console.log(`📋 Raw VITE_API_URL from env: "${import.meta.env.VITE_API_URL}"`);
 let API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 console.log(`📍 Initial API_URL: "${API_URL}"`);
