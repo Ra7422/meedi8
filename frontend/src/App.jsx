@@ -231,12 +231,12 @@ function Header() {
 
           <div style={styles.menuGrid}>
             <Link
-              to="/profile"
-              style={{...styles.menuItem, ...(hoveredItem === 'profile' ? styles.menuItemHover : {})}}
+              to="/rooms"
+              style={{...styles.menuItem, ...(hoveredItem === 'rooms' ? styles.menuItemHover : {})}}
               onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('profile')}
+              onMouseEnter={() => setHoveredItem('rooms')}
               onMouseLeave={() => setHoveredItem(null)}
-            >Profile</Link>
+            >My Rooms</Link>
             <Link
               to="/create"
               style={{...styles.menuItem, ...(hoveredItem === 'create' ? styles.menuItemHover : {})}}
@@ -244,6 +244,13 @@ function Header() {
               onMouseEnter={() => setHoveredItem('create')}
               onMouseLeave={() => setHoveredItem(null)}
             >New Mediation</Link>
+            <Link
+              to="/profile"
+              style={{...styles.menuItem, ...(hoveredItem === 'profile' ? styles.menuItemHover : {})}}
+              onClick={() => setMenuOpen(false)}
+              onMouseEnter={() => setHoveredItem('profile')}
+              onMouseLeave={() => setHoveredItem(null)}
+            >Profile</Link>
             <Link
               to="/faq"
               style={{...styles.menuItem, ...(hoveredItem === 'faq' ? styles.menuItemHover : {})}}
@@ -327,8 +334,8 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/screening-test" element={<PrivateRoute><ScreeningTest /></PrivateRoute>} />
           <Route path="/screening-carousel" element={<PrivateRoute><ScreeningCarousel /></PrivateRoute>} />
-          <Route path="/rooms" element={<Navigate to="/profile" replace />} />
-          <Route path="/sessions" element={<Navigate to="/profile" replace />} />
+          <Route path="/rooms" element={<PrivateRoute><Rooms /></PrivateRoute>} />
+          <Route path="/sessions" element={<PrivateRoute><SessionsDashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/create" element={<PrivateRoute><CreateRoom /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
