@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Frontend (not needed in backend image)
+frontend/
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+*.md
+CLAUDE.md
+RAILWAY_FIX.md
+DEPLOYMENT.md
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Environment files (Railway sets these via env vars)
+.env
+.env.local
