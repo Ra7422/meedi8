@@ -377,15 +377,15 @@ export default function ScreeningCarousel() {
     },
     backButton: {
       background: 'transparent',
-      color: '#7DD3C0',
-      border: '2px solid #7DD3C0',
+      color: '#D3C1FF',
+      border: '2px solid #D3C1FF',
       boxShadow: 'none',
     },
     continueButton: {
-      background: 'linear-gradient(135deg, #7DD3C0 0%, #6BC5B8 100%)',
+      background: 'linear-gradient(135deg, #D3C1FF 0%, #B8A7E5 100%)',
       color: 'white',
       border: 'none',
-      boxShadow: '0 4px 12px rgba(125, 211, 192, 0.3)',
+      boxShadow: '0 4px 12px rgba(211, 193, 255, 0.3)',
     },
     buttonDisabled: {
       background: 'transparent',
@@ -1062,14 +1062,14 @@ export default function ScreeningCarousel() {
             }}
             style={{ ...styles.button, ...styles.continueButton, width: '100%', marginTop: '24px' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #6BC5B8 0%, #5AB3A6 100%)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #C4AEFF 0%, #A895D4 100%)';
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(125, 211, 192, 0.4)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(211, 193, 255, 0.4)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #7DD3C0 0%, #6BC5B8 100%)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #D3C1FF 0%, #B8A7E5 100%)';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(125, 211, 192, 0.3)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(211, 193, 255, 0.3)';
             }}
           >
             Start Over
@@ -1117,7 +1117,7 @@ export default function ScreeningCarousel() {
           }}
           onMouseEnter={(e) => {
             if (currentSlide !== 0) {
-              e.currentTarget.style.backgroundColor = '#E8F9F5';
+              e.currentTarget.style.backgroundColor = '#F5EFFF';
               e.currentTarget.style.transform = 'translateY(-2px)';
             }
           }}
@@ -1141,16 +1141,16 @@ export default function ScreeningCarousel() {
           }}
           onMouseEnter={(e) => {
             if (canContinue(currentSlide) && !loading) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #6BC5B8 0%, #5AB3A6 100%)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #C4AEFF 0%, #A895D4 100%)';
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(125, 211, 192, 0.4)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(211, 193, 255, 0.4)';
             }
           }}
           onMouseLeave={(e) => {
             if (canContinue(currentSlide) && !loading) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #7DD3C0 0%, #6BC5B8 100%)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #D3C1FF 0%, #B8A7E5 100%)';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(125, 211, 192, 0.3)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(211, 193, 255, 0.3)';
             }
           }}
         >
