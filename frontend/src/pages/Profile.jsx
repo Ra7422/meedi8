@@ -22,6 +22,8 @@ export default function Profile() {
     religion: '',
     bio: '',
   });
+  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [healthFormData, setHealthFormData] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -75,6 +77,32 @@ export default function Profile() {
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile');
+    }
+  }
+
+  function handleOpenHealthModal() {
+    if (healthProfile) {
+      setHealthFormData({
+        has_mental_health_condition: healthProfile.has_mental_health_condition || false,
+        is_taking_medication: healthProfile.is_taking_medication || false,
+        suicidal_thoughts: healthProfile.suicidal_thoughts || false,
+        harm_thoughts: healthProfile.harm_thoughts || false,
+        substance_abuse: healthProfile.substance_abuse || false,
+        recent_trauma: healthProfile.recent_trauma || false,
+        baseline_risk_level: healthProfile.baseline_risk_level || 'low',
+      });
+    }
+    setShowHealthModal(true);
+  }
+
+  async function handleSaveHealthProfile() {
+    try {
+      const updatedProfile = await apiRequest('/screening/profile', 'PUT', healthFormData, token);
+      setHealthProfile(updatedProfile);
+      setShowHealthModal(false);
+    } catch (error) {
+      console.error('Error updating health profile:', error);
+      alert('Failed to update health profile');
     }
   }
 
@@ -794,6 +822,13 @@ export default function Profile() {
             {healthProfile ? (
               <>
                 <div style={styles.infoGroup}>
+                  <div style={styles.label}>Status</div>
+                  <div style={styles.value}>
+                    ✓ Screening completed
+                  </div>
+                </div>
+
+                <div style={styles.infoGroup}>
                   <div style={styles.label}>Risk Level</div>
                   <div style={styles.value}>
                     {healthProfile.baseline_risk_level === 'low' && '✓ Low'}
@@ -811,79 +846,32 @@ export default function Profile() {
 
                 {healthProfile.needs_update && (
                   <div style={{ ...styles.infoGroup, backgroundColor: '#FFF4E6', padding: '12px', borderRadius: '8px', marginTop: '12px' }}>
-                    <div style={{ color: '#F59E0B', fontWeight: '600' }}>
+                    <div style={{ color: '#F59E0B', fontWeight: '600', fontSize: '14px' }}>
                       ⚠️ Profile needs updating (90+ days old)
                     </div>
                   </div>
                 )}
 
-                {/* Detailed Health Information */}
-                <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#6750A4' }}>
-                    Screening Summary
-                  </h4>
-
-                  {healthProfile.has_mental_health_condition && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Mental Health Conditions:</div>
-                      <div style={{ fontSize: '14px', color: '#111827' }}>
-                        {healthProfile.mental_health_conditions?.join(', ') || 'None specified'}
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Currently in Treatment:</div>
-                    <div style={{ fontSize: '14px', color: '#111827' }}>
-                      {healthProfile.currently_in_treatment ? 'Yes' : 'No'}
-                      {healthProfile.currently_in_treatment && healthProfile.treatment_types?.length > 0 &&
-                        ` (${healthProfile.treatment_types.join(', ')})`
-                      }
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Safety Status:</div>
-                    <div style={{ fontSize: '14px', color: '#111827' }}>
-                      {healthProfile.feels_generally_safe ? '✓ Feels generally safe' : '⚠️ Has safety concerns'}
-                      {healthProfile.has_safety_plan && ' • Has safety plan'}
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '4px' }}>Substance Use:</div>
-                    <div style={{ fontSize: '14px', color: '#111827' }}>
-                      Alcohol: {healthProfile.alcohol_use || 'none'} •
-                      Drugs: {healthProfile.drug_use || 'none'}
-                    </div>
-                  </div>
-
-                  {healthProfile.risk_factors && healthProfile.risk_factors.length > 0 && (
-                    <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#FEF3C7', borderRadius: '6px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400E', marginBottom: '6px' }}>
-                        Risk Factors Identified:
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#92400E' }}>
-                        {healthProfile.risk_factors.map((factor, idx) => (
-                          <li key={idx}>{factor}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                <button
+                  style={{ ...styles.button, ...styles.primaryButton, width: '100%', marginTop: '16px' }}
+                  onClick={handleOpenHealthModal}
+                >
+                  View & Edit Health Screening
+                </button>
               </>
             ) : (
-              <div style={styles.emptyState}>
-                <p>No health screening completed</p>
-              </div>
+              <>
+                <div style={styles.emptyState}>
+                  <p>No health screening completed</p>
+                </div>
+                <button
+                  style={{ ...styles.button, ...styles.primaryButton, width: '100%', marginTop: '16px' }}
+                  onClick={() => navigate('/screening-carousel')}
+                >
+                  Complete Screening
+                </button>
+              </>
             )}
-
-            <button
-              style={{ ...styles.button, ...styles.primaryButton, width: '100%', marginTop: '16px' }}
-              onClick={() => navigate('/screening-carousel')}
-            >
-              {healthProfile ? 'Update Health Profile' : 'Complete Health Screening'}
-            </button>
           </div>
         </div>
 
@@ -1040,6 +1028,333 @@ export default function Profile() {
             </div>
           )}
         </div>
+
+        {/* Health Screening Modal */}
+        {showHealthModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              position: 'relative',
+            }}>
+              {/* Close button */}
+              <button
+                onClick={() => setShowHealthModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6750A4',
+                  fontWeight: '700',
+                }}
+              >
+                ×
+              </button>
+
+              <h2 style={{
+                fontSize: '28px',
+                fontWeight: '700',
+                color: '#6750A4',
+                marginBottom: '24px',
+                fontFamily: "'Nunito', sans-serif",
+              }}>
+                Health Screening Details
+              </h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Mental Health Condition */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#F5EFFF',
+                  borderRadius: '12px',
+                  border: '2px solid #D3C1FF',
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.has_mental_health_condition || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        has_mental_health_condition: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#D3C1FF',
+                      }}
+                    />
+                    <span style={{ fontSize: '16px', color: '#6750A4', fontWeight: '500' }}>
+                      Has mental health condition
+                    </span>
+                  </label>
+                </div>
+
+                {/* Taking Medication */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#F5EFFF',
+                  borderRadius: '12px',
+                  border: '2px solid #D3C1FF',
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.is_taking_medication || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        is_taking_medication: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#D3C1FF',
+                      }}
+                    />
+                    <span style={{ fontSize: '16px', color: '#6750A4', fontWeight: '500' }}>
+                      Currently taking medication
+                    </span>
+                  </label>
+                </div>
+
+                {/* Suicidal Thoughts */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: healthFormData.suicidal_thoughts ? '#FEE2E2' : '#F5EFFF',
+                  borderRadius: '12px',
+                  border: `2px solid ${healthFormData.suicidal_thoughts ? '#EF4444' : '#D3C1FF'}`,
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.suicidal_thoughts || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        suicidal_thoughts: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#EF4444',
+                      }}
+                    />
+                    <span style={{
+                      fontSize: '16px',
+                      color: healthFormData.suicidal_thoughts ? '#EF4444' : '#6750A4',
+                      fontWeight: '500'
+                    }}>
+                      Suicidal thoughts (past 2 weeks)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Harm Thoughts */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: healthFormData.harm_thoughts ? '#FEE2E2' : '#F5EFFF',
+                  borderRadius: '12px',
+                  border: `2px solid ${healthFormData.harm_thoughts ? '#EF4444' : '#D3C1FF'}`,
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.harm_thoughts || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        harm_thoughts: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#EF4444',
+                      }}
+                    />
+                    <span style={{
+                      fontSize: '16px',
+                      color: healthFormData.harm_thoughts ? '#EF4444' : '#6750A4',
+                      fontWeight: '500'
+                    }}>
+                      Thoughts of harming others
+                    </span>
+                  </label>
+                </div>
+
+                {/* Substance Abuse */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#F5EFFF',
+                  borderRadius: '12px',
+                  border: '2px solid #D3C1FF',
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.substance_abuse || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        substance_abuse: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#D3C1FF',
+                      }}
+                    />
+                    <span style={{ fontSize: '16px', color: '#6750A4', fontWeight: '500' }}>
+                      Substance abuse concerns
+                    </span>
+                  </label>
+                </div>
+
+                {/* Recent Trauma */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#F5EFFF',
+                  borderRadius: '12px',
+                  border: '2px solid #D3C1FF',
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={healthFormData.recent_trauma || false}
+                      onChange={(e) => setHealthFormData({
+                        ...healthFormData,
+                        recent_trauma: e.target.checked
+                      })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#D3C1FF',
+                      }}
+                    />
+                    <span style={{ fontSize: '16px', color: '#6750A4', fontWeight: '500' }}>
+                      Recent traumatic experience
+                    </span>
+                  </label>
+                </div>
+
+                {/* Risk Level Display */}
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#E8F9F5',
+                  borderRadius: '12px',
+                  border: '2px solid #7DD3C0',
+                  marginTop: '8px',
+                }}>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#6750A4',
+                    marginBottom: '8px',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    Current Risk Level
+                  </div>
+                  <div style={{
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    color: healthProfile?.baseline_risk_level === 'high' ? '#EF4444' :
+                           healthProfile?.baseline_risk_level === 'medium' ? '#F59E0B' : '#7DD3C0',
+                    fontFamily: "'Nunito', sans-serif",
+                  }}>
+                    {healthProfile?.baseline_risk_level === 'low' && '✓ Low Risk'}
+                    {healthProfile?.baseline_risk_level === 'medium' && '⚠️ Medium Risk'}
+                    {healthProfile?.baseline_risk_level === 'high' && '⚠️ High Risk'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                marginTop: '32px',
+                justifyContent: 'flex-end',
+              }}>
+                <button
+                  onClick={() => setShowHealthModal(false)}
+                  style={{
+                    ...styles.button,
+                    ...styles.secondaryButton,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveHealthProfile}
+                  style={{
+                    ...styles.button,
+                    ...styles.primaryButton,
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
