@@ -14,7 +14,7 @@ const categories = [
 ];
 
 export default function CreateRoom() {
-  const { token, user } = useAuth();
+  const { token, user, setUser } = useAuth();
   const navigate = useNavigate();
 
   // Restore saved form data if returning from screening
@@ -26,6 +26,21 @@ export default function CreateRoom() {
   const [category, setCategory] = useState(initialData.category || "");
   const [initialIssue, setInitialIssue] = useState(initialData.initialIssue || "");
   const [loading, setLoading] = useState(false);
+
+  // Refresh user data on mount to ensure has_completed_screening is up to date
+  useEffect(() => {
+    const refreshUserData = async () => {
+      if (token) {
+        try {
+          const updatedUser = await apiRequest('/auth/me', 'GET', null, token);
+          setUser(updatedUser);
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+      }
+    };
+    refreshUserData();
+  }, [token, setUser]);
 
   // Clear saved data after restoring
   useEffect(() => {
