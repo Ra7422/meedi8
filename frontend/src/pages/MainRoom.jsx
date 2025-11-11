@@ -824,8 +824,8 @@ export default function MainRoom() {
                     </span>
                   </div>
                 )}
-                {/* Don't show placeholder text if there's an attachment */}
-                {!(msg.attachmentUrl && msg.content?.startsWith("[Uploaded file:")) && (
+                {/* Don't show placeholder text if there's an attachment, but DO show AI image descriptions */}
+                {!(msg.attachmentUrl && (msg.content?.startsWith("[Uploaded file:") || msg.content?.startsWith("[Uploaded image:"))) && (
                   <div style={{ fontSize: "15px", lineHeight: "1.7" }}>
                     {msg.content}
                   </div>
@@ -868,7 +868,8 @@ export default function MainRoom() {
                             maxHeight: "300px",
                             borderRadius: "8px",
                             cursor: "pointer",
-                            objectFit: "contain"
+                            objectFit: "contain",
+                            border: `1pt solid ${isUser1 ? "#7DD3C0" : "#CCB2FF"}`
                           }}
                         />
                       </a>

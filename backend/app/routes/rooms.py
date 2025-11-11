@@ -2002,19 +2002,63 @@ async def upload_file_main_room(
             content_type=file.content_type or "application/octet-stream"
         )
 
+        # Analyze image if it's an image file
+        summary_text = f"[Uploaded file: {file.filename}]"
+        input_tokens = 0
+        output_tokens = 0
+        model_used = None
+        cost_usd = 0.0
+
+        # Check if file is an image
+        is_image = file_extension.lower() in {'.jpg', '.jpeg', '.png', '.gif'}
+
+        if is_image:
+            try:
+                from app.services.image_analysis import analyze_image
+                from app.services.cost_tracker import calculate_anthropic_cost
+                analysis = await analyze_image(file_url, file.filename)
+                summary_text = analysis['description']
+                input_tokens = analysis['input_tokens']
+                output_tokens = analysis['output_tokens']
+                model_used = analysis['model']
+                cost_usd = calculate_anthropic_cost(input_tokens, output_tokens, model_used) if input_tokens > 0 else 0.0
+            except Exception as e:
+                print(f"Image analysis failed: {e}")
+                # Fall back to placeholder if analysis fails
+                summary_text = f"[Uploaded image: {file.filename}]"
+
         # Create a turn with the file attachment
         file_turn = Turn(
             room_id=room_id,
             user_id=current_user.id,
             kind="user_response",
-            summary=f"[Uploaded file: {file.filename}]",
+            summary=summary_text,
             context="main",
-            tags=["main_room", "file_upload"],
+            tags=["main_room", "file_upload", "image" if is_image else "document"],
             attachment_url=file_url,
-            attachment_filename=file.filename
+            attachment_filename=file.filename,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost_usd,
+            model=model_used
         )
         db.add(file_turn)
         db.commit()
+
+        # Track API cost if image was analyzed
+        if is_image and input_tokens > 0:
+            from app.services.cost_tracker import track_api_cost
+            track_api_cost(
+                db=db,
+                user_id=current_user.id,
+                service_type="anthropic",
+                cost_usd=cost_usd,
+                room_id=room_id,
+                turn_id=file_turn.id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                model=model_used
+            )
 
         return {
             "success": True,
