@@ -20,9 +20,13 @@ class Room(Base):
     category = Column(String(50), nullable=True)  # work, family, romance, money, other
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Room type: mediation (2 users) or solo (1 user)
+    room_type = Column(String(20), nullable=False, default='mediation', index=True)
+
     # Mediation flow phases
     phase = Column(String, nullable=False, default='user1_intake')
-    # Phases: user1_intake, user1_coaching, user2_lobby, user2_coaching, main_room, resolved
+    # Mediation phases: user1_intake, user1_coaching, user2_lobby, user2_coaching, main_room, resolved
+    # Solo phases: solo_intake, solo_reflection, solo_clarity, resolved
     
     # Invite system
     invite_token = Column(String(100), unique=True, nullable=True, index=True)
@@ -35,6 +39,20 @@ class Room(Base):
     resolution_text = Column(Text, nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     check_in_date = Column(Date, nullable=True)
+
+    # Solo mode: Clarity summary and action steps
+    clarity_summary = Column(Text, nullable=True)
+    key_insights = Column(JSON, nullable=True)  # List of key insights
+    suggested_actions = Column(JSON, nullable=True)  # List of suggested actions
+    action_taken = Column(String(500), nullable=True)  # What action user decided to take
+
+    # Solo to Mediation conversion tracking
+    converted_from_solo = Column(Boolean, nullable=False, default=False)
+    converted_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Professional therapy report (Solo mode only)
+    professional_report = Column(Text, nullable=True)  # Full markdown report
+    report_generated_at = Column(DateTime(timezone=True), nullable=True)
 
     # Break/pause tracking for main room
     break_requested_by_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
