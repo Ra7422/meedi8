@@ -98,6 +98,10 @@ class Turn(Base):
     # Audio storage for voice messages
     audio_url = Column(String(500), nullable=True)
 
+    # File attachments (images, PDFs, documents) visible to all users
+    attachment_url = Column(String(500), nullable=True)
+    attachment_filename = Column(String(255), nullable=True)  # Original filename for display
+
     # Track which user the AI is addressing (for main room AI questions)
     addressed_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
 

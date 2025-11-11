@@ -1377,6 +1377,10 @@ def get_main_room_messages(
             # Include audio URL if this was a voice message
             if turn.audio_url:
                 msg["audioUrl"] = turn.audio_url
+            # Include attachment info if this message has a file
+            if turn.attachment_url:
+                msg["attachmentUrl"] = turn.attachment_url
+                msg["attachmentFilename"] = turn.attachment_filename
             messages.append(msg)
     
     # Determine current speaker (alternates)
@@ -1955,6 +1959,75 @@ async def voice_respond_main_room(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to process voice recording: {str(e)}"
+        )
+
+
+@router.post("/{room_id}/main-room/upload-file")
+async def upload_file_main_room(
+    room_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Upload a file (image, PDF, document) to main room.
+    File is stored in S3 and visible to both users in the chat.
+    """
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Validate file size (max 10MB)
+    file_bytes = await file.read()
+    if len(file_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large (max 10MB)")
+
+    # Validate file type
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt'}
+    file_extension = '.' + file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if file_extension not in allowed_extensions:
+        raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed: {', '.join(allowed_extensions)}")
+
+    try:
+        # Upload to S3
+        from app.services.s3_service import upload_file_to_s3
+        file_url = upload_file_to_s3(
+            file_bytes=file_bytes,
+            room_id=room_id,
+            user_id=current_user.id,
+            filename=file.filename,
+            content_type=file.content_type or "application/octet-stream"
+        )
+
+        # Create a turn with the file attachment
+        file_turn = Turn(
+            room_id=room_id,
+            user_id=current_user.id,
+            kind="user_response",
+            summary=f"[Uploaded file: {file.filename}]",
+            context="main",
+            tags=["main_room", "file_upload"],
+            attachment_url=file_url,
+            attachment_filename=file.filename
+        )
+        db.add(file_turn)
+        db.commit()
+
+        return {
+            "success": True,
+            "file_url": file_url,
+            "filename": file.filename,
+            "message": "File uploaded successfully"
+        }
+
+    except Exception as e:
+        print(f"File upload error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to upload file: {str(e)}"
         )
 
 

@@ -22,7 +22,9 @@ export default function MainRoom() {
   const [showBreathing, setShowBreathing] = useState(false);
   const [breakInfo, setBreakInfo] = useState(null);  // Track who requested the break
   const [otherUserPresent, setOtherUserPresent] = useState(false);  // Is other user in the room?
+  const [uploadingFile, setUploadingFile] = useState(false);  // Track file upload state
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);  // Reference for hidden file input
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -336,6 +338,81 @@ export default function MainRoom() {
       alert(errorMsg);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File too large. Maximum size is 10MB.");
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(fileExtension)) {
+      alert(`File type not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+      return;
+    }
+
+    setUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const endpoint = `${API_URL}/rooms/${roomId}/main-room/upload-file`;
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "File upload failed");
+      }
+
+      const result = await response.json();
+      console.log("File uploaded successfully:", result);
+
+      // Force immediate refresh to show uploaded file
+      const history = await apiRequest(`/rooms/${roomId}/main-room/messages`, "GET", null, token);
+
+      // Prepend summary
+      const isUser1 = user.id === summaries.user1_id;
+      const otherUserSummary = isUser1 ? summaries.user2_summary : summaries.user1_summary;
+      const otherUserName = isUser1 ? summaries.user2_name : summaries.user1_name;
+
+      const messagesWithSummary = [
+        {
+          role: "summary",
+          content: otherUserSummary,
+          fromUser: otherUserName
+        },
+        ...history.messages
+      ];
+
+      setMessages(messagesWithSummary);
+      setCurrentSpeakerId(history.current_speaker_id);
+      setSessionComplete(history.session_complete);
+
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      alert("File upload failed: " + error.message);
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -766,6 +843,59 @@ export default function MainRoom() {
                     </audio>
                   </div>
                 )}
+                {msg.role === "user" && msg.attachmentUrl && (
+                  <div style={{
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: `1px solid ${isUser1 ? "#7DD3C0" : "#CCB2FF"}`
+                  }}>
+                    {/* Check if it's an image */}
+                    {msg.attachmentFilename && /\.(jpg|jpeg|png|gif)$/i.test(msg.attachmentFilename) ? (
+                      <a
+                        href={msg.attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: "block" }}
+                      >
+                        <img
+                          src={msg.attachmentUrl}
+                          alt={msg.attachmentFilename}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "300px",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            objectFit: "contain"
+                          }}
+                        />
+                      </a>
+                    ) : (
+                      /* For documents, show download link */
+                      <a
+                        href={msg.attachmentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "8px 12px",
+                          background: "#f3f4f6",
+                          borderRadius: "8px",
+                          textDecoration: "none",
+                          color: "#374151",
+                          fontSize: "14px",
+                          fontWeight: "500"
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        <span>{msg.attachmentFilename}</span>
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -826,15 +956,29 @@ export default function MainRoom() {
             </button>
 
             <div className="main-input-container">
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileUpload}
+                style={{ display: "none" }}
+              />
+
               {/* Plus icon for file upload */}
               <button
                 className="icon-button"
-                title="Upload evidence"
-                disabled={!isMyTurn || sending}
+                title="Upload evidence (images, documents)"
+                disabled={!isMyTurn || sending || uploadingFile}
+                onClick={() => fileInputRef.current?.click()}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                </svg>
+                {uploadingFile ? (
+                  <span style={{ fontSize: "16px" }}>⏳</span>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                )}
               </button>
 
               {/* Input field with microphone inside */}
