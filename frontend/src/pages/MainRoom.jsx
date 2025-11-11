@@ -824,9 +824,12 @@ export default function MainRoom() {
                     </span>
                   </div>
                 )}
-                <div style={{ fontSize: "15px", lineHeight: "1.7" }}>
-                  {msg.content}
-                </div>
+                {/* Don't show placeholder text if there's an attachment */}
+                {!(msg.attachmentUrl && msg.content?.startsWith("[Uploaded file:")) && (
+                  <div style={{ fontSize: "15px", lineHeight: "1.7" }}>
+                    {msg.content}
+                  </div>
+                )}
                 {msg.role === "user" && msg.audioUrl && msg.userId !== user.id && (
                   <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${isUser1 ? "#7DD3C0" : "#CCB2FF"}` }}>
                     <audio
