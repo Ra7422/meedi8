@@ -1,1 +1,1 @@
-web: python fix_alembic_heads.py && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+web: python -c "from sqlalchemy import create_engine, text; import os; engine = create_engine(os.environ['DATABASE_URL']); conn = engine.connect(); conn.execute(text('DELETE FROM alembic_version WHERE version_num = \\'b6133fb09084\\\'')); conn.commit(); conn.close()" && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
