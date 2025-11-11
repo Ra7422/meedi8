@@ -50,6 +50,7 @@ class UserOut(BaseModel):
     email: str
     name: Optional[str] = None
     profile_picture_url: Optional[str] = None
+    has_completed_screening: bool = False
 
 @router.post("/register", response_model=TokenOut, status_code=201)
 def register(payload: RegisterIn, db: Session = Depends(get_db)):
@@ -279,7 +280,8 @@ def get_me(current_user: User = Depends(get_current_user)):
         id=current_user.id,
         email=current_user.email,
         name=current_user.name,
-        profile_picture_url=current_user.profile_picture_url
+        profile_picture_url=current_user.profile_picture_url,
+        has_completed_screening=current_user.has_completed_screening
     )
 
 @router.get("/me/usage")
