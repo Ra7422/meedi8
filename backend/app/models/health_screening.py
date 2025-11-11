@@ -72,7 +72,7 @@ class SessionScreening(Base):
     __tablename__ = 'session_screenings'
 
     id = Column(Integer, primary_key=True, index=True)
-    room_id = Column(Integer, ForeignKey('rooms.id', ondelete='CASCADE'), nullable=False, index=True)
+    room_id = Column(Integer, ForeignKey('rooms.id', ondelete='CASCADE'), nullable=True, index=True)  # Nullable for first-time screening
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     health_profile_id = Column(Integer, ForeignKey('user_health_profiles.id', ondelete='SET NULL'), nullable=True)
 
