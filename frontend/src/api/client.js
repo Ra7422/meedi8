@@ -1,8 +1,8 @@
-// Use localhost for local development
-// Change this to production URL when deploying
-const API_URL = "http://localhost:8000";
+// Use environment variable with fallback to localhost
+// In production (Vercel), set VITE_API_URL to https://meedi8-production.up.railway.app
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-console.log(`🔗 API_URL (local dev): ${API_URL}`);
+console.log(`🔗 API_URL: ${API_URL}`);
 
 // Export the converted API_URL so other files can use it
 export { API_URL };
