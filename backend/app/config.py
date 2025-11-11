@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = "dev-secret-change-me"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 hours - mediation sessions can be long
 
     # API Keys
     ANTHROPIC_API_KEY: str = ""
