@@ -1,8 +1,8 @@
-// ALWAYS use HTTPS for production Railway backend
-// No environment variables - hardcoded to eliminate any caching issues
-const API_URL = "https://meedi8-production.up.railway.app";
+// Use localhost for local development
+// Change this to production URL when deploying
+const API_URL = "http://localhost:8000";
 
-console.log(`🔗 API_URL (hardcoded HTTPS): ${API_URL}`);
+console.log(`🔗 API_URL (local dev): ${API_URL}`);
 
 // Export the converted API_URL so other files can use it
 export { API_URL };

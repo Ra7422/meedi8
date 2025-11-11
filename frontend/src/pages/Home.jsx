@@ -19,10 +19,10 @@ export default function Home() {
   const handleSoloClick = () => {
     if (!token) {
       // Save intent to sessionStorage so we can redirect after login
-      sessionStorage.setItem('postLoginRedirect', '/solo-session');
+      sessionStorage.setItem('postLoginRedirect', '/solo/start');
       navigate('/login');
     } else {
-      navigate('/solo-session');
+      navigate('/solo/start');
     }
   };
 

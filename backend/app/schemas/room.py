@@ -5,6 +5,7 @@ from datetime import datetime
 class RoomCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     category: Optional[str] = Field(None, max_length=50)
+    room_type: Optional[str] = Field("mediation", max_length=20)  # "mediation" or "solo"
 
 class RoomResponse(BaseModel):
     id: int

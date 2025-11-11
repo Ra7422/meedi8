@@ -1,7 +1,7 @@
 ALLOWED_SIGNALS = {"agree","disagree","sorry","hear_you","break","hurt"}
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -14,6 +14,9 @@ from app.models.subscription import Subscription
 from app.services.llm_service import is_unsafe
 from app.services.pre_mediation_coach import start_coaching_session, process_coaching_response, generate_invite_token
 from app.services.main_room_mediator import start_main_room, process_main_room_response
+# SOLO MODE - Commented out for production until deployed
+# from app.services.solo_coach import start_solo_session, process_solo_response
+# from app.services.therapy_report import generate_professional_report
 from app.services.whisper_service import transcribe_audio
 from app.services.subscription_service import require_feature_access, increment_voice_usage
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
@@ -64,10 +67,20 @@ def create_room(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Support room_type parameter (mediation or solo)
+    room_type = getattr(room_data, 'room_type', 'mediation')  # Default to mediation for backward compatibility
+
+    # Set initial phase based on room type
+    if room_type == 'solo':
+        initial_phase = 'solo_intake'
+    else:
+        initial_phase = 'user1_intake'
+
     room = Room(
         title=room_data.title,
         category=room_data.category,
-        phase="user1_intake"
+        room_type=room_type,
+        phase=initial_phase
     )
     room.participants.append(current_user)
     db.add(room)
@@ -1943,6 +1956,423 @@ async def voice_respond_main_room(
             status_code=500,
             detail=f"Failed to process voice recording: {str(e)}"
         )
+
+
+# ============================================
+# SOLO MODE ENDPOINTS
+# ============================================
+
+@router.post("/{room_id}/solo/start")
+def start_solo_coaching(
+    room_id: int,
+    payload: StartCoachingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Start Solo coaching session for self-reflection and conflict processing."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check if user is participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Verify this is a solo room
+    if room.room_type != 'solo':
+        raise HTTPException(status_code=400, detail="This endpoint is for Solo mode only")
+
+    # Get user's name for personalization
+    user_name = clean_user_name(current_user)
+
+    # Start Solo session
+    result = start_solo_session(payload.initial_message, user_name)
+
+    # Save initial turn (intake)
+    turn = Turn(
+        room_id=room_id,
+        user_id=current_user.id,
+        kind="intake",
+        summary=payload.initial_message,
+        context="solo",
+        tags=["solo_start"]
+    )
+    db.add(turn)
+
+    # Save AI response with cost tracking
+    ai_turn = Turn(
+        room_id=room_id,
+        user_id=current_user.id,
+        kind="ai_question",
+        summary=result["ai_response"],
+        context="solo",
+        tags=["solo"],
+        input_tokens=result.get("input_tokens", 0),
+        output_tokens=result.get("output_tokens", 0),
+        cost_usd=result.get("cost_usd", 0.0),
+        model=result.get("model")
+    )
+    db.add(ai_turn)
+
+    # Update room phase
+    if room.phase == "solo_intake":
+        room.phase = "solo_reflection"
+
+    db.commit()
+
+    return {
+        "ai_response": result["ai_response"],
+        "ready_for_clarity": result.get("ready_for_clarity", False),
+        "room_phase": room.phase
+    }
+
+
+@router.post("/{room_id}/solo/respond")
+async def respond_solo_coaching(
+    room_id: int,
+    text: Optional[str] = Form(None),
+    audio: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    subscription: Subscription = Depends(get_current_subscription)
+):
+    """Process Solo response (text or audio). Returns ai_response or clarity_summary."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Verify this is a solo room
+    if room.room_type != 'solo':
+        raise HTTPException(status_code=400, detail="This endpoint is for Solo mode only")
+
+    # Process audio if provided
+    transcribed_text = None
+    audio_url = None
+    if audio:
+        # Check subscription access for voice
+        access = require_feature_access(subscription, "voice_recording")
+
+        try:
+            # Read and transcribe audio
+            audio_bytes = await audio.read()
+            audio_file = io.BytesIO(audio_bytes)
+
+            transcription_result = transcribe_audio(audio_file, audio.filename)
+            transcribed_text = transcription_result["text"]
+            text = transcribed_text  # Use transcription as text
+            audio_duration = transcription_result.get("duration", len(audio_bytes) / 16000)
+
+            # Track Whisper cost
+            whisper_cost = calculate_whisper_cost(audio_duration)
+            track_api_cost(
+                db=db,
+                user_id=current_user.id,
+                service_type="openai_whisper",
+                cost_usd=whisper_cost,
+                room_id=room_id,
+                audio_seconds=audio_duration,
+                model="whisper-1"
+            )
+
+            # Upload audio to S3
+            from app.services.s3_service import upload_audio_to_s3
+            audio_url = upload_audio_to_s3(audio_bytes, room_id, current_user.id, audio.filename)
+
+            # Increment voice usage for free tier
+            if access.get("is_trial"):
+                increment_voice_usage(db, current_user.id)
+
+        except Exception as e:
+            print(f"Voice transcription error: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to process voice recording: {str(e)}"
+            )
+
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Response text is required")
+
+    # Get Solo conversation history
+    turns = db.query(Turn).filter(
+        Turn.room_id == room_id,
+        Turn.user_id == current_user.id,
+        Turn.context == "solo"
+    ).order_by(Turn.created_at.asc()).all()
+
+    # Build conversation for Claude
+    conversation_history = []
+    for turn in turns:
+        if turn.kind == "ai_question":
+            conversation_history.append({"role": "assistant", "content": turn.summary})
+        else:
+            conversation_history.append({"role": "user", "content": turn.summary})
+
+    # Get user's name
+    user_name = clean_user_name(current_user)
+
+    # Process response through Solo coach
+    result = process_solo_response(conversation_history, text, user_name)
+
+    # Save user response
+    user_turn = Turn(
+        room_id=room_id,
+        user_id=current_user.id,
+        kind="user_response",
+        summary=text,
+        context="solo",
+        tags=["solo", "voice_recording"] if audio_url else ["solo"],
+        audio_url=audio_url
+    )
+    db.add(user_turn)
+
+    # If ready for clarity, save clarity summary to Room
+    if result.get("ready_for_clarity"):
+        room.clarity_summary = result["clarity_summary"]
+        room.key_insights = result.get("key_insights", [])
+        room.suggested_actions = result.get("suggested_actions", [])
+        room.phase = "solo_clarity"
+
+        db.commit()
+
+        return {
+            "ready_for_clarity": True,
+            "clarity_summary": result["clarity_summary"],
+            "key_insights": result.get("key_insights", []),
+            "suggested_actions": result.get("suggested_actions", []),
+            "possible_actions": result.get("possible_actions", []),
+            "transcribed_text": transcribed_text
+        }
+    else:
+        # Save next AI question with cost tracking
+        ai_turn = Turn(
+            room_id=room_id,
+            user_id=current_user.id,
+            kind="ai_question",
+            summary=result["ai_response"],
+            context="solo",
+            tags=["solo"],
+            input_tokens=result.get("input_tokens", 0),
+            output_tokens=result.get("output_tokens", 0),
+            cost_usd=result.get("cost_usd", 0.0),
+            model=result.get("model")
+        )
+        db.add(ai_turn)
+
+        db.commit()
+
+        return {
+            "ai_response": result["ai_response"],
+            "ready_for_clarity": False,
+            "transcribed_text": transcribed_text
+        }
+
+
+@router.get("/{room_id}/solo/turns")
+def get_solo_turns(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all Solo conversation turns for this room."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Get all solo turns
+    turns = db.query(Turn).filter(
+        Turn.room_id == room_id,
+        Turn.context == "solo"
+    ).order_by(Turn.id).all()
+
+    # Format as conversation messages
+    messages = []
+    for turn in turns:
+        if turn.kind == "user_response" or turn.kind == "intake":
+            msg = {"role": "user", "content": turn.summary or ""}
+            if turn.audio_url:
+                msg["audioUrl"] = turn.audio_url
+            messages.append(msg)
+        elif turn.kind == "ai_question":
+            messages.append({"role": "assistant", "content": turn.summary or ""})
+
+    # Include clarity summary if exists
+    clarity_data = None
+    if room.clarity_summary:
+        clarity_data = {
+            "summary": room.clarity_summary,
+            "key_insights": room.key_insights or [],
+            "suggested_actions": room.suggested_actions or [],
+            "action_taken": room.action_taken
+        }
+
+    return {
+        "messages": messages,
+        "clarity_summary": clarity_data,
+        "room_phase": room.phase
+    }
+
+
+@router.post("/{room_id}/generate-therapy-report")
+def generate_therapy_report(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a professional therapy report from Solo session.
+    Uses GPT-4 to create comprehensive clinical assessment.
+    Only available for Solo rooms with clarity_summary completed.
+    """
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check user is participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Verify this is a Solo room
+    if room.room_type != 'solo':
+        raise HTTPException(status_code=400, detail="Therapy reports are only available for Solo mode")
+
+    # Verify room is in solo_clarity phase (has completed clarity summary)
+    if not room.clarity_summary:
+        raise HTTPException(
+            status_code=400,
+            detail="Room must have a clarity summary before generating therapy report. Complete your Solo session first."
+        )
+
+    # Get all Solo conversation turns
+    turns = db.query(Turn).filter(
+        Turn.room_id == room_id,
+        Turn.context == "solo"
+    ).order_by(Turn.created_at.asc()).all()
+
+    # Build conversation history for report
+    conversation_turns = []
+    for turn in turns:
+        if turn.kind == "user_response" or turn.kind == "intake":
+            conversation_turns.append({"role": "user", "content": turn.summary or ""})
+        elif turn.kind == "ai_question":
+            conversation_turns.append({"role": "assistant", "content": turn.summary or ""})
+
+    # Generate professional report
+    try:
+        report_result = generate_professional_report(
+            clarity_summary=room.clarity_summary,
+            conversation_turns=conversation_turns
+        )
+
+        # Save report to Room
+        room.professional_report = report_result["full_report"]
+        room.report_generated_at = func.now()
+
+        # Track OpenAI API cost
+        cost_info = report_result.get("cost_info", {})
+        track_api_cost(
+            db=db,
+            user_id=current_user.id,
+            service_type="openai_gpt4",
+            cost_usd=cost_info.get("cost_usd", 0.0),
+            room_id=room_id,
+            input_tokens=cost_info.get("input_tokens", 0),
+            output_tokens=cost_info.get("output_tokens", 0),
+            model=cost_info.get("model", "gpt-4")
+        )
+
+        db.commit()
+
+        # Return structured report data
+        return {
+            "success": True,
+            "report": {
+                "full_report": report_result["full_report"],
+                "clinical_summary": report_result["clinical_summary"],
+                "key_themes": report_result["key_themes"],
+                "strengths": report_result["strengths"],
+                "support_areas": report_result["support_areas"],
+                "recommendations": report_result["recommendations"],
+                "therapist_notes": report_result["therapist_notes"],
+                "urgency_level": report_result["urgency_level"]
+            },
+            "cost_info": cost_info,
+            "generated_at": room.report_generated_at.isoformat() if room.report_generated_at else None
+        }
+
+    except Exception as e:
+        print(f"Error generating therapy report: {e}")
+        import traceback
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate therapy report: {str(e)}"
+        )
+
+
+@router.post("/{room_id}/convert-to-mediation")
+def convert_solo_to_mediation(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Convert Solo room to Joint Mediation. User's clarity summary becomes user1_summary."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Verify this is a solo room
+    if room.room_type != 'solo':
+        raise HTTPException(status_code=400, detail="Room is already a mediation room")
+
+    # Verify clarity summary exists
+    if not room.clarity_summary:
+        raise HTTPException(
+            status_code=400,
+            detail="Complete Solo coaching first to get your clarity summary"
+        )
+
+    # Generate invite token
+    if not room.invite_token:
+        room.invite_token = generate_invite_token()
+
+    # Convert room to mediation
+    room.room_type = 'mediation'
+    room.user1_summary = room.clarity_summary  # Use Solo clarity as user1_summary
+    room.phase = 'user2_lobby'
+    room.converted_from_solo = True
+    room.converted_at = func.now()
+
+    db.commit()
+
+    # Return invite link
+    from app.config import settings
+    import os
+
+    # Check if running in production
+    is_production = "railway" in os.getenv("DATABASE_URL", "").lower() or settings.APP_ENV == "prod"
+    frontend_url = "https://meedi8.vercel.app" if is_production else "http://localhost:5173"
+    invite_link = f"{frontend_url}/join/{room.invite_token}"
+
+    return {
+        "success": True,
+        "invite_link": invite_link,
+        "message": "Room converted to mediation. Share this link with the other person.",
+        "room_phase": room.phase
+    }
 
 
 # === ROOM DELETION ENDPOINTS ===

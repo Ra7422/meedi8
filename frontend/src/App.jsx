@@ -9,6 +9,8 @@ import Rooms from "./pages/Rooms";
 import SessionsDashboard from "./pages/SessionsDashboard";
 import CreateRoom from "./pages/CreateRoom";
 import CoachingChat from "./pages/CoachingChat";
+import SoloCoaching from "./pages/SoloCoaching";
+import StartSolo from "./pages/StartSolo";
 import CoachingChatDemo from "./pages/CoachingChatDemo";
 import CoachingChatDemoUser2 from "./pages/CoachingChatDemoUser2";
 import CoachingSummaryDemo from "./pages/CoachingSummaryDemo";
@@ -78,6 +80,7 @@ function Header() {
   const hideHeader = ['/login', '/signup', '/verify-email', '/onboarding'].includes(location.pathname) ||
                      location.pathname.startsWith('/join/') ||
                      location.pathname.includes('/coaching/') ||
+                     location.pathname.includes('/solo/') ||
                      location.pathname.includes('/main-room/') ||
                      location.pathname.includes('/waiting/');
 
@@ -245,6 +248,13 @@ function Header() {
               onMouseLeave={() => setHoveredItem(null)}
             >New Mediation</Link>
             <Link
+              to="/solo/start"
+              style={{...styles.menuItem, ...(hoveredItem === 'solo' ? styles.menuItemHover : {})}}
+              onClick={() => setMenuOpen(false)}
+              onMouseEnter={() => setHoveredItem('solo')}
+              onMouseLeave={() => setHoveredItem(null)}
+            >Solo Reflection</Link>
+            <Link
               to="/profile"
               style={{...styles.menuItem, ...(hoveredItem === 'profile' ? styles.menuItemHover : {})}}
               onClick={() => setMenuOpen(false)}
@@ -340,6 +350,8 @@ export default function App() {
           <Route path="/create" element={<PrivateRoute><CreateRoom /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
+          <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} />
+          <Route path="/solo/start" element={<PrivateRoute><StartSolo /></PrivateRoute>} />
           <Route path="/coaching-demo" element={<CoachingChatDemo />} />
           <Route path="/coaching-demo-user2" element={<CoachingChatDemoUser2 />} />
           <Route path="/coaching-summary-demo" element={<CoachingSummaryDemo />} />
