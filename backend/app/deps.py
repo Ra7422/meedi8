@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status, Request
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -26,6 +26,10 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = int(payload.get("sub"))
         logger.info(f"✅ Token decoded successfully, user_id: {user_id}")
+    except ExpiredSignatureError as e:
+        # Handle expired tokens explicitly
+        logger.error(f"❌ Token expired on {request.url.path}: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired. Please log in again.")
     except (JWTError, ValueError, TypeError) as e:
         logger.error(f"❌ Token decode failed on {request.url.path}: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
