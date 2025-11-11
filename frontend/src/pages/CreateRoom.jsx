@@ -49,6 +49,15 @@ export default function CreateRoom() {
     }
   }, []);
 
+  // Check if returning from screening and automatically advance to step 2
+  useEffect(() => {
+    const screeningJustCompleted = sessionStorage.getItem('screeningJustCompleted');
+    if (screeningJustCompleted) {
+      sessionStorage.removeItem('screeningJustCompleted');
+      setStep(2); // Automatically go to "Tell me more" step
+    }
+  }, []);
+
   const handleNext = () => {
     if (step === 1) {
       if (!title.trim()) {
@@ -57,14 +66,6 @@ export default function CreateRoom() {
       }
       if (!category) {
         alert("Please choose a topic category");
-        return;
-      }
-
-      // Check if screening was just completed (prevents redirect loop)
-      const screeningJustCompleted = sessionStorage.getItem('screeningJustCompleted');
-      if (screeningJustCompleted) {
-        sessionStorage.removeItem('screeningJustCompleted');
-        setStep(2);
         return;
       }
 
