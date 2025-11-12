@@ -951,41 +951,61 @@ def start_main_room_session(
     current_user: User = Depends(get_current_user)
 ):
     """Start the main room mediation session (idempotent - safe to call multiple times)."""
-    # Lock the room row to prevent race condition when both users enter simultaneously
-    room = db.query(Room).filter(Room.id == room_id).with_for_update().first()
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    
-    if room.phase not in ["main_room", "resolved"]:
-        raise HTTPException(status_code=400, detail="Not ready for main room")
+    try:
+        # Lock the room row to prevent race condition when both users enter simultaneously
+        room = db.query(Room).filter(Room.id == room_id).with_for_update().first()
+        if not room:
+            raise HTTPException(status_code=404, detail="Room not found")
 
-    participants = room.participants
+        if room.phase not in ["main_room", "resolved"]:
+            raise HTTPException(status_code=400, detail="Not ready for main room")
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_detail = f"Database query failed in start_main_room: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
 
-    # CRITICAL: Determine user1/user2 by who initiated (has pre_mediation turns first)
-    # Find the earliest pre_mediation turn to determine who started coaching first
-    first_turn = db.query(Turn).filter(
-        Turn.room_id == room_id,
-        Turn.context == "pre_mediation"
-    ).order_by(Turn.created_at.asc()).first()
+    try:
+        participants = room.participants
 
-    if not first_turn:
-        # Fallback if no coaching history
-        user1 = participants[0]
-        user2 = participants[1]
-    else:
-        # User who created the first turn is User 1
-        user1_id = first_turn.user_id
-        user1 = next((p for p in participants if p.id == user1_id), participants[0])
-        user2 = next((p for p in participants if p.id != user1_id), participants[1])
+        # CRITICAL: Determine user1/user2 by who initiated (has pre_mediation turns first)
+        # Find the earliest pre_mediation turn to determine who started coaching first
+        first_turn = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "pre_mediation"
+        ).order_by(Turn.created_at.asc()).first()
 
-    # Check if conversation already started (CRITICAL: prevents duplicates when both users enter)
-    # Query inside the locked transaction to prevent race condition
-    existing_turns = db.query(Turn).filter(
-        Turn.room_id == room_id,
-        Turn.context == "main",
-        Turn.kind == "ai_question",
-        Turn.tags.contains(["main_room_start"])  # Only check for opening message
-    ).order_by(Turn.created_at.asc()).all()
+        if not first_turn:
+            # Fallback if no coaching history
+            user1 = participants[0]
+            user2 = participants[1]
+        else:
+            # User who created the first turn is User 1
+            user1_id = first_turn.user_id
+            user1 = next((p for p in participants if p.id == user1_id), participants[0])
+            user2 = next((p for p in participants if p.id != user1_id), participants[1])
+    except Exception as e:
+        import traceback
+        error_detail = f"Failed to determine user1/user2: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
+
+    try:
+        # Check if conversation already started (CRITICAL: prevents duplicates when both users enter)
+        # Query inside the locked transaction to prevent race condition
+        existing_turns = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "main",
+            Turn.kind == "ai_question",
+            Turn.tags.contains(["main_room_start"])  # Only check for opening message
+        ).order_by(Turn.created_at.asc()).all()
+    except Exception as e:
+        import traceback
+        error_detail = f"Failed to query existing turns (tags.contains may require migration): {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
 
     if existing_turns:
         # Already started - return existing state
@@ -1009,8 +1029,14 @@ def start_main_room_session(
     
     # Generate opening for first time
     # Clean names in summaries (replace "dave dave" -> "dave", etc.)
-    user1_clean_name = clean_user_name(user1)
-    user2_clean_name = clean_user_name(user2)
+    try:
+        user1_clean_name = clean_user_name(user1)
+        user2_clean_name = clean_user_name(user2)
+    except Exception as e:
+        import traceback
+        error_detail = f"Failed to clean user names: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
 
     # Check that both users have completed coaching
     if not room.user1_summary or not room.user2_summary:
@@ -1020,44 +1046,57 @@ def start_main_room_session(
         )
 
     # Pass summaries directly to AI - no placeholder replacement needed
-    result = start_main_room(
-        room.user1_summary,
-        room.user2_summary,
-        user1_clean_name,
-        user2_clean_name,
-        room.category
-    )
+    try:
+        result = start_main_room(
+            room.user1_summary,
+            room.user2_summary,
+            user1_clean_name,
+            user2_clean_name,
+            room.category
+        )
+    except Exception as e:
+        import traceback
+        error_detail = f"AI service (start_main_room) failed - check ANTHROPIC_API_KEY: {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
     
     # Save opening message (only once)
     # Double-check one more time before creating to handle race condition
-    final_check = db.query(Turn).filter(
-        Turn.room_id == room_id,
-        Turn.context == "main",
-        Turn.kind == "ai_question"
-    ).first()
+    try:
+        final_check = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "main",
+            Turn.kind == "ai_question"
+        ).first()
 
-    if final_check:
-        # Another request beat us to it - return that opening message
-        return MainRoomStartResponse(
-            opening_message=final_check.summary,
-            current_speaker_id=user1.id,
-            next_turn="user1"
+        if final_check:
+            # Another request beat us to it - return that opening message
+            return MainRoomStartResponse(
+                opening_message=final_check.summary,
+                current_speaker_id=user1.id,
+                next_turn="user1"
+            )
+
+        opening_turn = Turn(
+            room_id=room_id,
+            user_id=user1.id,  # Use user1.id not current_user (for consistency)
+            kind="ai_question",
+            summary=result["opening_message"],
+            context="main",
+            tags=["main_room_start"]
         )
+        db.add(opening_turn)
+        db.commit()
+    except Exception as e:
+        import traceback
+        db.rollback()
+        error_detail = f"Failed to save opening turn (check if attachment/solo columns exist): {str(e)}\n{traceback.format_exc()}"
+        print(error_detail)
+        raise HTTPException(status_code=500, detail=error_detail)
 
-    opening_turn = Turn(
-        room_id=room_id,
-        user_id=user1.id,  # Use user1.id not current_user (for consistency)
-        kind="ai_question",
-        summary=result["opening_message"],
-        context="main",
-        tags=["main_room_start"]
-    )
-    db.add(opening_turn)
-    db.commit()
-    
     # ALWAYS user1 (who initiated) speaks first
     first_speaker_id = user1.id
-    
+
     return MainRoomStartResponse(
         opening_message=result["opening_message"],
         current_speaker_id=first_speaker_id,
