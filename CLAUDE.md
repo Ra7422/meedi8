@@ -6,23 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Meedi8** is an AI-powered mediation platform that guides users through conflict resolution using Nonviolent Communication (NVC) principles. The system consists of a React frontend and FastAPI backend that orchestrates a multi-phase mediation flow.
 
-## Recent Updates (Last Updated: 2025-11-10)
+## Recent Updates (Last Updated: 2025-11-12)
+
+**✅ STABLE WORKING STATE** - Commit `246b6c4` (2025-11-12) represents a fully functional deployment with all features working on Railway production.
 
 **Critical Changes** - Read these first when working on the codebase:
 
-1. **Trailing Slash CORS Fix (Safari/Firefox)** - Safari 16.3+ and Firefox 112+ strip Authorization headers on cross-origin redirects per 2024 Fetch Standard. ALL frontend API calls must match backend route definitions EXACTLY (including trailing slashes) to avoid 308 redirects that strip auth headers. Chrome hasn't adopted this standard yet. See "Trailing Slash Pattern" section below.
+1. **PostgreSQL JSON Query Fix (CRITICAL)** - `Turn.tags` column must use `cast(Turn.tags, String).like('%pattern%')` instead of `.contains()` for PostgreSQL compatibility. The `.contains()` method generates `LIKE` operator on JSON which fails with "operator does not exist: json ~~ text". See commit `246b6c4` for implementation. This fix is required for any JSON column queries.
 
-2. **User1/User2 Identification Fix** - Fixed bug where User1/User2 were determined by participant database ID order instead of chronological coaching start time. Now correctly identifies User1 as whoever has the earliest `pre_mediation` turn. Applied to `/main-room/summaries`, `/main-room/start`, and `/main-room/messages` endpoints.
+2. **File Attachment Feature (2025-11-11)** - Main room now supports file uploads (images, PDFs, documents) visible to both users. Files stored in S3 with automatic AI image analysis using Claude Vision API. Images display as thumbnails with 1pt colored border (teal/purple). Backend: `POST /rooms/{id}/main-room/upload-file`, Frontend: MainRoom.jsx lines 906-929 (upload button) and 846-898 (display). Migration: `20251111_add_attachment_fields_to_turns.py`
 
-3. **SSR Safety Required** - All components must guard browser APIs (`window`, `document`, `localStorage`) with `typeof window !== 'undefined'` checks. Vercel build WILL crash without this. See "SSR Safety" section below.
+3. **AI Image Analysis** - Uploaded images automatically analyzed by Claude 3.5 Sonnet Vision API. AI provides 2-3 sentence contextual description shown above thumbnail. Service: `backend/app/services/image_analysis.py`. Cost tracking integrated (~$0.01-0.03 per image). Fallback to placeholder text if analysis fails.
 
-4. **Deep Exploration Mode** - Main room mediator now detects harsh language and stays with same speaker for up to 2 follow-up questions before switching. Tracked via `Room.last_speaker_id` and `consecutive_questions_to_same` fields.
+4. **Screening Bypass Fix** - Added `has_completed_screening` field to `/auth/me` endpoint response (UserOut schema). Without this, users stuck in screening loop after completion. Backend: `app/routes/auth.py` lines 53, 284. This field MUST be included in auth responses.
 
-5. **Break/Pause Feature** - Users can request breathing breaks that sync in real-time to both participants via polling. Uses `Room.break_requested_by_id` and `break_requested_at` fields.
+5. **Trailing Slash CORS Fix (Safari/Firefox)** - Safari 16.3+ and Firefox 112+ strip Authorization headers on cross-origin redirects per 2024 Fetch Standard. ALL frontend API calls must match backend route definitions EXACTLY (including trailing slashes) to avoid 308 redirects that strip auth headers. Chrome hasn't adopted this standard yet. See "Trailing Slash Pattern" section below.
 
-6. **Invite Link Redirect** - Unauthenticated users clicking invite links are redirected back after login/signup via `sessionStorage.pendingInvite` pattern.
+6. **User1/User2 Identification Fix** - Fixed bug where User1/User2 were determined by participant database ID order instead of chronological coaching start time. Now correctly identifies User1 as whoever has the earliest `pre_mediation` turn. Applied to `/main-room/summaries`, `/main-room/start`, and `/main-room/messages` endpoints.
 
-7. **OAuth Conditional Rendering** - OAuth components only render if valid credentials exist to prevent crashes. Check main.jsx and LoginNew.jsx for pattern.
+7. **SSR Safety Required** - All components must guard browser APIs (`window`, `document`, `localStorage`) with `typeof window !== 'undefined'` checks. Vercel build WILL crash without this. See "SSR Safety" section below.
+
+8. **Deep Exploration Mode** - Main room mediator now detects harsh language and stays with same speaker for up to 2 follow-up questions before switching. Tracked via `Room.last_speaker_id` and `consecutive_questions_to_same` fields.
+
+9. **Break/Pause Feature** - Users can request breathing breaks that sync in real-time to both participants via polling. Uses `Room.break_requested_by_id` and `break_requested_at` fields.
+
+10. **Invite Link Redirect** - Unauthenticated users clicking invite links are redirected back after login/signup via `sessionStorage.pendingInvite` pattern.
+
+11. **OAuth Conditional Rendering** - OAuth components only render if valid credentials exist to prevent crashes. Check main.jsx and LoginNew.jsx for pattern.
 
 ## Development Commands
 
@@ -699,3 +709,88 @@ cost_usd = (input_tokens * INPUT_COST) + (output_tokens * OUTPUT_COST)
 **Database**:
 - `backend/migrations/versions/` - Alembic migration files
 - `backend/alembic.ini` - Alembic configuration
+
+## Rollback Reference Point
+
+### Stable Production State: Commit `246b6c4` (2025-11-12)
+
+**Git Rollback Command**:
+```bash
+git revert HEAD~5..HEAD  # Revert last 5 commits if needed
+# Or specific rollback:
+git checkout 246b6c4     # Check out stable commit
+git checkout -b rollback-to-stable
+git push origin rollback-to-stable
+```
+
+**Deployment URLs**:
+- Frontend: https://meedi8.vercel.app (Vercel auto-deploys from `main`)
+- Backend: https://meedi8-production.up.railway.app (Railway auto-deploys from `main`)
+
+**What's Working at This State**:
+✅ User authentication (Google, Facebook, Telegram OAuth)
+✅ Screening flow with bypass for returning users
+✅ Individual coaching (pre-mediation) for both users
+✅ Main room mediation with turn-taking
+✅ File attachments (images + documents) with AI analysis
+✅ Voice messages with Whisper transcription
+✅ Break/pause feature synchronized between users
+✅ Deep exploration mode for harsh language
+✅ Resolution tracking and agreements
+✅ PostgreSQL compatibility (Railway) + SQLite (local dev)
+
+**Recent Commits Included** (2025-11-11 to 2025-11-12):
+1. `5a825ba` - Add file attachment feature to main room chat
+2. `47db28a` - Fix image attachments displaying placeholder text
+3. `c35082b` - Fix screening bypass: Add has_completed_screening to /auth/me response
+4. `6774563` - Add AI image analysis and fix image thumbnail display
+5. `80709e6` - Add comprehensive error handling and debugging for Railway 500 errors
+6. `246b6c4` - Fix PostgreSQL JSON query: Replace tags.contains() with cast to text
+
+**Database Migrations Included**:
+- `20251111_add_solo_mode_columns.py` - Solo mode fields (room_type, clarity_summary, etc.)
+- `20251111_add_attachment_fields_to_turns.py` - File attachment fields (attachment_url, attachment_filename)
+
+**Critical Files Modified**:
+- `backend/app/routes/rooms.py` (lines 1002, 1961-2061) - PostgreSQL fix + file upload endpoint
+- `backend/app/routes/auth.py` (lines 53, 284) - Screening bypass fix
+- `backend/app/models/room.py` (lines 24, 44-56, 101-103) - Solo mode + attachment fields
+- `backend/app/services/image_analysis.py` (NEW) - Claude Vision integration
+- `frontend/src/pages/MainRoom.jsx` (lines 827-898, 906-929) - File upload UI + attachment display
+- `frontend/src/pages/CreateRoom.jsx` (lines 31-43) - User data refresh for screening
+
+**Environment Variables Required on Railway**:
+```
+ANTHROPIC_API_KEY=sk-ant-...        # For AI mediation + image analysis
+OPENAI_API_KEY=sk-...               # For Whisper voice transcription
+AWS_ACCESS_KEY_ID=...               # For S3 file storage
+AWS_SECRET_ACCESS_KEY=...           # For S3 file storage
+AWS_S3_BUCKET=...                   # S3 bucket name
+AWS_REGION=us-east-1                # S3 region
+DATABASE_URL=postgresql://...       # Railway PostgreSQL
+CORS_ORIGINS=https://meedi8.vercel.app,...  # Frontend origins
+```
+
+**Known Issues Fixed**:
+- ✅ PostgreSQL JSON query compatibility (`tags.contains()` → `cast().like()`)
+- ✅ CORS errors on Safari/Firefox (trailing slash matching)
+- ✅ Screening loop bug (missing `has_completed_screening` field)
+- ✅ Image placeholder text showing above thumbnails
+- ✅ User1/User2 misidentification (now uses chronological order)
+
+**How to Verify Deployment is Working**:
+1. Check health: `curl https://meedi8-production.up.railway.app/health`
+2. Check environment: `curl https://meedi8-production.up.railway.app/debug/env`
+3. Check database: `curl https://meedi8-production.up.railway.app/debug/database`
+4. Test full flow:
+   - Create room → Complete screening → Coaching → Main room
+   - Upload image → Verify AI analysis appears
+   - Test file download works
+   - Test break button syncs between users
+
+**If Issues Occur After This Point**:
+1. Check Railway deployment logs for migration errors
+2. Verify environment variables are set correctly
+3. Test `/debug/database` endpoint to confirm schema is correct
+4. Compare working commit `246b6c4` with current HEAD to see what changed
+5. Consider rolling back to this commit and re-applying changes incrementally
