@@ -262,6 +262,13 @@ export default function FAQ() {
       {/* Top ellipse for depth */}
       <div style={styles.topEllipse} />
 
+      {/* Decorative ellipses behind content */}
+      <div style={styles.decorativeEllipse1} />
+      <div style={styles.decorativeEllipse2} />
+      <div style={styles.decorativeEllipse3} />
+      <div style={styles.decorativeEllipse4} />
+      <div style={styles.decorativeEllipse5} />
+
       {/* Main content */}
       <div style={styles.content}>
         {/* Heading */}
@@ -440,5 +447,61 @@ const styles = {
     lineHeight: '1.7',
     margin: '16px 0 0 0',
     fontFamily: "'Nunito', sans-serif",
+  },
+  // Decorative ellipses with purple color at 40% opacity
+  decorativeEllipse1: {
+    position: 'absolute',
+    top: '15%',
+    right: '-10%',
+    width: '500px',
+    height: '500px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(204, 178, 255, 0.4) 0%, transparent 70%)',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
+  decorativeEllipse2: {
+    position: 'absolute',
+    top: '35%',
+    left: '-15%',
+    width: '600px',
+    height: '400px',
+    borderRadius: '50%',
+    background: 'radial-gradient(ellipse, rgba(204, 178, 255, 0.4) 0%, transparent 70%)',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
+  decorativeEllipse3: {
+    position: 'absolute',
+    top: '55%',
+    right: '-8%',
+    width: '450px',
+    height: '450px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(204, 178, 255, 0.4) 0%, transparent 70%)',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
+  decorativeEllipse4: {
+    position: 'absolute',
+    top: '75%',
+    left: '-12%',
+    width: '550px',
+    height: '350px',
+    borderRadius: '50%',
+    background: 'radial-gradient(ellipse, rgba(204, 178, 255, 0.4) 0%, transparent 70%)',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
+  decorativeEllipse5: {
+    position: 'absolute',
+    top: '90%',
+    right: '-5%',
+    width: '400px',
+    height: '400px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(204, 178, 255, 0.4) 0%, transparent 70%)',
+    zIndex: 0,
+    pointerEvents: 'none',
   },
 };
