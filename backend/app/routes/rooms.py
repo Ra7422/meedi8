@@ -1269,16 +1269,26 @@ def respond_main_room(
 
     db.commit()
 
-    # ALWAYS switch to other person - strict turn-by-turn
-    next_speaker_id = other_user.id
-    addressed_user_name = other_user_name
+    # Respect AI's next_speaker decision (SAME or OTHER)
+    if result.get("next_speaker") == "SAME":
+        # AI wants to ask current speaker a follow-up question
+        next_speaker_id = current_user.id
+        addressed_user_name = current_user_name
+    else:
+        # AI wants to switch to other person (default behavior)
+        next_speaker_id = other_user.id
+        addressed_user_name = other_user_name
 
-    print(f"\n=== TURN-TAKING DEBUG (Strict Turn-by-Turn) ===")
+    print(f"\n=== TURN-TAKING DEBUG (AI-Driven) ===")
     print(f"Current speaker: {current_user_name} (ID: {current_user.id})")
+    print(f"AI decision: {result.get('next_speaker', 'OTHER')}")
     print(f"Next speaker: {addressed_user_name} (ID: {next_speaker_id})")
     print(f"User1: {clean_user_name(user1)} (ID: {user1.id})")
     print(f"User2: {clean_user_name(user2)} (ID: {user2.id})")
-    print(f"✓ Switching from {current_user_name} -> {addressed_user_name}")
+    if result.get("next_speaker") == "SAME":
+        print(f"✓ STAYING with {current_user_name} for follow-up")
+    else:
+        print(f"✓ SWITCHING from {current_user_name} -> {addressed_user_name}")
     print(f"=========================\n")
 
     if result.get("session_complete"):

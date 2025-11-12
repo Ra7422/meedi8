@@ -166,9 +166,6 @@ def process_main_room_response(
         {"role": "user", "content": f"{user_name}: {user_message}"}
     ]
 
-    # ALWAYS switch to other person - strict turn-by-turn
-    next_speaker = "OTHER"
-
     # Include breathing break count in instruction
     breathing_status = ""
     if breathing_break_count >= 5:
@@ -176,20 +173,45 @@ def process_main_room_response(
     elif breathing_break_count > 0:
         breathing_status = f"\n\nNote: This session has had {breathing_break_count} breathing break(s) so far."
 
-    mode_instruction = f"""STRICT TURN-BY-TURN conversation. After {user_name} spoke, now {other_user_name} will respond next.{breathing_status}
+    mode_instruction = f"""After {user_name} spoke, you need to decide who speaks next.{breathing_status}
 
-Guide the conversation forward. Options:
-1. Ask {other_user_name} to respond to what {user_name} just said
-2. Reflect what you heard from {user_name} and ask {other_user_name} their thoughts
-3. Ask {other_user_name} about common ground or shared needs
-4. Ask {other_user_name} about potential solutions
-5. If escalation detected (profanity, personal attacks, high emotion): BREATHING_BREAK: [message]
-6. If agreement reached: RESOLUTION: [summary]
-7. If 5+ breathing breaks or unable to proceed: HALT: [reason]
+DECISION POINT - Choose ONE approach:
 
-IMPORTANT: Detect escalation patterns and suggest breathing breaks when needed. You will have the opportunity to ask {user_name} follow-up questions when it's their turn again. For now, focus on {other_user_name}'s perspective.
+**OPTION A - SWITCH to {other_user_name}** (Most common - use this 80% of the time)
+- When you want to hear {other_user_name}'s reaction to what {user_name} just said
+- When it's important to maintain balanced conversation flow
+- When you've already asked {user_name} 1-2 questions in a row
+Format: NEXT_SPEAKER: OTHER
+Then ask {other_user_name} a question (under 40 words)
 
-Direct your message to {other_user_name}. Keep under 40 words."""
+**OPTION B - STAY with {user_name}** (Only when truly needed for clarity)
+- When {user_name} said something vague/incomplete that needs immediate clarification
+- When you need to understand {user_name}'s deeper feelings before moving on
+- When {user_name} hinted at something important but didn't fully express it
+- LIMIT: Maximum 2 follow-up questions to same person before switching
+Format: NEXT_SPEAKER: SAME
+Then ask {user_name} a clarifying question (under 40 words)
+
+**SPECIAL RESPONSES:**
+- Breathing break needed: BREATHING_BREAK: [message]
+- Agreement reached: RESOLUTION: [summary]
+- Too many breaks/can't proceed: HALT: [reason]
+
+**EXAMPLE RESPONSES:**
+
+Example 1 (switching - most common):
+```
+NEXT_SPEAKER: OTHER
+{other_user_name}, when you hear {user_name} say they feel unappreciated - what's your reaction to that?
+```
+
+Example 2 (staying for clarity - rare):
+```
+NEXT_SPEAKER: SAME
+{user_name}, when you say "it bothers me" - can you say more about what specifically bothers you?
+```
+
+**CRITICAL:** Start your response with "NEXT_SPEAKER: SAME" or "NEXT_SPEAKER: OTHER" so the system knows who speaks next."""
 
     # Add instruction for AI
     messages.append({
@@ -208,6 +230,17 @@ Direct your message to {other_user_name}. Keep under 40 words."""
         )
         
         ai_message = response.content[0].text
+
+        # Parse NEXT_SPEAKER decision (NEW)
+        next_speaker = "OTHER"  # Default to switching
+        if "NEXT_SPEAKER: SAME" in ai_message:
+            next_speaker = "SAME"
+            # Remove the directive from the message shown to users
+            ai_message = ai_message.replace("NEXT_SPEAKER: SAME", "").strip()
+        elif "NEXT_SPEAKER: OTHER" in ai_message:
+            next_speaker = "OTHER"
+            # Remove the directive from the message shown to users
+            ai_message = ai_message.replace("NEXT_SPEAKER: OTHER", "").strip()
 
         # Check for breathing break suggestion
         if "BREATHING_BREAK:" in ai_message:
