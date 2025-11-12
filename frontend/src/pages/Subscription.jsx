@@ -96,7 +96,7 @@ export default function Subscription() {
             fontFamily: "'Nunito', sans-serif",
             color: "#7DD3C0",
             fontWeight: "700"
-          }}>Subscription</h1>
+          }}>Pricing</h1>
           <p style={{
             color: "#6B7280",
             fontSize: "clamp(16px, 3vw, 18px)",
@@ -327,7 +327,7 @@ export default function Subscription() {
                   boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)"
                 }}
               >
-                Upgrade to Plus Monthly
+                Get Plus Monthly
               </button>
               <button
                 onClick={() => handleUpgrade("plus", "yearly")}
@@ -444,7 +444,7 @@ export default function Subscription() {
                   boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
                 }}
               >
-                Upgrade to Pro Monthly
+                Get Pro Monthly
               </button>
               <button
                 onClick={() => handleUpgrade("pro", "yearly")}
