@@ -186,7 +186,7 @@ export default function Home() {
             Transform Conflict into <span style={styles.titleAccent}>Understanding</span>
           </h1>
           <img
-            src="/assets/illustrations/meedi standing.svg"
+            src="/assets/illustrations/sitting_type.svg"
             alt="Meedi - Your AI Mediator"
             style={styles.heroImage}
           />
@@ -211,7 +211,7 @@ export default function Home() {
             }}
           >
             <img
-              src="/assets/illustrations/family.svg"
+              src="/assets/illustrations/lifesavers-sitting.svg"
               alt="Two People in Mediation"
               style={styles.cardImage}
             />
@@ -251,7 +251,7 @@ export default function Home() {
             }}
           >
             <img
-              src="/assets/illustrations/Meedi_sit_bubble.svg"
+              src="/assets/illustrations/stuck-at-home-sitting-on-floor.svg"
               alt="Talk to Meedi Solo"
               style={styles.cardImage}
             />
