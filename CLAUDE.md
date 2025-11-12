@@ -8,9 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Updates (Last Updated: 2025-11-12)
 
-**✅ STABLE WORKING STATE** - Commit `246b6c4` (2025-11-12) represents a fully functional deployment with all features working on Railway production.
+**✅ LATEST STABLE STATE** - Commit `c5cfd7b` (2025-11-12) includes professional PDF report generation, homepage image fixes, and strict turn-by-turn mediation with harsh language intervention.
+
+**Previous Stable**: Commit `246b6c4` (2025-11-12) - PostgreSQL compatibility and file uploads working.
 
 **Critical Changes** - Read these first when working on the codebase:
+
+0. **Professional PDF Report Generation (2025-11-12)** - Resolution page now includes "Generate Report" button that creates therapist-style PDF reports using Claude API. Reports include: Presenting Issues, Conversation Summary, Observations, Assessment, and Recommendations. Generated on-demand (button press) to save tokens, stored in S3 bucket. Button transitions: "Generate Report" → "Generating..." → "Download Report (PDF)". Backend: `POST /rooms/{id}/generate-report`, Service: `backend/app/services/report_generator.py` (uses ReportLab + Claude Sonnet 4.5), Frontend: ResolutionComplete.jsx lines 14-15, 55-68, 180-248. Migration: `20251112_add_professional_report_url.py`. Cost: ~$0.03-0.05 per report.
 
 1. **PostgreSQL JSON Query Fix (CRITICAL)** - `Turn.tags` column must use `cast(Turn.tags, String).like('%pattern%')` instead of `.contains()` for PostgreSQL compatibility. The `.contains()` method generates `LIKE` operator on JSON which fails with "operator does not exist: json ~~ text". See commit `246b6c4` for implementation. This fix is required for any JSON column queries.
 
@@ -26,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 7. **SSR Safety Required** - All components must guard browser APIs (`window`, `document`, `localStorage`) with `typeof window !== 'undefined'` checks. Vercel build WILL crash without this. See "SSR Safety" section below.
 
-8. **Deep Exploration Mode** - Main room mediator now detects harsh language and stays with same speaker for up to 2 follow-up questions before switching. Tracked via `Room.last_speaker_id` and `consecutive_questions_to_same` fields.
+8. **Strict Turn-by-Turn with Harsh Language Intervention (2025-11-12)** - Main room mediator enforces strict turn-taking where AI ALWAYS switches speakers after each response. When harsh language detected ("lazy", "selfish", "never", "always"), AI directly pauses and names the behavior: "{Name}, I need to pause here. Calling someone 'lazy' shifts us away from solving this together." Then reframes and switches to other person to hear impact: "When you hear yourself being called lazy, how does that land?" Later circles back with context. This replaces the previous "deep exploration mode" with simpler, more effective intervention. Updated: `main_room_mediator.py` lines 44-62 (prompt), 180-224 (logic). **CRITICAL**: Users MUST have distinct names for AI to properly address them - duplicate names (e.g., "Adam"/"Adam") will confuse the AI's turn-taking.
 
 9. **Break/Pause Feature** - Users can request breathing breaks that sync in real-time to both participants via polling. Uses `Room.break_requested_by_id` and `break_requested_at` fields.
 
@@ -148,34 +152,39 @@ Each phase transition is critical - backend routes check current phase before al
 
 **Key Pattern**: Both services maintain conversation history in memory during session, stored in `Turn` records with `context` field to separate coaching from mediation.
 
-### Deep Exploration Mode
+### Harsh Language Intervention (Strict Turn-by-Turn)
 
-**Purpose**: When users express harsh feelings or use triggering language, the AI should dig deeper with that person before switching to the other participant. This creates better understanding and shows support.
+**Purpose**: When users express harsh language ("lazy", "selfish", "never", "always"), the AI should directly confront the behavior, explain its impact, and facilitate understanding between participants. This uses strict turn-by-turn switching (no consecutive questions to same person).
 
 **How It Works**:
-1. **Trigger Detection** (`main_room_mediator.py:149-155`): Detects words like "lazy", "selfish", "never", "always", "hate", "terrible", "awful", "worthless", "useless", "idiot", "stupid", "don't care"
-2. **Consecutive Questions**: AI stays with same person for up to 2 additional questions (tracked via `consecutive_questions_to_same`)
-3. **Database Tracking**: Room model tracks `last_speaker_id` and `consecutive_questions_to_same`
-4. **AI Instruction**: When triggered, AI receives "DEEP EXPLORATION MODE" instruction to ask follow-up questions about:
-   - What's really driving this feeling?
-   - What do they need to feel different?
-   - What would help them feel heard/respected/valued?
+1. **Detection**: AI detects harsh language patterns in system prompt
+2. **Direct Intervention**: AI immediately pauses and names the behavior:
+   - Example: "{Name}, I need to pause here. Calling someone 'lazy' shifts us away from solving this together."
+3. **Reframe**: AI reframes the situation with context:
+   - Example: "What you're both describing sounds like a cycle where good intentions get lost."
+4. **Switch to Other Person**: AI immediately switches to the other participant to hear their reaction:
+   - Example: "{OtherName}, when you hear yourself being called lazy, how does that land?"
+5. **Circle Back Later**: After hearing the other person's impact, AI circles back to original speaker:
+   - Example: "You heard them say it hurts. What do they need from you?"
 
-**Example Flow**:
+**Example Flow** (from production transcript):
 ```
-User 1: "Dave is just lazy man"  [TRIGGER DETECTED]
-AI → User 1: "I hear your frustration. What would help you feel like Dave is contributing?"
-User 1: "I just need him to follow through on his promises"
-AI → User 1: "When he doesn't follow through, what does that mean to you?"
-User 1: "It makes me feel like he doesn't respect my time"
-AI → User 2: "Dave, Ads mentioned feeling disrespected when promises aren't kept. What comes up for you hearing that?"
+User 1: "They are just lazy, it's an excuse"
+AI: "Adam, I need to pause here. Calling someone 'lazy' shifts us away from solving this together.
+     What you're both describing sounds like a cycle where good intentions get lost.
+     User2, when you hear yourself being called lazy, how does that land?"
+User 2: "It hurts because I'm trying my best..."
+AI: "Adam, you heard them say it hurts. What do they need from you?"
 ```
+
+**Why Strict Turn-by-Turn**: Previous "deep exploration mode" (multiple consecutive questions) was complex and created input locking issues. The new approach is simpler, more effective, and works within existing turn-taking infrastructure.
 
 **Implementation Files**:
-- `backend/app/models/room.py:42-43` - Database fields
-- `backend/app/services/main_room_mediator.py:149-175` - Trigger detection and mode switching
-- `backend/app/routes/rooms.py:962-1041` - Integration in respond_main_room endpoint
-- `backend/migrations/versions/20251107_add_deep_exploration_tracking.py` - Migration
+- `backend/app/services/main_room_mediator.py:44-62` - System prompt with intervention pattern
+- `backend/app/services/main_room_mediator.py:180-224` - Simplified turn-switching logic (always "OTHER")
+- Commit `ee70883` (2025-11-12) - Implementation
+
+**CRITICAL Requirement**: Users MUST have distinct names (e.g., "Dave"/"Ads", not "Adam"/"Adam"). Duplicate names confuse the AI's ability to address the correct person during turn-taking.
 
 ### Break/Pause Feature
 
@@ -592,6 +601,153 @@ cost_usd = (input_tokens * INPUT_COST) + (output_tokens * OUTPUT_COST)
 
 **Admin Endpoint**: `GET /rooms/admin/costs` - Total costs by user, room, date range.
 
+### Professional PDF Report Generation
+
+**Purpose**: Generate therapist-style professional reports for completed mediations, suitable for case documentation or therapy review.
+
+**How It Works**:
+1. **User Action**: On ResolutionComplete page, user clicks "Generate Report" button
+2. **API Call**: Frontend calls `POST /rooms/{id}/generate-report`
+3. **Content Generation**: Backend uses Claude Sonnet 4.5 API to generate report sections from transcript
+4. **PDF Creation**: ReportLab library formats content into professional PDF with Meedi8 logo
+5. **S3 Upload**: PDF stored in S3 bucket at `reports/{room_id}/professional-report-{timestamp}.pdf`
+6. **Database Update**: `room.professional_report_url` saved with S3 URL
+7. **Caching**: If report already exists, returns existing URL (avoids regenerating and wasting tokens)
+8. **Button Transition**: Frontend button changes to "Download Report (PDF)" link
+
+**Report Sections**:
+1. **Header**: Meedi8 logo, mediation details (date, category, participants)
+2. **Presenting Issues**: Initial conflict description (2-3 paragraphs)
+3. **Conversation Summary**: Key moments and progression (3-4 paragraphs)
+4. **Observations**: Mediator insights on communication patterns (2-3 paragraphs)
+5. **Assessment**: Analysis of conflict dynamics and resolution process (2-3 paragraphs)
+6. **Recommendations**: Suggestions for ongoing support, link to https://meedi8.vercel.app/therapy (2-3 paragraphs)
+7. **Final Agreement**: Full text of mediation agreement
+
+**Cost Analysis**:
+- Claude API call: ~$0.03-0.05 per report (depends on transcript length)
+- Input tokens: ~10,000-15,000 (full transcript + prompt)
+- Output tokens: ~2,000-3,000 (comprehensive report)
+- S3 storage: Negligible (~$0.01/GB/month)
+- Total per report: ~$0.03-0.05
+
+**Implementation Files**:
+- `backend/app/services/report_generator.py` - Complete report generation service (353 lines)
+  - `generate_report_content_with_claude()`: Claude API integration
+  - `create_pdf_report()`: ReportLab PDF formatting
+  - Uses PNG logo from `public/meedi8-logo.png`
+- `backend/app/routes/rooms.py:2638-2779` - API endpoint
+  - Authorization check (only participants)
+  - Phase validation (only resolved rooms)
+  - Caching logic (returns existing report if present)
+- `backend/app/models/room.py:57-58` - Database field: `professional_report_url`
+- `backend/app/services/s3_service.py:136-180` - S3 upload function
+- `backend/migrations/versions/20251112_add_professional_report_url.py` - Migration
+- `frontend/src/pages/ResolutionComplete.jsx:14-15, 55-68, 180-248` - UI components
+  - State management: `generatingReport`, `reportUrl`
+  - Button states: Generate → Generating... → Download
+- `backend/requirements.txt:18-19` - Dependencies: `reportlab>=4.0.0`, `Pillow>=9.0.0`
+
+**Frontend Button States**:
+```javascript
+// State 1: Report not generated yet
+<button onClick={generateReport}>
+  📄 Generate Report
+</button>
+
+// State 2: API call in progress
+<button disabled>
+  ⏳ Generating...
+</button>
+
+// State 3: Report ready
+<a href={reportUrl} target="_blank">
+  📥 Download Report (PDF)
+</a>
+```
+
+**Backend Response Format**:
+```json
+{
+  "success": true,
+  "report_url": "https://bucket.s3.region.amazonaws.com/reports/123/professional-report-20251112_143022.pdf",
+  "message": "Report generated successfully",
+  "cost_usd": 0.0342,
+  "input_tokens": 12456,
+  "output_tokens": 2341
+}
+```
+
+**Logo Handling**:
+- Logo file: `public/meedi8-logo.png` (PNG format)
+- Dimensions: 300x100 pixels (approximate)
+- Positioned at top center of PDF
+- Alternative text-only fallback if logo missing
+
+**Error Handling**:
+- Missing transcript: Returns 400 error
+- Unauthorized user: Returns 403 error
+- Wrong phase: Returns 400 "Report can only be generated for resolved rooms"
+- Claude API failure: Returns 500 with error message
+- S3 upload failure: Returns 500 with error message
+- Frontend shows alert: "Failed to generate report. Please try again."
+
+**Production Notes**:
+- ReportLab library compatible with Railway deployment
+- PNG logo preferred over SVG (no pycairo dependency issues)
+- Reports cached in database to avoid regeneration costs
+- S3 ContentDisposition set to 'inline' for browser viewing
+
+### Homepage Image Assets
+
+**Purpose**: Display branded Meedi8 illustrations on homepage instead of placeholder SVG data.
+
+**The Fix** (2025-11-12):
+Homepage was showing inline SVG placeholders instead of actual Meedi8 branded illustrations. Three images needed to be replaced with correct asset paths.
+
+**Files Changed**:
+- `frontend/src/pages/Home.jsx:188-192` - Hero image (Meedi standing)
+- `frontend/src/pages/Home.jsx:213-217` - Mediation card image (family)
+- `frontend/src/pages/Home.jsx:253-257` - Solo session card image (Meedi sitting with bubble)
+
+**Before** (inline SVG data URIs):
+```javascript
+src="data:image/svg+xml,%3Csvg width='300' height='300'..."
+```
+
+**After** (proper asset paths):
+```javascript
+// Hero section
+src="/assets/illustrations/meedi standing.svg"
+alt="Meedi - Your AI Mediator"
+
+// Mediation card
+src="/assets/illustrations/family.svg"
+alt="Two People in Mediation"
+
+// Solo session card
+src="/assets/illustrations/Meedi_sit_bubble.svg"
+alt="Talk to Meedi Solo"
+```
+
+**Asset Locations**:
+All illustrations stored in `frontend/public/assets/illustrations/`:
+- `meedi standing.svg` - Main hero character
+- `family.svg` - Two people for mediation card
+- `Meedi_sit_bubble.svg` - Meedi with speech bubble for solo mode
+
+**Visual Consistency**:
+- Illustrations use brand colors (teal #7DD3C0, purple #D3C1FF)
+- Maintain consistent character design across all pages
+- SVG format for crisp scaling at any resolution
+
+**Debugging Homepage Image Issues**:
+1. Check browser console for 404 errors on image paths
+2. Verify files exist in `frontend/public/assets/illustrations/`
+3. Check asset paths don't include `/public/` prefix (Vite handles this automatically)
+4. Ensure SVG files are valid (not corrupted)
+5. Use browser dev tools to inspect actual `src` attribute values
+
 ## Testing & Debugging
 
 ### Local Development Setup
@@ -647,6 +803,7 @@ cost_usd = (input_tokens * INPUT_COST) + (output_tokens * OUTPUT_COST)
 - Check `current_speaker_id` matches requesting user
 - Mediator assigns next speaker after each message
 - Frontend polls for message updates every 3 seconds
+- **CRITICAL**: Verify users have DISTINCT names - duplicate names (e.g., "Adam"/"Adam") will confuse the AI's ability to address the correct person. Test with clearly different names (e.g., "Dave"/"Sarah") to rule out name confusion before debugging code.
 
 **Break not syncing between users**:
 - Verify polling is working (check Network tab for `/main-room/messages` calls every 3s)
@@ -710,22 +867,42 @@ cost_usd = (input_tokens * INPUT_COST) + (output_tokens * OUTPUT_COST)
 - `backend/migrations/versions/` - Alembic migration files
 - `backend/alembic.ini` - Alembic configuration
 
-## Rollback Reference Point
+## Rollback Reference Points
 
-### Stable Production State: Commit `246b6c4` (2025-11-12)
+### Latest Stable State: Commit `c5cfd7b` (2025-11-12)
 
 **Git Rollback Command**:
 ```bash
-git revert HEAD~5..HEAD  # Revert last 5 commits if needed
+git revert HEAD~2..HEAD  # Revert to previous stable if needed
 # Or specific rollback:
-git checkout 246b6c4     # Check out stable commit
-git checkout -b rollback-to-stable
-git push origin rollback-to-stable
+git checkout c5cfd7b     # Check out latest stable commit
+git checkout -b rollback-to-c5cfd7b
+git push origin rollback-to-c5cfd7b
 ```
 
 **Deployment URLs**:
 - Frontend: https://meedi8.vercel.app (Vercel auto-deploys from `main`)
 - Backend: https://meedi8-production.up.railway.app (Railway auto-deploys from `main`)
+
+**What's Working at This State**:
+✅ User authentication (Google, Facebook, Telegram OAuth)
+✅ Screening flow with bypass for returning users
+✅ Individual coaching (pre-mediation) for both users
+✅ Main room mediation with strict turn-by-turn
+✅ Harsh language intervention (direct confrontation pattern)
+✅ File attachments (images + documents) with AI analysis
+✅ Voice messages with Whisper transcription
+✅ Break/pause feature synchronized between users
+✅ Resolution tracking and agreements
+✅ Professional PDF report generation (Claude API + ReportLab)
+✅ Homepage branded illustrations (correct asset paths)
+✅ PostgreSQL compatibility (Railway) + SQLite (local dev)
+
+**Recent Commits Included** (2025-11-12):
+1. `ee70883` - Enforce strict turn-by-turn with direct harsh language intervention
+2. `c5cfd7b` - Add professional PDF report generation and fix homepage images
+
+### Previous Stable State: Commit `246b6c4` (2025-11-12)
 
 **What's Working at This State**:
 ✅ User authentication (Google, Facebook, Telegram OAuth)
