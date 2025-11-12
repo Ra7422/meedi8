@@ -182,8 +182,8 @@ export default function Home() {
       gap: '12px',
     },
     quickLinkIcon: {
-      width: '40px',
-      height: '40px',
+      width: '60px',
+      height: '60px',
       objectFit: 'contain',
       flexShrink: 0,
     },
@@ -331,7 +331,6 @@ export default function Home() {
               <img src={profileIcon} alt="" style={styles.quickLinkIcon} />
               My Profile
             </div>
-            <div style={styles.quickLinkDesc}>View sessions & settings</div>
           </div>
 
           <div
@@ -350,7 +349,6 @@ export default function Home() {
               <img src={pricingIcon} alt="" style={styles.quickLinkIcon} />
               Pricing
             </div>
-            <div style={styles.quickLinkDesc}>Upgrade your plan</div>
           </div>
 
           <div
@@ -369,7 +367,6 @@ export default function Home() {
               <img src={howIcon} alt="" style={styles.quickLinkIcon} />
               How It Works
             </div>
-            <div style={styles.quickLinkDesc}>Learn about Meedi</div>
           </div>
 
           <div
@@ -388,7 +385,6 @@ export default function Home() {
               <img src={faqIcon} alt="" style={styles.quickLinkIcon} />
               FAQ
             </div>
-            <div style={styles.quickLinkDesc}>Common questions</div>
           </div>
         </div>
 
