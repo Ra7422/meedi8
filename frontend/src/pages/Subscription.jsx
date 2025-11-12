@@ -304,7 +304,7 @@ export default function Subscription() {
               fontFamily: "'Nunito', sans-serif",
               fontSize: "16px"
             }}>
-              Current Plan
+              Start for FREE!
             </div>
           )}
         </div>
@@ -525,24 +525,32 @@ export default function Subscription() {
         </div>
       </div>
 
-        {/* Back Button */}
+        {/* Get Started Button */}
         <div style={{ marginTop: "40px", textAlign: "center" }}>
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => {
+              if (!token) {
+                sessionStorage.setItem('postLoginRedirect', '/create');
+                navigate('/signup');
+              } else {
+                navigate('/create');
+              }
+            }}
             style={{
               padding: "14px 36px",
-              background: "#F3F4F6",
-              border: "2px solid #D3C1FF",
+              background: "#7DD3C0",
+              border: "none",
               borderRadius: "12px",
-              fontWeight: "600",
+              fontWeight: "700",
               fontFamily: "'Nunito', sans-serif",
               cursor: "pointer",
               fontSize: "16px",
-              color: "#6750A4",
-              transition: "all 0.2s"
+              color: "white",
+              transition: "all 0.2s",
+              boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
             }}
           >
-            ← Back to Profile
+            Get Started Now →
           </button>
         </div>
       </div>
