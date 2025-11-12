@@ -111,6 +111,7 @@ export default function Home() {
       flexDirection: 'column',
       alignItems: 'flex-start',
       textAlign: 'left',
+      justifyContent: 'space-between',
     },
     cardTitle: {
       fontSize: '28px',
@@ -228,13 +229,15 @@ export default function Home() {
               style={styles.cardImage}
             />
             <div style={styles.cardContent}>
-              <h2 style={{ ...styles.cardTitle, ...styles.cardTitleMediation }}>
-                Start a Mediation
-              </h2>
-              <p style={styles.cardDescription}>
-                Invite someone to resolve a conflict together with Meedi as your friendly, unbiased mediator.
-                Perfect for disputes, disagreements, or difficult conversations.
-              </p>
+              <div>
+                <h2 style={{ ...styles.cardTitle, ...styles.cardTitleMediation }}>
+                  Start a Mediation
+                </h2>
+                <p style={styles.cardDescription}>
+                  Invite someone to resolve a conflict together with Meedi as your friendly, unbiased mediator.
+                  Perfect for disputes, disagreements, or difficult conversations.
+                </p>
+              </div>
               <button
                 style={{ ...styles.cardButton, ...styles.buttonMediation }}
                 onMouseEnter={(e) => {
@@ -270,13 +273,15 @@ export default function Home() {
               style={styles.cardImage}
             />
             <div style={styles.cardContent}>
-              <h2 style={{ ...styles.cardTitle, ...styles.cardTitleSolo }}>
-                Talk to Meedi Solo
-              </h2>
-              <p style={styles.cardDescription}>
-                Process your thoughts and feelings individually. Get clarity on your perspective
-                before addressing the situation with others.
-              </p>
+              <div>
+                <h2 style={{ ...styles.cardTitle, ...styles.cardTitleSolo }}>
+                  Talk to Meedi Solo
+                </h2>
+                <p style={styles.cardDescription}>
+                  Process your thoughts and feelings individually. Get clarity on your perspective
+                  before addressing the situation with others.
+                </p>
+              </div>
               <button
                 style={{ ...styles.cardButton, ...styles.buttonSolo }}
                 onMouseEnter={(e) => {
