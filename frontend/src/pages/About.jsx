@@ -4,6 +4,7 @@ import confirmImg from '../assets/icons/Confirm.png';
 import inviteImg from '../assets/icons/Invite.png';
 import chatImg from '../assets/icons/Chat.png';
 import resolveImg from '../assets/icons/Resolve.png';
+import meediHead from '../assets/icons/Meedi_head.svg';
 
 /**
  * About / Our Story Page
@@ -64,7 +65,7 @@ export default function About() {
     },
     {
       title: "AI as a Tool, Not a Decision-Maker",
-      description: "Meedi helps facilitate conversations, but you control the outcomes. Meedi never makes decisions for you—it simply helps create clarity and understanding."
+      description: "Meedi helps facilitate conversations, but you control the outcomes. Meedi never makes decisions for you. It simply helps create clarity and understanding."
     },
     {
       title: "Privacy First",
@@ -77,13 +78,17 @@ export default function About() {
       {/* Top ellipse for depth */}
       <div style={styles.topEllipse} />
 
+      {/* Meedi head peering from right */}
+      <img src={meediHead} alt="" style={styles.meediHead} />
+
       {/* Main content */}
       <div style={styles.content}>
         {/* How It Works Section */}
         <section style={styles.section}>
           <h2 style={styles.howItWorksHeading}>How It Works</h2>
-          <div style={styles.stepsGrid}>
-            {howItWorksSteps.slice(0, 3).map((step, index) => (
+          {/* First Row - 2 Cards */}
+          <div style={styles.stepsGridRow}>
+            {howItWorksSteps.slice(0, 2).map((step, index) => (
               <div key={index} style={styles.stepCard}>
                 <img src={step.image} alt={step.title} style={styles.stepImage} />
                 <div style={styles.stepContent}>
@@ -93,9 +98,22 @@ export default function About() {
               </div>
             ))}
           </div>
-          <div style={styles.stepsGridBottom}>
-            {howItWorksSteps.slice(3).map((step, index) => (
-              <div key={index + 3} style={styles.stepCard}>
+          {/* Second Row - 2 Cards */}
+          <div style={styles.stepsGridRow}>
+            {howItWorksSteps.slice(2, 4).map((step, index) => (
+              <div key={index + 2} style={styles.stepCard}>
+                <img src={step.image} alt={step.title} style={styles.stepImage} />
+                <div style={styles.stepContent}>
+                  <h3 style={styles.stepTitle}>{step.title}</h3>
+                  <p style={styles.stepDescription}>{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Third Row - 1 Card Centered */}
+          <div style={styles.stepsGridSingle}>
+            {howItWorksSteps.slice(4).map((step, index) => (
+              <div key={index + 4} style={styles.stepCard}>
                 <img src={step.image} alt={step.title} style={styles.stepImage} />
                 <div style={styles.stepContent}>
                   <h3 style={styles.stepTitle}>{step.title}</h3>
@@ -112,14 +130,14 @@ export default function About() {
           <p style={styles.bodyText}>
             Meedi8 was born from a simple observation: most conflicts escalate not because people are
             fundamentally incompatible, but because they struggle to communicate effectively. Arguments
-            spiral into interruptions, raised voices, and hurt feelings—leaving both parties feeling
+            spiral into interruptions, raised voices, and hurt feelings, leaving both parties feeling
             unheard and frustrated.
           </p>
           <p style={styles.bodyText}>
             We created Meedi8 to change that. By providing a structured, moderated space where each
             person gets equal time to speak and be truly heard, we help transform conflict into understanding.
             Meedi, our friendly mediator, ensures conversations stay productive, fair, and
-            respectful—giving conflicts the clarity they need to resolve naturally.
+            respectful, giving conflicts the clarity they need to resolve naturally.
           </p>
         </section>
 
@@ -148,6 +166,62 @@ export default function About() {
                 <p style={styles.principleDescription}>{principle.description}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Core Modality Blend Section */}
+        <section style={styles.modalitySection}>
+          <h2 style={styles.sectionHeading}>Meedi8's Core Modality Blend</h2>
+          <p style={styles.bodyText}>
+            Our AI mediator integrates proven therapeutic and mediation frameworks to guide you through every stage of conflict resolution.
+          </p>
+          <div style={styles.tableContainer}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Category</th>
+                  <th style={styles.tableHeader}>Modality</th>
+                  <th style={styles.tableHeader}>Function in Platform</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={styles.tableRow}>
+                  <td style={styles.tableCell}>Communication Framing</td>
+                  <td style={styles.tableCell}>Nonviolent Communication (NVC)</td>
+                  <td style={styles.tableCell}>Builds empathy based summaries and standardized conflict inputs</td>
+                </tr>
+                <tr style={styles.tableRowAlt}>
+                  <td style={styles.tableCell}>Emotional Exploration</td>
+                  <td style={styles.tableCell}>Emotionally Focused Therapy (EFT)</td>
+                  <td style={styles.tableCell}>Enhances relational empathy and connection</td>
+                </tr>
+                <tr style={styles.tableRow}>
+                  <td style={styles.tableCell}>Cognitive Insight</td>
+                  <td style={styles.tableCell}>Cognitive Behavioural Techniques (CBT)</td>
+                  <td style={styles.tableCell}>Identifies and reframes negative assumptions</td>
+                </tr>
+                <tr style={styles.tableRowAlt}>
+                  <td style={styles.tableCell}>Motivation & Reflection</td>
+                  <td style={styles.tableCell}>Motivational Interviewing (MI)</td>
+                  <td style={styles.tableCell}>Elicits internal motivation and ownership of change</td>
+                </tr>
+                <tr style={styles.tableRow}>
+                  <td style={styles.tableCell}>Negotiation & Structure</td>
+                  <td style={styles.tableCell}>Harvard Mediation Model</td>
+                  <td style={styles.tableCell}>Guides toward shared interest based solutions</td>
+                </tr>
+                <tr style={styles.tableRowAlt}>
+                  <td style={styles.tableCell}>Goal Creation</td>
+                  <td style={styles.tableCell}>Solution Focused Brief Therapy (SFBT)</td>
+                  <td style={styles.tableCell}>Converts insight into clear behavioural agreements</td>
+                </tr>
+                <tr style={styles.tableRow}>
+                  <td style={styles.tableCell}>Tone & Relational Safety</td>
+                  <td style={styles.tableCell}>Coaching & Person Centred Therapy</td>
+                  <td style={styles.tableCell}>Maintains encouragement, neutrality, and trust</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -190,6 +264,16 @@ const styles = {
     borderRadius: '50%',
     background: 'radial-gradient(ellipse at center, rgba(76, 211, 194, 0.08) 0%, transparent 70%)',
     zIndex: 0,
+  },
+  meediHead: {
+    position: 'absolute',
+    right: '-80px',
+    top: '1400px',
+    width: '400px',
+    height: 'auto',
+    opacity: 0.4,
+    zIndex: 0,
+    pointerEvents: 'none',
   },
   bottomEllipse: {
     position: 'absolute',
@@ -308,20 +392,28 @@ const styles = {
     color: '#7DD3C0',
     lineHeight: '1.2',
     margin: '0 0 48px 0',
-    textAlign: 'center',
+    textAlign: 'left',
   },
-  stepsGrid: {
+  stepsGridRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '32px',
-    marginBottom: '32px',
+    gridTemplateColumns: '1fr',
+    gap: '24px',
+    marginBottom: '24px',
+    '@media (min-width: 768px)': {
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '32px',
+      marginBottom: '32px',
+    },
   },
-  stepsGridBottom: {
+  stepsGridSingle: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '32px',
-    maxWidth: '800px',
+    gridTemplateColumns: '1fr',
+    gap: '24px',
     margin: '0 auto',
+    '@media (min-width: 768px)': {
+      maxWidth: 'calc(50% - 16px)',
+      gap: '32px',
+    },
   },
   stepCard: {
     display: 'flex',
@@ -356,5 +448,58 @@ const styles = {
     color: '#6B7280',
     lineHeight: '1.6',
     margin: 0,
+  },
+  modalitySection: {
+    width: '100%',
+    marginBottom: '64px',
+  },
+  tableContainer: {
+    overflowX: 'auto',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    padding: '16px',
+    WebkitOverflowScrolling: 'touch',
+    '@media (min-width: 768px)': {
+      padding: '24px',
+    },
+  },
+  table: {
+    width: '100%',
+    minWidth: '600px',
+    borderCollapse: 'collapse',
+    fontSize: '13px',
+    '@media (min-width: 768px)': {
+      fontSize: '15px',
+      minWidth: 'auto',
+    },
+  },
+  tableHeader: {
+    backgroundColor: '#7DD3C0',
+    color: 'white',
+    padding: '12px 8px',
+    textAlign: 'left',
+    fontWeight: '700',
+    fontSize: '14px',
+    borderBottom: '2px solid #6BC5B8',
+    '@media (min-width: 768px)': {
+      padding: '16px 12px',
+      fontSize: '16px',
+    },
+  },
+  tableRow: {
+    backgroundColor: 'white',
+  },
+  tableRowAlt: {
+    backgroundColor: '#F9FAFB',
+  },
+  tableCell: {
+    padding: '10px 8px',
+    borderBottom: '1px solid #E5E7EB',
+    color: '#4B5563',
+    lineHeight: '1.5',
+    '@media (min-width: 768px)': {
+      padding: '14px 12px',
+    },
   },
 };

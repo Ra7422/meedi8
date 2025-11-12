@@ -118,6 +118,7 @@ function Header() {
       top: '50px',
       right: '0',
       background: '#6750A4',
+      border: '2px solid #FFFFFF',
       borderRadius: '12px',
       padding: '24px 32px',
       minWidth: '400px',

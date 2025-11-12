@@ -278,7 +278,8 @@ const styles = {
   },
   menuButton: {
     background: 'none',
-    border: 'none',
+    border: '1px solid #FFFFFF',
+    borderRadius: '6px',
     cursor: 'pointer',
     padding: '10px',
   },

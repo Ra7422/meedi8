@@ -108,6 +108,7 @@ const styles = {
     top: '80px',
     right: '30px',
     background: 'rgba(255, 255, 255, 0.95)',
+    border: '2px solid #7DD3C0',
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
     padding: '10px 0',
