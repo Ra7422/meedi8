@@ -168,7 +168,7 @@ const styles = {
   },
   heading: {
     fontSize: 'clamp(48px, 10vw, 72px)',
-    fontWeight: '700',
+    fontWeight: '300',
     color: '#7DD3C0',
     lineHeight: '1.2',
     margin: '0 0 48px 0',
