@@ -1,4 +1,9 @@
 import React from 'react';
+import describeImg from '../assets/icons/Describe.png';
+import confirmImg from '../assets/icons/Confirm.png';
+import inviteImg from '../assets/icons/Invite.png';
+import chatImg from '../assets/icons/Chat.png';
+import resolveImg from '../assets/icons/Resolve.png';
 
 /**
  * About / Our Story Page
@@ -15,6 +20,39 @@ import React from 'react';
  *   - Privacy First
  */
 export default function About() {
+  const howItWorksSteps = [
+    {
+      number: "1",
+      image: describeImg,
+      title: "Describe the Issue",
+      description: "Start by sharing your perspective in a private space. Take your time to articulate what happened, how it made you feel, and what matters most to you. Meedi listens carefully without judgment, creating a safe environment for honest expression."
+    },
+    {
+      number: "2",
+      image: confirmImg,
+      title: "Confirm Understanding",
+      description: "Meedi reflects back what you've shared to ensure nothing is lost in translation. This moment of confirmation helps clarify your thoughts and ensures your voice will be accurately represented when it's time to connect with the other person."
+    },
+    {
+      number: "3",
+      image: inviteImg,
+      title: "Invite the Other Person",
+      description: "When you're ready, send a simple invitation link. The other person receives the same thoughtful onboarding experience, sharing their perspective privately with Meedi. Both sides get equal space to be heard before the conversation begins."
+    },
+    {
+      number: "4",
+      image: chatImg,
+      title: "Guided Three-Way Conversation",
+      description: "Now the real magic happens. Meedi brings you together in a structured dialogue where each person takes turns speaking and listening. The AI mediator keeps the conversation balanced, prevents interruptions, and gently redirects if tensions rise. You'll find yourself actually hearing each other, perhaps for the first time."
+    },
+    {
+      number: "5",
+      image: resolveImg,
+      title: "Reach Resolution Together",
+      description: "Through patient turn taking and guided reflection, the path forward becomes clear. Meedi helps you identify common ground, explore creative solutions, and craft agreements that work for everyone. The conversation continues until you both feel heard and ready to move forward."
+    }
+  ];
+
   const ethicalPrinciples = [
     {
       title: "No Judgment",
@@ -41,6 +79,33 @@ export default function About() {
 
       {/* Main content */}
       <div style={styles.content}>
+        {/* How It Works Section */}
+        <section style={styles.section}>
+          <h2 style={styles.howItWorksHeading}>How It Works</h2>
+          <div style={styles.stepsGrid}>
+            {howItWorksSteps.slice(0, 3).map((step, index) => (
+              <div key={index} style={styles.stepCard}>
+                <img src={step.image} alt={step.title} style={styles.stepImage} />
+                <div style={styles.stepContent}>
+                  <h3 style={styles.stepTitle}>{step.title}</h3>
+                  <p style={styles.stepDescription}>{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={styles.stepsGridBottom}>
+            {howItWorksSteps.slice(3).map((step, index) => (
+              <div key={index + 3} style={styles.stepCard}>
+                <img src={step.image} alt={step.title} style={styles.stepImage} />
+                <div style={styles.stepContent}>
+                  <h3 style={styles.stepTitle}>{step.title}</h3>
+                  <p style={styles.stepDescription}>{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Our Story Section */}
         <section style={styles.section}>
           <h1 style={styles.mainHeading}>Our Story</h1>
@@ -236,5 +301,60 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     fontFamily: "'Nunito', sans-serif",
+  },
+  howItWorksHeading: {
+    fontSize: 'clamp(40px, 8vw, 64px)',
+    fontWeight: '700',
+    color: '#7DD3C0',
+    lineHeight: '1.2',
+    margin: '0 0 48px 0',
+    textAlign: 'center',
+  },
+  stepsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '32px',
+    marginBottom: '32px',
+  },
+  stepsGridBottom: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '32px',
+    maxWidth: '800px',
+    margin: '0 auto',
+  },
+  stepCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: '32px 24px',
+    borderRadius: '16px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+  },
+  stepImage: {
+    width: '200px',
+    height: '200px',
+    objectFit: 'contain',
+    marginBottom: '24px',
+  },
+  stepContent: {
+    textAlign: 'center',
+    width: '100%',
+  },
+  stepTitle: {
+    fontSize: 'clamp(20px, 4vw, 26px)',
+    fontWeight: '700',
+    color: '#6750A4',
+    lineHeight: '1.3',
+    margin: '0 0 16px 0',
+  },
+  stepDescription: {
+    fontSize: 'clamp(14px, 3vw, 16px)',
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: '1.6',
+    margin: 0,
   },
 };
