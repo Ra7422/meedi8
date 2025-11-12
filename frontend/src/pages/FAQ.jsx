@@ -286,7 +286,8 @@ export default function FAQ() {
                     key={questionIndex}
                     style={{
                       ...styles.faqItem,
-                      backgroundColor: isOpen ? '#FFFFFF' : section.color,
+                      backgroundColor: isOpen ? section.color : '#FFFFFF',
+                      border: `1px solid ${section.color}`,
                     }}
                   >
                     <button
@@ -296,7 +297,7 @@ export default function FAQ() {
                     >
                       <h3 style={{
                         ...styles.question,
-                        color: isOpen ? section.color : '#FFFFFF',
+                        color: isOpen ? '#FFFFFF' : section.color,
                       }}>{faq.question}</h3>
                       <svg
                         width="24"
@@ -310,7 +311,7 @@ export default function FAQ() {
                       >
                         <path
                           d="M6 9L12 15L18 9"
-                          stroke={isOpen ? section.color : '#FFFFFF'}
+                          stroke={isOpen ? '#FFFFFF' : section.color}
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -319,7 +320,7 @@ export default function FAQ() {
                     </button>
 
                     {isOpen && (
-                      <p style={styles.answer}>{faq.answer}</p>
+                      <p style={{...styles.answer, color: '#FFFFFF'}}>{faq.answer}</p>
                     )}
                   </div>
                 );
