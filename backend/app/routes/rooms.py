@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, cast, String
 import io
 
 from app.db import get_db
@@ -999,11 +999,11 @@ def start_main_room_session(
             Turn.room_id == room_id,
             Turn.context == "main",
             Turn.kind == "ai_question",
-            Turn.tags.contains(["main_room_start"])  # Only check for opening message
+            cast(Turn.tags, String).like('%main_room_start%')  # PostgreSQL-compatible JSON query
         ).order_by(Turn.created_at.asc()).all()
     except Exception as e:
         import traceback
-        error_detail = f"Failed to query existing turns (tags.contains may require migration): {str(e)}\n{traceback.format_exc()}"
+        error_detail = f"Failed to query existing turns: {str(e)}\n{traceback.format_exc()}"
         print(error_detail)
         raise HTTPException(status_code=500, detail=error_detail)
 
