@@ -4,6 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import heroIllustration from '../assets/illustrations/hero-illustration.png';
 import mediationDuo from '../assets/illustrations/mediation-duo.png';
 import soloConversation from '../assets/illustrations/solo-conversation.png';
+import profileIcon from '../assets/icons/Profile_image.png';
+import pricingIcon from '../assets/icons/Pricing_icon.png';
+import howIcon from '../assets/icons/How_icon.png';
+import faqIcon from '../assets/icons/FAQ_icon.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -172,6 +176,15 @@ export default function Home() {
       fontWeight: '700',
       color: '#6750A4',
       marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+    },
+    quickLinkIcon: {
+      width: '24px',
+      height: '24px',
+      objectFit: 'contain',
     },
     quickLinkDesc: {
       fontSize: '14px',
@@ -313,7 +326,10 @@ export default function Home() {
               e.currentTarget.style.backgroundColor = '#F5EFFF';
             }}
           >
-            <div style={styles.quickLinkTitle}>👤 My Profile</div>
+            <div style={styles.quickLinkTitle}>
+              <img src={profileIcon} alt="" style={styles.quickLinkIcon} />
+              My Profile
+            </div>
             <div style={styles.quickLinkDesc}>View sessions & settings</div>
           </div>
 
@@ -329,7 +345,10 @@ export default function Home() {
               e.currentTarget.style.backgroundColor = '#F5EFFF';
             }}
           >
-            <div style={styles.quickLinkTitle}>💎 Pricing</div>
+            <div style={styles.quickLinkTitle}>
+              <img src={pricingIcon} alt="" style={styles.quickLinkIcon} />
+              Pricing
+            </div>
             <div style={styles.quickLinkDesc}>Upgrade your plan</div>
           </div>
 
@@ -345,7 +364,10 @@ export default function Home() {
               e.currentTarget.style.backgroundColor = '#F5EFFF';
             }}
           >
-            <div style={styles.quickLinkTitle}>ℹ️ How It Works</div>
+            <div style={styles.quickLinkTitle}>
+              <img src={howIcon} alt="" style={styles.quickLinkIcon} />
+              How It Works
+            </div>
             <div style={styles.quickLinkDesc}>Learn about Meedi</div>
           </div>
 
@@ -361,7 +383,10 @@ export default function Home() {
               e.currentTarget.style.backgroundColor = '#F5EFFF';
             }}
           >
-            <div style={styles.quickLinkTitle}>❓ FAQ</div>
+            <div style={styles.quickLinkTitle}>
+              <img src={faqIcon} alt="" style={styles.quickLinkIcon} />
+              FAQ
+            </div>
             <div style={styles.quickLinkDesc}>Common questions</div>
           </div>
         </div>
