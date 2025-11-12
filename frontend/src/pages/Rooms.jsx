@@ -10,6 +10,12 @@ export default function Rooms() {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
+    // If no token, redirect to login immediately
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     const fetchRooms = async () => {
       try {
         const response = await apiRequest("/rooms/", "GET", null, token);
@@ -20,7 +26,7 @@ export default function Rooms() {
       setLoading(false);
     };
     fetchRooms();
-  }, [token]);
+  }, [token, navigate]);
   
   const getPhaseDisplay = (phase) => {
     const phases = {

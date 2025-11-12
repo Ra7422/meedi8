@@ -34,11 +34,6 @@ export async function apiRequest(path, method = "GET", body, token) {
         console.error(`🚫 401 Unauthorized on ${path}:`, errorBody);
         console.error('Token being used:', token?.substring(0, 50) + '...');
 
-        // TEMPORARY: Don't redirect immediately for debugging Safari issue
-        if (typeof window !== 'undefined' && window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')) {
-          alert(`Safari Debug: 401 on ${path}. Check console for details. Token: ${token?.substring(0, 20)}...`);
-        }
-
         // Clear invalid token and redirect to login
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
