@@ -178,13 +178,14 @@ export default function Home() {
       marginBottom: '8px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
+      justifyContent: 'flex-start',
+      gap: '12px',
     },
     quickLinkIcon: {
-      width: '24px',
-      height: '24px',
+      width: '40px',
+      height: '40px',
       objectFit: 'contain',
+      flexShrink: 0,
     },
     quickLinkDesc: {
       fontSize: '14px',
