@@ -29,6 +29,12 @@ export default function Subscription() {
   }, []);
 
   const loadSubscription = async () => {
+    // Only load subscription if user is authenticated
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await apiRequest("/subscriptions/status", "GET", null, token);
       setSubscription(data);
@@ -39,6 +45,13 @@ export default function Subscription() {
   };
 
   const handleUpgrade = async (tier, interval) => {
+    // If not authenticated, redirect to signup
+    if (!token) {
+      sessionStorage.setItem('postLoginRedirect', '/subscription');
+      navigate('/signup');
+      return;
+    }
+
     setProcessing(true);
     try {
       const response = await apiRequest(

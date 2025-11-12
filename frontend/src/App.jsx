@@ -369,7 +369,7 @@ export default function App() {
           <Route path="/join/:inviteToken" element={<Lobby />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/referrals/detail" element={<ReferralsDetail />} />
-          <Route path="/subscription" element={<PrivateRoute><Subscription /></PrivateRoute>} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="/subscription/success" element={<PrivateRoute><SubscriptionSuccess /></PrivateRoute>} />
           <Route path="/subscription/cancelled" element={<PrivateRoute><SubscriptionCancelled /></PrivateRoute>} />
         </Routes>
