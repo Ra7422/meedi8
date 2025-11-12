@@ -41,15 +41,19 @@ STYLE:
 - Acknowledge progress ("I'm seeing movement here")
 - Make suggestions when stuck ("What if you tried...")
 
-WHEN THINGS GET HEATED:
-Only trigger breathing breaks for REAL escalation patterns:
+WHEN HARSH LANGUAGE APPEARS:
+Detect harsh/blaming language like "lazy", "selfish", "never", "always", "doesn't care":
+- **PAUSE and NAME IT** directly to the speaker: "{Name}, I need to pause here. Calling someone 'lazy' shifts us away from solving this together."
+- Then REFRAME what you heard: "What you're both describing sounds like a cycle where good intentions get lost."
+- Then SWITCH to the other person to hear their reaction: "When you hear yourself being called lazy, how does that land?"
+- Later, circle back to original speaker with context: "You heard them say it hurts. What do they need from you?"
+
+BREATHING BREAKS - Only for REAL escalation:
 - Profanity or cursing (f***, sh**, damn, etc.)
 - Contempt (mockery, sarcasm, eye-rolling language)
 - Yelling indicators (ALL CAPS, multiple exclamation marks!!!)
 - Severe personal attacks ("you're manipulative/abusive/horrible")
 - Bringing up unrelated past hurts to attack character
-
-For mild conflict (frustrated tone, words like "lazy", single complaints) → continue mediating normally
 
 When you detect real escalation:
 → BREATHING_BREAK: [Brief acknowledgment of intensity]. Let's pause and breathe before continuing.
@@ -173,45 +177,30 @@ def process_main_room_response(
     elif breathing_break_count > 0:
         breathing_status = f"\n\nNote: This session has had {breathing_break_count} breathing break(s) so far."
 
-    mode_instruction = f"""After {user_name} spoke, you need to decide who speaks next.{breathing_status}
+    mode_instruction = f"""After {user_name} spoke, now {other_user_name} will respond next.{breathing_status}
 
-DECISION POINT - Choose ONE approach:
+**STRICT TURN-BY-TURN**: Always switch speakers. Ask {other_user_name} a question.
 
-**OPTION A - SWITCH to {other_user_name}** (Most common - use this 80% of the time)
-- When you want to hear {other_user_name}'s reaction to what {user_name} just said
-- When it's important to maintain balanced conversation flow
-- When you've already asked {user_name} 1-2 questions in a row
-Format: NEXT_SPEAKER: OTHER
-Then ask {other_user_name} a question (under 40 words)
-
-**OPTION B - STAY with {user_name}** (Only when truly needed for clarity)
-- When {user_name} said something vague/incomplete that needs immediate clarification
-- When you need to understand {user_name}'s deeper feelings before moving on
-- When {user_name} hinted at something important but didn't fully express it
-- LIMIT: Maximum 2 follow-up questions to same person before switching
-Format: NEXT_SPEAKER: SAME
-Then ask {user_name} a clarifying question (under 40 words)
+Your options:
+1. Ask {other_user_name} to respond to what {user_name} just said
+2. If {user_name} used harsh language ("lazy", "selfish", "never", "always"):
+   - PAUSE and NAME IT to {user_name}: "I need to pause here. Calling someone 'lazy' shifts us away from solving this together."
+   - REFRAME: "What you're both describing sounds like a cycle where good intentions get lost."
+   - Then ask {other_user_name}: "When you hear yourself being called lazy, how does that land?"
+3. Reflect what you heard and ask {other_user_name} their thoughts
+4. Ask {other_user_name} about common ground or shared needs
+5. Ask {other_user_name} about potential solutions
 
 **SPECIAL RESPONSES:**
-- Breathing break needed: BREATHING_BREAK: [message]
+- Real escalation (profanity, attacks): BREATHING_BREAK: [message]
 - Agreement reached: RESOLUTION: [summary]
-- Too many breaks/can't proceed: HALT: [reason]
+- Too many breaks: HALT: [reason]
 
-**EXAMPLE RESPONSES:**
-
-Example 1 (switching - most common):
-```
-NEXT_SPEAKER: OTHER
-{other_user_name}, when you hear {user_name} say they feel unappreciated - what's your reaction to that?
-```
-
-Example 2 (staying for clarity - rare):
-```
-NEXT_SPEAKER: SAME
-{user_name}, when you say "it bothers me" - can you say more about what specifically bothers you?
-```
-
-**CRITICAL:** Start your response with "NEXT_SPEAKER: SAME" or "NEXT_SPEAKER: OTHER" so the system knows who speaks next."""
+**IMPORTANT**:
+- Keep under 40 words
+- Direct your message to {other_user_name}
+- Use conversational language, not therapy-speak
+- If harsh language was used, NAME IT directly before moving to next person"""
 
     # Add instruction for AI
     messages.append({
@@ -231,16 +220,8 @@ NEXT_SPEAKER: SAME
         
         ai_message = response.content[0].text
 
-        # Parse NEXT_SPEAKER decision (NEW)
-        next_speaker = "OTHER"  # Default to switching
-        if "NEXT_SPEAKER: SAME" in ai_message:
-            next_speaker = "SAME"
-            # Remove the directive from the message shown to users
-            ai_message = ai_message.replace("NEXT_SPEAKER: SAME", "").strip()
-        elif "NEXT_SPEAKER: OTHER" in ai_message:
-            next_speaker = "OTHER"
-            # Remove the directive from the message shown to users
-            ai_message = ai_message.replace("NEXT_SPEAKER: OTHER", "").strip()
+        # Always switch to other person (strict turn-by-turn)
+        next_speaker = "OTHER"
 
         # Check for breathing break suggestion
         if "BREATHING_BREAK:" in ai_message:
