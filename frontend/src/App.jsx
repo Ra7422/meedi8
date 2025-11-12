@@ -282,7 +282,7 @@ function Header() {
               onClick={() => setMenuOpen(false)}
               onMouseEnter={() => setHoveredItem('subscription')}
               onMouseLeave={() => setHoveredItem(null)}
-            >Subscription</Link>
+            >Pricing</Link>
             <Link
               to="/referrals"
               style={{...styles.menuItem, ...(hoveredItem === 'referrals' ? styles.menuItemHover : {})}}
