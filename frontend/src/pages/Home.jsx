@@ -1,6 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import heroIllustration from '../assets/illustrations/hero-illustration.png';
+import mediationDuo from '../assets/illustrations/mediation-duo.png';
+import soloConversation from '../assets/illustrations/solo-conversation.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -186,7 +189,7 @@ export default function Home() {
             Transform Conflict into <span style={styles.titleAccent}>Understanding</span>
           </h1>
           <img
-            src="/assets/illustrations/sitting_type.svg"
+            src={heroIllustration}
             alt="Meedi - Your AI Mediator"
             style={styles.heroImage}
           />
@@ -211,7 +214,7 @@ export default function Home() {
             }}
           >
             <img
-              src="/assets/illustrations/lifesavers-sitting.svg"
+              src={mediationDuo}
               alt="Two People in Mediation"
               style={styles.cardImage}
             />
@@ -251,7 +254,7 @@ export default function Home() {
             }}
           >
             <img
-              src="/assets/illustrations/stuck-at-home-sitting-on-floor.svg"
+              src={soloConversation}
               alt="Talk to Meedi Solo"
               style={styles.cardImage}
             />
