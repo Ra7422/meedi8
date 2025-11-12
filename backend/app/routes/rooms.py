@@ -2633,3 +2633,147 @@ def bulk_delete_rooms(
         "total_requested": len(room_ids),
         "errors": errors if errors else None
     }
+
+
+@router.post("/{room_id}/generate-report")
+def generate_professional_report(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a professional therapy-style PDF report for a resolved mediation room.
+    Returns the S3 URL of the generated PDF.
+    """
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check authorization
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant in this room")
+
+    # Only allow for resolved rooms
+    if room.phase != 'resolved':
+        raise HTTPException(status_code=400, detail="Report can only be generated for resolved rooms")
+
+    # Check if report already exists
+    if room.professional_report_url:
+        return {
+            "success": True,
+            "report_url": room.professional_report_url,
+            "message": "Report already exists"
+        }
+
+    try:
+        # Get participants (determine User1 and User2)
+        participants = room.participants
+        if len(participants) < 2:
+            raise HTTPException(status_code=400, detail="Room must have 2 participants")
+
+        # Determine User1 by finding who started coaching first
+        first_turn = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "pre_mediation"
+        ).order_by(Turn.created_at.asc()).first()
+
+        if not first_turn:
+            # Fallback to participant order
+            user1 = participants[0]
+            user2 = participants[1]
+        else:
+            user1_id = first_turn.user_id
+            user1 = next((p for p in participants if p.id == user1_id), participants[0])
+            user2 = next((p for p in participants if p.id != user1_id), participants[1])
+
+        user1_name = clean_user_name(user1)
+        user2_name = clean_user_name(user2)
+
+        # Get main room conversation transcript
+        main_turns = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "main"
+        ).order_by(Turn.created_at.asc()).all()
+
+        # Build transcript for Claude
+        transcript = []
+        for turn in main_turns:
+            if turn.kind == "ai_question":
+                transcript.append({
+                    "role": "assistant",
+                    "content": turn.summary,
+                    "userId": None,
+                    "isUser1": None
+                })
+            elif turn.kind == "resolution":
+                transcript.append({
+                    "role": "resolution",
+                    "content": turn.summary,
+                    "userId": None,
+                    "isUser1": None
+                })
+            else:
+                is_user1 = turn.user_id == user1.id
+                transcript.append({
+                    "role": "user",
+                    "content": turn.summary,
+                    "userId": turn.user_id,
+                    "isUser1": is_user1
+                })
+
+        # Import report generation services
+        from app.services.report_generator import generate_report_content_with_claude, create_pdf_report
+        from app.services.s3_service import upload_report_to_s3
+
+        # Generate report content using Claude
+        report_data = generate_report_content_with_claude(
+            room_title=room.title,
+            category=room.category or "general",
+            user1_name=user1_name,
+            user2_name=user2_name,
+            user1_summary=room.user1_summary or "",
+            user2_summary=room.user2_summary or "",
+            transcript=transcript,
+            resolution_text=room.resolution_text or ""
+        )
+
+        # Create PDF
+        pdf_bytes = create_pdf_report(
+            room_id=room.id,
+            room_title=room.title,
+            category=room.category or "general",
+            created_at=room.created_at,
+            user1_name="User 1",  # Anonymized in PDF
+            user2_name="User 2",  # Anonymized in PDF
+            report_content=report_data["report_content"],
+            resolution_text=room.resolution_text or ""
+        )
+
+        # Upload to S3
+        report_url = upload_report_to_s3(pdf_bytes, room.id)
+
+        # Save URL to database
+        room.professional_report_url = report_url
+        db.commit()
+
+        return {
+            "success": True,
+            "report_url": report_url,
+            "message": "Report generated successfully",
+            "cost_info": {
+                "input_tokens": report_data["input_tokens"],
+                "output_tokens": report_data["output_tokens"],
+                "cost_usd": report_data["cost_usd"],
+                "model": report_data["model"]
+            }
+        }
+
+    except Exception as e:
+        print(f"Error generating report: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate report: {str(e)}"
+        )

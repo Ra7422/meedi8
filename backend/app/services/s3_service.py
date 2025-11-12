@@ -133,6 +133,53 @@ def upload_audio_to_s3(audio_bytes: bytes, room_id: int, user_id: int, filename:
         raise Exception(error_message)
 
 
+def upload_report_to_s3(pdf_bytes: bytes, room_id: int) -> str:
+    """
+    Upload professional therapy report PDF to S3 and return the public URL.
+
+    Args:
+        pdf_bytes: The PDF file content as bytes
+        room_id: The room ID
+
+    Returns:
+        str: The public URL of the uploaded PDF
+
+    Raises:
+        Exception: If upload fails
+    """
+    try:
+        # Get S3 client at runtime
+        s3_client, aws_s3_bucket, aws_region = get_s3_client()
+
+        # Generate unique filename with timestamp
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        s3_key = f"reports/{room_id}/professional-report-{timestamp}.pdf"
+
+        # Upload to S3
+        s3_client.put_object(
+            Bucket=aws_s3_bucket,
+            Key=s3_key,
+            Body=pdf_bytes,
+            ContentType='application/pdf',
+            ContentDisposition='inline'  # Allow viewing in browser
+        )
+
+        # Generate public URL
+        url = f"https://{aws_s3_bucket}.s3.{aws_region}.amazonaws.com/{s3_key}"
+
+        print(f"Report PDF uploaded successfully to S3: {url}")
+        return url
+
+    except ClientError as e:
+        error_message = f"S3 upload failed: {e}"
+        print(error_message)
+        raise Exception(error_message)
+    except Exception as e:
+        error_message = f"Unexpected error uploading PDF to S3: {e}"
+        print(error_message)
+        raise Exception(error_message)
+
+
 def delete_audio_from_s3(audio_url: str) -> bool:
     """
     Delete audio file from S3.

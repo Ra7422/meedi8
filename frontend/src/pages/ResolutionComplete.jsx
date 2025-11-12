@@ -11,6 +11,8 @@ export default function ResolutionComplete() {
   const [summaries, setSummaries] = useState(null);
   const [transcript, setTranscript] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportUrl, setReportUrl] = useState(null);
 
   useEffect(() => {
     const loadResolution = async () => {
@@ -18,7 +20,12 @@ export default function ResolutionComplete() {
         // Get room details
         const roomData = await apiRequest(`/rooms/${roomId}`, "GET", null, token);
         setRoom(roomData);
-        
+
+        // Check if report already exists
+        if (roomData.professional_report_url) {
+          setReportUrl(roomData.professional_report_url);
+        }
+
         // Get summaries
         const summariesData = await apiRequest(`/rooms/${roomId}/main-room/summaries`, "GET", null, token);
         setSummaries(summariesData);
@@ -44,6 +51,21 @@ export default function ResolutionComplete() {
   }
 
   const checkInDate = room.check_in_date ? new Date(room.check_in_date).toLocaleDateString() : "1 week";
+
+  const generateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const response = await apiRequest(`/rooms/${roomId}/generate-report`, "POST", null, token);
+      if (response.success && response.report_url) {
+        setReportUrl(response.report_url);
+      }
+    } catch (error) {
+      console.error("Failed to generate report:", error);
+      alert("Failed to generate report. Please try again.");
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   const downloadTranscript = () => {
     const transcriptText = `MEEDI8 MEDIATION TRANSCRIPT
@@ -126,7 +148,7 @@ ${new Date().toLocaleString()}
           {room.resolution_text}
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
           <button
             onClick={downloadTranscript}
             style={{
@@ -154,6 +176,76 @@ ${new Date().toLocaleString()}
               </div>
             </div>
           </button>
+
+          {!reportUrl ? (
+            <button
+              onClick={generateReport}
+              disabled={generatingReport}
+              style={{
+                background: generatingReport ? "#d1d5db" : "#7DD3C0",
+                padding: "16px",
+                borderRadius: "8px",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: generatingReport ? "not-allowed" : "pointer",
+                transition: "background 0.2s",
+                textAlign: "left",
+                opacity: generatingReport ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!generatingReport) e.currentTarget.style.background = "#5FBFAB";
+              }}
+              onMouseLeave={(e) => {
+                if (!generatingReport) e.currentTarget.style.background = "#7DD3C0";
+              }}
+            >
+              <span style={{ fontSize: "24px" }}>
+                {generatingReport ? "⏳" : "📄"}
+              </span>
+              <div>
+                <div style={{ fontWeight: "600", color: "#065f46", marginBottom: "4px" }}>
+                  {generatingReport ? "Generating..." : "Generate Report"}
+                </div>
+                <div style={{ fontSize: "14px", color: "#047857" }}>
+                  {generatingReport ? "Please wait..." : "Professional PDF report"}
+                </div>
+              </div>
+            </button>
+          ) : (
+            <a
+              href={reportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ textDecoration: "none", display: "block" }}
+            >
+              <div style={{
+                background: "#7DD3C0",
+                padding: "16px",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                transition: "background 0.2s",
+                height: "100%"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "#5FBFAB"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "#7DD3C0"}
+              >
+                <span style={{ fontSize: "24px" }}>📥</span>
+                <div>
+                  <div style={{ fontWeight: "600", color: "#065f46", marginBottom: "4px" }}>
+                    Download Report (PDF) ›
+                  </div>
+                  <div style={{ fontSize: "14px", color: "#047857" }}>
+                    Professional therapy report
+                  </div>
+                </div>
+              </div>
+            </a>
+          )}
 
           <a
             href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Clean%20Air%20Check-in&dates=${room.check_in_date?.replace(/-/g, '')}T120000/${room.check_in_date?.replace(/-/g, '')}T130000&details=Review%20how%20your%20mediation%20agreement%20is%20working.%20Return%20to%20Clean%20Air%20if%20you%20need%20support.&location=Clean%20Air%20App`}

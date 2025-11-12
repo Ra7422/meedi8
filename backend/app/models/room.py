@@ -54,6 +54,9 @@ class Room(Base):
     professional_report = Column(Text, nullable=True)  # Full markdown report
     report_generated_at = Column(DateTime(timezone=True), nullable=True)
 
+    # Professional PDF report URL (for resolved mediation rooms)
+    professional_report_url = Column(String(500), nullable=True)  # S3 URL for PDF report
+
     # Break/pause tracking for main room
     break_requested_by_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     break_requested_at = Column(DateTime(timezone=True), nullable=True)
