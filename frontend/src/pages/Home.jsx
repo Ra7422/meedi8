@@ -175,10 +175,10 @@ export default function Home() {
       fontSize: '18px',
       fontWeight: '700',
       color: '#6750A4',
-      marginBottom: '8px',
+      marginBottom: '0',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'center',
       gap: '12px',
     },
     quickLinkIcon: {
