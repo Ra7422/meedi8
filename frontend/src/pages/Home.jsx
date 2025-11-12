@@ -89,7 +89,9 @@ export default function Home() {
       border: '3px solid',
       transition: 'all 0.3s ease',
       cursor: 'pointer',
-      textAlign: 'center',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '32px',
     },
     cardMediation: {
       borderColor: '#7DD3C0',
@@ -98,10 +100,17 @@ export default function Home() {
       borderColor: '#D3C1FF',
     },
     cardImage: {
-      width: '200px',
-      height: '200px',
-      margin: '0 auto 24px',
+      width: '180px',
+      height: '180px',
+      flexShrink: 0,
       objectFit: 'contain',
+    },
+    cardContent: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      textAlign: 'left',
     },
     cardTitle: {
       fontSize: '28px',
@@ -218,26 +227,28 @@ export default function Home() {
               alt="Two People in Mediation"
               style={styles.cardImage}
             />
-            <h2 style={{ ...styles.cardTitle, ...styles.cardTitleMediation }}>
-              Start a Mediation
-            </h2>
-            <p style={styles.cardDescription}>
-              Invite someone to resolve a conflict together with Meedi as your friendly, unbiased mediator.
-              Perfect for disputes, disagreements, or difficult conversations.
-            </p>
-            <button
-              style={{ ...styles.cardButton, ...styles.buttonMediation }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#6BC5B8';
-                e.stopPropagation();
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#7DD3C0';
-                e.stopPropagation();
-              }}
-            >
-              Begin Mediation
-            </button>
+            <div style={styles.cardContent}>
+              <h2 style={{ ...styles.cardTitle, ...styles.cardTitleMediation }}>
+                Start a Mediation
+              </h2>
+              <p style={styles.cardDescription}>
+                Invite someone to resolve a conflict together with Meedi as your friendly, unbiased mediator.
+                Perfect for disputes, disagreements, or difficult conversations.
+              </p>
+              <button
+                style={{ ...styles.cardButton, ...styles.buttonMediation }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#6BC5B8';
+                  e.stopPropagation();
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#7DD3C0';
+                  e.stopPropagation();
+                }}
+              >
+                Begin Mediation
+              </button>
+            </div>
           </div>
 
           {/* Solo Session Card */}
@@ -258,26 +269,28 @@ export default function Home() {
               alt="Talk to Meedi Solo"
               style={styles.cardImage}
             />
-            <h2 style={{ ...styles.cardTitle, ...styles.cardTitleSolo }}>
-              Talk to Meedi Solo
-            </h2>
-            <p style={styles.cardDescription}>
-              Process your thoughts and feelings individually. Get clarity on your perspective
-              before addressing the situation with others.
-            </p>
-            <button
-              style={{ ...styles.cardButton, ...styles.buttonSolo }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#C4AEFF';
-                e.stopPropagation();
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#D3C1FF';
-                e.stopPropagation();
-              }}
-            >
-              Start Solo Session
-            </button>
+            <div style={styles.cardContent}>
+              <h2 style={{ ...styles.cardTitle, ...styles.cardTitleSolo }}>
+                Talk to Meedi Solo
+              </h2>
+              <p style={styles.cardDescription}>
+                Process your thoughts and feelings individually. Get clarity on your perspective
+                before addressing the situation with others.
+              </p>
+              <button
+                style={{ ...styles.cardButton, ...styles.buttonSolo }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#C4AEFF';
+                  e.stopPropagation();
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#D3C1FF';
+                  e.stopPropagation();
+                }}
+              >
+                Start Solo Session
+              </button>
+            </div>
           </div>
         </div>
 
