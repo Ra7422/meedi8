@@ -9,6 +9,7 @@ export default function Subscription() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [billingInterval, setBillingInterval] = useState('monthly');
   const [isWideScreen, setIsWideScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth > 900 : true
   );
@@ -114,10 +115,71 @@ export default function Subscription() {
             color: "#6B7280",
             fontSize: "clamp(16px, 3vw, 18px)",
             fontFamily: "'Nunito', sans-serif",
-            lineHeight: "1.6"
+            lineHeight: "1.6",
+            marginBottom: "24px"
           }}>
             Choose the plan that works best for you
           </p>
+
+          {/* Billing Toggle */}
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "16px",
+            background: "white",
+            padding: "8px",
+            borderRadius: "12px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            border: "2px solid #E5E7EB"
+          }}>
+            <button
+              onClick={() => setBillingInterval('monthly')}
+              style={{
+                padding: "10px 24px",
+                fontSize: "16px",
+                fontWeight: "600",
+                fontFamily: "'Nunito', sans-serif",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: billingInterval === 'monthly' ? "#7DD3C0" : "transparent",
+                color: billingInterval === 'monthly' ? "white" : "#6B7280"
+              }}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval('yearly')}
+              style={{
+                padding: "10px 24px",
+                fontSize: "16px",
+                fontWeight: "600",
+                fontFamily: "'Nunito', sans-serif",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: billingInterval === 'yearly' ? "#7DD3C0" : "transparent",
+                color: billingInterval === 'yearly' ? "white" : "#6B7280",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}
+            >
+              Yearly
+              <span style={{
+                fontSize: "12px",
+                fontWeight: "700",
+                background: "#10B981",
+                color: "white",
+                padding: "2px 8px",
+                borderRadius: "6px"
+              }}>
+                Save 17%
+              </span>
+            </button>
+          </div>
         </div>
 
       {/* Current Plan Status */}
@@ -288,7 +350,10 @@ export default function Subscription() {
               color: "#7C6CB6",
               fontFamily: "'Nunito', sans-serif"
             }}>
-              £9.99<span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>/month</span>
+              {billingInterval === 'monthly' ? '£9.99' : '£99'}
+              <span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>
+                /{billingInterval === 'monthly' ? 'month' : 'year'}
+              </span>
             </div>
             <p style={{
               color: "#888",
@@ -322,45 +387,26 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "plus" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button
-                onClick={() => handleUpgrade("plus", "monthly")}
-                disabled={processing}
-                style={{
-                  padding: "14px",
-                  background: "#7C6CB6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontWeight: "700",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "16px",
-                  transition: "all 0.2s",
-                  boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)"
-                }}
-              >
-                Get Plus Monthly
-              </button>
-              <button
-                onClick={() => handleUpgrade("plus", "yearly")}
-                disabled={processing}
-                style={{
-                  padding: "12px",
-                  background: "#F3F4F6",
-                  color: "#6750A4",
-                  border: "2px solid #E5E7EB",
-                  borderRadius: "12px",
-                  fontWeight: "600",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "14px",
-                  transition: "all 0.2s"
-                }}
-              >
-                £99/year (Save 17%)
-              </button>
-            </div>
+            <button
+              onClick={() => handleUpgrade("plus", billingInterval)}
+              disabled={processing}
+              style={{
+                padding: "14px",
+                background: "#7C6CB6",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "700",
+                fontFamily: "'Nunito', sans-serif",
+                cursor: processing ? "not-allowed" : "pointer",
+                fontSize: "16px",
+                transition: "all 0.2s",
+                boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
+                width: "100%"
+              }}
+            >
+              Get Plus
+            </button>
           ) : (
             <div style={{
               padding: "14px",
@@ -401,7 +447,10 @@ export default function Subscription() {
               color: "#7DD3C0",
               fontFamily: "'Nunito', sans-serif"
             }}>
-              £19.99<span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>/month</span>
+              {billingInterval === 'monthly' ? '£19.99' : '£199'}
+              <span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>
+                /{billingInterval === 'monthly' ? 'month' : 'year'}
+              </span>
             </div>
             <p style={{
               color: "#888",
@@ -439,45 +488,26 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "pro" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button
-                onClick={() => handleUpgrade("pro", "monthly")}
-                disabled={processing}
-                style={{
-                  padding: "14px",
-                  background: "#7DD3C0",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontWeight: "700",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "16px",
-                  transition: "all 0.2s",
-                  boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
-                }}
-              >
-                Get Pro Monthly
-              </button>
-              <button
-                onClick={() => handleUpgrade("pro", "yearly")}
-                disabled={processing}
-                style={{
-                  padding: "12px",
-                  background: "#F3F4F6",
-                  color: "#6750A4",
-                  border: "2px solid #E5E7EB",
-                  borderRadius: "12px",
-                  fontWeight: "600",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "14px",
-                  transition: "all 0.2s"
-                }}
-              >
-                £199/year (Save 17%)
-              </button>
-            </div>
+            <button
+              onClick={() => handleUpgrade("pro", billingInterval)}
+              disabled={processing}
+              style={{
+                padding: "14px",
+                background: "#7DD3C0",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "700",
+                fontFamily: "'Nunito', sans-serif",
+                cursor: processing ? "not-allowed" : "pointer",
+                fontSize: "16px",
+                transition: "all 0.2s",
+                boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
+                width: "100%"
+              }}
+            >
+              Get Pro
+            </button>
           ) : (
             <div style={{
               padding: "14px",
