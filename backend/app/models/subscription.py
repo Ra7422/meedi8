@@ -38,6 +38,14 @@ class Subscription(Base):
     voice_conversations_used = Column(Integer, default=0, nullable=False)
     voice_conversations_limit = Column(Integer, default=1, nullable=False)  # 1 trial for free tier
 
+    # Room usage tracking (for paywall enforcement)
+    rooms_created_this_month = Column(Integer, default=0, nullable=False)
+    month_reset_date = Column(DateTime(timezone=True), nullable=True)
+
+    # Professional report tracking (PRO tier only)
+    reports_generated_this_month = Column(Integer, default=0, nullable=False)
+    reports_limit_per_month = Column(Integer, default=0, nullable=False)
+
     # Relationships
     user = relationship('User', back_populates='subscription')
 
