@@ -55,6 +55,9 @@ function ExpressCheckoutForm({ clientSecret, onSuccess, onError }) {
   const handleClick = (event) => {
     // User clicked Express Checkout button
     console.log('Express checkout clicked:', event.expressPaymentType);
+
+    // CRITICAL: Must call resolve() within 1 second or Stripe times out
+    event.resolve();
   };
 
   return (
