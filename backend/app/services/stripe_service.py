@@ -204,12 +204,29 @@ def create_guest_subscription_with_payment_intent(
 ) -> dict:
     """
     Create subscription for unauthenticated users with Express Checkout.
-    Similar to authenticated flow but without existing customer.
+    Creates a temporary customer first, then attaches subscription.
     """
     price_id = get_price_id(tier, interval)
 
-    # Create subscription parameters
+    # Create a temporary Stripe customer for guest checkout
+    # Email will be updated from payment method after successful payment
+    customer_params = {
+        'metadata': {
+            'tier': tier,
+            'interval': interval,
+            'guest_checkout': 'true'
+        }
+    }
+
+    # Pre-fill customer email if provided (e.g., from OAuth)
+    if customer_email:
+        customer_params['email'] = customer_email
+
+    customer = stripe.Customer.create(**customer_params)
+
+    # Create subscription with the customer ID
     subscription_params = {
+        'customer': customer.id,  # CRITICAL: Must provide customer ID
         'items': [{'price': price_id}],
         'payment_behavior': 'default_incomplete',
         'payment_settings': {
@@ -223,10 +240,6 @@ def create_guest_subscription_with_payment_intent(
             'guest_checkout': 'true'
         }
     }
-
-    # Pre-fill customer email if provided
-    if customer_email:
-        subscription_params['customer_email'] = customer_email
 
     subscription = stripe.Subscription.create(**subscription_params)
     payment_intent = subscription.latest_invoice.payment_intent

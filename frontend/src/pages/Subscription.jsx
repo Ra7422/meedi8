@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
 import ExpressCheckoutForm from "../components/ExpressCheckoutForm";
+import thumbsUpIcon from "../assets/icons/thumbs_up.png";
 
 export default function Subscription() {
   const { token } = useAuth();
@@ -262,7 +263,9 @@ export default function Subscription() {
           padding: "32px",
           background: "white",
           transition: "all 0.3s ease",
-          boxShadow: currentTier === "free" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)"
+          boxShadow: currentTier === "free" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column"
         }}>
           <div style={{ marginBottom: "24px" }}>
             <div style={{
@@ -270,7 +273,8 @@ export default function Subscription() {
               fontWeight: "700",
               marginBottom: "8px",
               color: "#7DD3C0",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "'Nunito', sans-serif",
+              textAlign: "right"
             }}>
               £0<span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>/month</span>
             </div>
@@ -280,26 +284,27 @@ export default function Subscription() {
             listStyle: "none",
             padding: 0,
             marginBottom: "24px",
-            fontFamily: "'Nunito', sans-serif"
+            fontFamily: "'Nunito', sans-serif",
+            flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Text-based mediation</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Individual coaching with Meedi</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Basic conversation summary</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>7-day access to transcript</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Email support</span>
             </li>
           </ul>
@@ -328,7 +333,9 @@ export default function Subscription() {
           background: "white",
           position: "relative",
           transition: "all 0.3s ease",
-          boxShadow: currentTier === "plus" ? "0 8px 24px rgba(124, 108, 182, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)"
+          boxShadow: currentTier === "plus" ? "0 8px 24px rgba(124, 108, 182, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column"
         }}>
           <div style={{
             position: "absolute",
@@ -352,7 +359,8 @@ export default function Subscription() {
               fontWeight: "700",
               marginBottom: "8px",
               color: "#7C6CB6",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "'Nunito', sans-serif",
+              textAlign: "right"
             }}>
               {billingInterval === 'monthly' ? '£9.99' : '£99'}
               <span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>
@@ -365,38 +373,39 @@ export default function Subscription() {
             listStyle: "none",
             padding: 0,
             marginBottom: "24px",
-            fontFamily: "'Nunito', sans-serif"
+            fontFamily: "'Nunito', sans-serif",
+            flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Free</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited text mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Voice-enabled mediations</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 10MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Automatic transcription</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>30-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Download basic session summaries</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority email support</span>
             </li>
           </ul>
@@ -541,7 +550,9 @@ export default function Subscription() {
           padding: "32px",
           background: "white",
           transition: "all 0.3s ease",
-          boxShadow: currentTier === "pro" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)"
+          boxShadow: currentTier === "pro" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column"
         }}>
           <div style={{ marginBottom: "24px" }}>
             <div style={{
@@ -549,7 +560,8 @@ export default function Subscription() {
               fontWeight: "700",
               marginBottom: "8px",
               color: "#7DD3C0",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "'Nunito', sans-serif",
+              textAlign: "right"
             }}>
               {billingInterval === 'monthly' ? '£19.99' : '£199'}
               <span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>
@@ -562,42 +574,43 @@ export default function Subscription() {
             listStyle: "none",
             padding: 0,
             marginBottom: "24px",
-            fontFamily: "'Nunito', sans-serif"
+            fontFamily: "'Nunito', sans-serif",
+            flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Plus</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited voice mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Meedi AI voice responses</strong> (two-way voice conversations)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 50MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>3 professional evaluation reports per month</strong> (additional reports £4.99 each)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>90-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Advanced relationship pattern analytics</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority support (24-hour response)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Export to share with therapists</span>
             </li>
           </ul>
