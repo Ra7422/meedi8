@@ -206,49 +206,67 @@ def create_guest_subscription_with_payment_intent(
     Create subscription for unauthenticated users with Express Checkout.
     Creates a temporary customer first, then attaches subscription.
     """
-    price_id = get_price_id(tier, interval)
+    try:
+        price_id = get_price_id(tier, interval)
 
-    # Create a temporary Stripe customer for guest checkout
-    # Email will be updated from payment method after successful payment
-    customer_params = {
-        'metadata': {
-            'tier': tier,
-            'interval': interval,
-            'guest_checkout': 'true'
+        # Create a temporary Stripe customer for guest checkout
+        # Email will be updated from payment method after successful payment
+        customer_params = {
+            'metadata': {
+                'tier': tier,
+                'interval': interval,
+                'guest_checkout': 'true'
+            }
         }
-    }
 
-    # Pre-fill customer email if provided (e.g., from OAuth)
-    if customer_email:
-        customer_params['email'] = customer_email
+        # Pre-fill customer email if provided (e.g., from OAuth)
+        if customer_email:
+            customer_params['email'] = customer_email
 
-    customer = stripe.Customer.create(**customer_params)
+        print(f"Creating Stripe customer for guest checkout: {customer_params}")
+        customer = stripe.Customer.create(**customer_params)
+        print(f"✓ Created customer: {customer.id}")
 
-    # Create subscription with the customer ID
-    subscription_params = {
-        'customer': customer.id,  # CRITICAL: Must provide customer ID
-        'items': [{'price': price_id}],
-        'payment_behavior': 'default_incomplete',
-        'payment_settings': {
-            'payment_method_types': ['card', 'link'],
-            'save_default_payment_method': 'on_subscription',
-        },
-        'expand': ['latest_invoice.payment_intent'],
-        'metadata': {
-            'tier': tier,
-            'interval': interval,
-            'guest_checkout': 'true'
+        # Create subscription with the customer ID
+        subscription_params = {
+            'customer': customer.id,  # CRITICAL: Must provide customer ID
+            'items': [{'price': price_id}],
+            'payment_behavior': 'default_incomplete',
+            'payment_settings': {
+                'payment_method_types': ['card', 'link'],
+                'save_default_payment_method': 'on_subscription',
+            },
+            'expand': ['latest_invoice.payment_intent'],
+            'metadata': {
+                'tier': tier,
+                'interval': interval,
+                'guest_checkout': 'true'
+            }
         }
-    }
 
-    subscription = stripe.Subscription.create(**subscription_params)
-    payment_intent = subscription.latest_invoice.payment_intent
+        print(f"Creating subscription with params: customer={customer.id}, price={price_id}")
+        subscription = stripe.Subscription.create(**subscription_params)
+        print(f"✓ Created subscription: {subscription.id}")
 
-    return {
-        'client_secret': payment_intent.client_secret,
-        'subscription_id': subscription.id,
-        'payment_intent_id': payment_intent.id
-    }
+        # Extract PaymentIntent client_secret
+        payment_intent = subscription.latest_invoice.payment_intent
+
+        if not payment_intent:
+            print(f"❌ ERROR: No payment_intent in subscription. Latest invoice: {subscription.latest_invoice}")
+            raise ValueError("No payment_intent found in subscription")
+
+        print(f"✓ Extracted payment_intent: {payment_intent.id}")
+
+        return {
+            'client_secret': payment_intent.client_secret,
+            'subscription_id': subscription.id,
+            'payment_intent_id': payment_intent.id
+        }
+    except Exception as e:
+        print(f"❌ Error in create_guest_subscription_with_payment_intent: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 def create_portal_session(customer_id: str, return_url: str) -> str:
