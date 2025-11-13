@@ -26,6 +26,7 @@ export default function CreateRoom() {
   const [category, setCategory] = useState(initialData.category || "");
   const [initialIssue, setInitialIssue] = useState(initialData.initialIssue || "");
   const [loading, setLoading] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState(null); // {message, tier, limit, currentCount}
 
   // Refresh user data on mount to ensure has_completed_screening is up to date
   useEffect(() => {
@@ -92,7 +93,18 @@ export default function CreateRoom() {
       sessionStorage.setItem(`room_${room.id}_initial`, initialIssue);
       navigate(`/rooms/${room.id}/coaching`);
     } catch (error) {
-      alert("Error creating room: " + error.message);
+      // Handle paywall errors (402 Payment Required)
+      if (error.paywallError) {
+        const details = error.details || {};
+        setUpgradeModal({
+          message: error.message,
+          tier: details.tier,
+          limit: details.limit,
+          currentCount: details.current_count
+        });
+      } else {
+        alert("Error creating room: " + error.message);
+      }
     }
     setLoading(false);
   };
@@ -352,6 +364,110 @@ export default function CreateRoom() {
           <rect x="65" y="55" width="15" height="30" rx="3" fill="#FFB366" />
         </svg>
       </div>
+
+      {/* Upgrade Modal - shown when paywall limit reached */}
+      {upgradeModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+        }} onClick={() => setUpgradeModal(null)}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '480px',
+            width: '100%',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '16px',
+              textAlign: 'center',
+            }}>
+              Upgrade Required
+            </h2>
+
+            <p style={{
+              fontSize: '16px',
+              color: '#6B7280',
+              marginBottom: '24px',
+              textAlign: 'center',
+              lineHeight: '1.6',
+            }}>
+              {upgradeModal.message}
+            </p>
+
+            {upgradeModal.tier === 'free' && upgradeModal.limit !== undefined && (
+              <div style={{
+                backgroundColor: '#EAF7F0',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '24px',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>
+                  Your usage this month:
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: '700', color: '#7DD3C0' }}>
+                  {upgradeModal.currentCount} / {upgradeModal.limit}
+                </div>
+              </div>
+            )}
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              flexDirection: 'column',
+            }}>
+              <button
+                onClick={() => {
+                  setUpgradeModal(null);
+                  navigate('/subscription');
+                }}
+                style={{
+                  backgroundColor: '#7DD3C0',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                }}
+              >
+                View Subscription Plans
+              </button>
+
+              <button
+                onClick={() => setUpgradeModal(null)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#6B7280',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 24px',
+                  fontSize: '16px',
+                  fontWeight: '400',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

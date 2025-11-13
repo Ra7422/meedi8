@@ -42,6 +42,27 @@ export async function apiRequest(path, method = "GET", body, token) {
         throw new Error('Session expired. Please log in again.');
       }
 
+      // Handle 402 Payment Required and 413 Payload Too Large (paywall errors)
+      if (res.status === 402 || res.status === 413) {
+        try {
+          const errorData = await res.json();
+          console.error(`💳 Paywall Error ${res.status} on ${path}:`, errorData);
+          const error = new Error(errorData.detail?.message || errorData.detail || 'Upgrade required');
+          error.paywallError = true;
+          error.statusCode = res.status;
+          error.details = errorData.detail;
+          throw error;
+        } catch (parseError) {
+          if (parseError.paywallError) throw parseError;
+          // JSON parse failed, fall back to text
+          const msg = await res.text().catch(() => "Upgrade required");
+          const error = new Error(msg);
+          error.paywallError = true;
+          error.statusCode = res.status;
+          throw error;
+        }
+      }
+
       let msg = await res.text().catch(() => "");
       console.error(`❌ API Error ${res.status} on ${path}:`, msg);
       throw new Error(msg || `API ${res.status}`);
