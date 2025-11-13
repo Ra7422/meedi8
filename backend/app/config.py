@@ -19,11 +19,17 @@ class Settings(BaseSettings):
     # OAuth
     TELEGRAM_BOT_TOKEN: str = ""
 
-    # Stripe Price IDs
-    STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST3SOI6BakpcqZhMdACodvT"
-    STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST3RqI6BakpcqZhg8F3UcAd"
-    STRIPE_PRICE_PRO_MONTHLY: str = "price_1ST3W6I6BakpcqZhLTITlNHJ"
-    STRIPE_PRICE_PRO_YEARLY: str = "price_1ST3W6I6BakpcqZhYykzYUG9"
+    # Stripe Price IDs (Test Mode)
+    STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST4GSIFSfYvttlAuK48AVkK"
+    STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST4HPIFSfYvttlA7wcumfd8"
+    STRIPE_PRICE_PRO_MONTHLY: str = "price_1ST4EQIFSfYvttlACMstQcuO"
+    STRIPE_PRICE_PRO_YEARLY: str = "price_1ST4FDIFSfYvttlAyIghPKBf"
+
+    # Stripe Price IDs (Live Mode - for reference when switching to production)
+    # STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST3SOI6BakpcqZhMdACodvT"
+    # STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST3RqI6BakpcqZhg8F3UcAd"
+    # STRIPE_PRICE_PRO_MONTHLY: str = "price_1ST3W6I6BakpcqZhLTITlNHJ"
+    # STRIPE_PRICE_PRO_YEARLY: str = "price_1ST3W6I6BakpcqZhYykzYUG9"
 
     # Frontend URL for redirects
     FRONTEND_URL: str = "https://meedi8.com"
