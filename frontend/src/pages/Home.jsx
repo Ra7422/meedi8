@@ -102,7 +102,7 @@ export default function Home() {
       marginBottom: '40px',
       '@media (min-width: 768px)': {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',
+        gridTemplateColumns: 'repeat(2, 1fr)',
         gap: '32px',
         marginBottom: '60px',
       },
