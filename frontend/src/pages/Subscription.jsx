@@ -11,8 +11,8 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [billingInterval, setBillingInterval] = useState('monthly');
-  const [isWideScreen, setIsWideScreen] = useState(
-    typeof window !== 'undefined' ? window.innerWidth > 900 : true
+  const [screenWidth, setScreenWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
   );
   const [checkoutSession, setCheckoutSession] = useState(null);
   const [expandedTier, setExpandedTier] = useState(null); // Track which tier's payment methods are expanded
@@ -25,7 +25,7 @@ export default function Subscription() {
     if (typeof window === 'undefined') return;
 
     const handleResize = () => {
-      setIsWideScreen(window.innerWidth > 900);
+      setScreenWidth(window.innerWidth);
     };
 
     window.addEventListener('resize', handleResize);
@@ -250,7 +250,7 @@ export default function Subscription() {
       {/* Pricing Cards */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: isWideScreen ? "repeat(3, 1fr)" : "1fr",
+        gridTemplateColumns: screenWidth >= 768 ? "repeat(3, 1fr)" : "1fr",
         gap: "24px",
         maxWidth: "100%"
       }}>
