@@ -263,11 +263,11 @@ export default function FAQ() {
       <div style={styles.topEllipse} />
 
       {/* Decorative ellipses behind content */}
-      <img src="/assets/illustrations/elipse.png" alt="" style={styles.decorativeEllipse1} />
-      <img src="/assets/illustrations/elipse.png" alt="" style={styles.decorativeEllipse2} />
-      <img src="/assets/illustrations/elipse.png" alt="" style={styles.decorativeEllipse3} />
-      <img src="/assets/illustrations/elipse.png" alt="" style={styles.decorativeEllipse4} />
-      <img src="/assets/illustrations/elipse.png" alt="" style={styles.decorativeEllipse5} />
+      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse1} />
+      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse2} />
+      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse3} />
+      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse4} />
+      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse5} />
 
       {/* Main content */}
       <div style={styles.content}>
