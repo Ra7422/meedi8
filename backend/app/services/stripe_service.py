@@ -248,14 +248,28 @@ def create_guest_subscription_with_payment_intent(
         subscription = stripe.Subscription.create(**subscription_params)
         print(f"✓ Created subscription: {subscription.id}")
 
-        # Extract PaymentIntent client_secret
-        payment_intent = subscription.latest_invoice.payment_intent
+        # The latest_invoice might be just an ID, need to retrieve it if it's not expanded
+        if isinstance(subscription.latest_invoice, str):
+            print(f"⚠ latest_invoice is a string ID, retrieving invoice...")
+            invoice = stripe.Invoice.retrieve(
+                subscription.latest_invoice,
+                expand=['payment_intent']
+            )
+            payment_intent = invoice.payment_intent
+        else:
+            # Already expanded
+            payment_intent = subscription.latest_invoice.payment_intent
 
         if not payment_intent:
-            print(f"❌ ERROR: No payment_intent in subscription. Latest invoice: {subscription.latest_invoice}")
+            print(f"❌ ERROR: No payment_intent found. Invoice: {subscription.latest_invoice}")
             raise ValueError("No payment_intent found in subscription")
 
-        print(f"✓ Extracted payment_intent: {payment_intent.id}")
+        print(f"✓ Extracted payment_intent: {payment_intent.id if hasattr(payment_intent, 'id') else payment_intent}")
+
+        # Handle if payment_intent is still just an ID
+        if isinstance(payment_intent, str):
+            print(f"⚠ payment_intent is a string ID, retrieving payment_intent...")
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent)
 
         return {
             'client_secret': payment_intent.client_secret,
