@@ -15,6 +15,7 @@ export default function Subscription() {
     typeof window !== 'undefined' ? window.innerWidth > 900 : true
   );
   const [checkoutSession, setCheckoutSession] = useState(null);
+  const [expandedTier, setExpandedTier] = useState(null); // Track which tier's payment methods are expanded
 
   useEffect(() => {
     loadSubscription();
@@ -438,26 +439,122 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "plus" ? (
-            <button
-              onClick={() => handleUpgrade("plus", billingInterval)}
-              disabled={processing}
-              style={{
-                padding: "14px",
-                background: "#7C6CB6",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "700",
-                fontFamily: "'Nunito', sans-serif",
-                cursor: processing ? "not-allowed" : "pointer",
-                fontSize: "16px",
-                transition: "all 0.2s",
-                boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
-                width: "100%"
-              }}
-            >
-              Get Plus
-            </button>
+            <div style={{ width: "100%" }}>
+              <button
+                onClick={() => setExpandedTier(expandedTier === "plus" ? null : "plus")}
+                disabled={processing}
+                style={{
+                  padding: "14px",
+                  background: "#7C6CB6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: expandedTier === "plus" ? "12px 12px 0 0" : "12px",
+                  fontWeight: "700",
+                  fontFamily: "'Nunito', sans-serif",
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                Get Plus
+                <span style={{ fontSize: "12px" }}>{expandedTier === "plus" ? "▲" : "▼"}</span>
+              </button>
+
+              {/* Expanded payment methods */}
+              {expandedTier === "plus" && (
+                <div style={{
+                  border: "2px solid #7C6CB6",
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  padding: "12px",
+                  background: "#F5F3FF",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
+                }}>
+                  {/* Apple Pay Button */}
+                  <button
+                    onClick={() => handleUpgrade("plus", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "black",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    <span style={{ fontSize: "18px" }}>🍎</span> Pay
+                  </button>
+
+                  {/* Google Pay Button */}
+                  <button
+                    onClick={() => handleUpgrade("plus", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "white",
+                      color: "#3C4043",
+                      border: "1px solid #DADCE0",
+                      borderRadius: "8px",
+                      fontWeight: "500",
+                      fontFamily: "'Google Sans', 'Roboto', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    <span style={{ fontWeight: "700", color: "#4285F4" }}>G</span> Pay
+                  </button>
+
+                  {/* Pay by Card Button */}
+                  <button
+                    onClick={() => handleUpgrade("plus", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "#7C6CB6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontFamily: "'Nunito', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    💳 Pay by Card
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{
               padding: "14px",
@@ -562,26 +659,122 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "pro" ? (
-            <button
-              onClick={() => handleUpgrade("pro", billingInterval)}
-              disabled={processing}
-              style={{
-                padding: "14px",
-                background: "#7DD3C0",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "700",
-                fontFamily: "'Nunito', sans-serif",
-                cursor: processing ? "not-allowed" : "pointer",
-                fontSize: "16px",
-                transition: "all 0.2s",
-                boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
-                width: "100%"
-              }}
-            >
-              Get Pro
-            </button>
+            <div style={{ width: "100%" }}>
+              <button
+                onClick={() => setExpandedTier(expandedTier === "pro" ? null : "pro")}
+                disabled={processing}
+                style={{
+                  padding: "14px",
+                  background: "#7DD3C0",
+                  color: "white",
+                  border: "none",
+                  borderRadius: expandedTier === "pro" ? "12px 12px 0 0" : "12px",
+                  fontWeight: "700",
+                  fontFamily: "'Nunito', sans-serif",
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                Get Pro
+                <span style={{ fontSize: "12px" }}>{expandedTier === "pro" ? "▲" : "▼"}</span>
+              </button>
+
+              {/* Expanded payment methods */}
+              {expandedTier === "pro" && (
+                <div style={{
+                  border: "2px solid #7DD3C0",
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  padding: "12px",
+                  background: "#E8F9F5",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
+                }}>
+                  {/* Apple Pay Button */}
+                  <button
+                    onClick={() => handleUpgrade("pro", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "black",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    <span style={{ fontSize: "18px" }}>🍎</span> Pay
+                  </button>
+
+                  {/* Google Pay Button */}
+                  <button
+                    onClick={() => handleUpgrade("pro", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "white",
+                      color: "#3C4043",
+                      border: "1px solid #DADCE0",
+                      borderRadius: "8px",
+                      fontWeight: "500",
+                      fontFamily: "'Google Sans', 'Roboto', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    <span style={{ fontWeight: "700", color: "#4285F4" }}>G</span> Pay
+                  </button>
+
+                  {/* Pay by Card Button */}
+                  <button
+                    onClick={() => handleUpgrade("pro", billingInterval)}
+                    disabled={processing}
+                    style={{
+                      padding: "12px",
+                      background: "#7DD3C0",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontFamily: "'Nunito', sans-serif",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      fontSize: "14px",
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      opacity: processing ? 0.6 : 1
+                    }}
+                  >
+                    💳 Pay by Card
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{
               padding: "14px",
