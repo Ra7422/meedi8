@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
-import FloatingMenu from "../components/FloatingMenu";
 
 export default function SessionsDashboard() {
   const navigate = useNavigate();
@@ -274,9 +273,7 @@ export default function SessionsDashboard() {
   }
 
   return (
-    <>
-      <FloatingMenu />
-      <div style={styles.container}>
+    <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>My Sessions</h1>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -430,7 +427,6 @@ export default function SessionsDashboard() {
         </>
       )}
       </div>
-    </>
   );
 }
 
