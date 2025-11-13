@@ -8,15 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Updates (Last Updated: 2025-11-13)
 
-**✅ LATEST STABLE STATE** - Commit `f9825c3` (2025-11-13) includes email notification system (disabled by default), PAYWALL.md strategy doc, and SENDGRID_SETUP.md guide. System ready for domain DNS configuration.
+**✅ LATEST STABLE STATE** - Commit `ff3df8d` (2025-11-13) includes Phase 1 paywall implementation with room creation limits, email notification system (disabled by default), PAYWALL.md strategy doc, and SENDGRID_SETUP.md guide.
+
+**Previous Stable**: Commit `f9825c3` (2025-11-13) - Email notifications and paywall strategy documentation.
 
 **Previous Stable**: Commit `c5cfd7b` (2025-11-12) - Professional PDF report generation, homepage image fixes, and strict turn-by-turn mediation with harsh language intervention.
 
-**Previous Stable**: Commit `246b6c4` (2025-11-12) - PostgreSQL compatibility and file uploads working.
-
 **Critical Changes** - Read these first when working on the codebase:
 
-0. **Email Notification System (2025-11-13) - UNCOMMITTED** - Full SendGrid integration for turn-taking notifications. Code is complete but NOT committed pending domain DNS setup. Files modified: `backend/app/services/email_service.py` (NEW), `backend/app/routes/rooms.py` (lines 23, 1299-1311, 1499-1511), `backend/requirements.txt` (added sendgrid>=6.10.0), `SENDGRID_SETUP.md` (NEW - comprehensive setup guide), `backend/test_email.py` (NEW - testing script). Features: HTML emails with brand styling, turn notifications, break notifications, graceful error handling. Disabled by default via `EMAIL_NOTIFICATIONS_ENABLED=false` env var. **STATUS**: Waiting on domain DNS configuration to verify sender domain before committing. See `SENDGRID_SETUP.md` for full setup instructions.
+0. **Subscription Paywall System - Phase 1 (2025-11-13) - DEPLOYED** - Comprehensive tiered subscription system with usage limits and automatic monthly resets. **Commits**: `bfe9adc` (database migration), `f544ca6` (service functions), `ff3df8d` (room creation enforcement). **Files**: Migration `20251113_add_usage_counters.py`, Service `backend/app/services/subscription_service.py` (lines 162-386), Routes `backend/app/routes/rooms.py` (lines 21, 72, 95). **Features**: Room creation limits (FREE: 1/month, PLUS/PRO: unlimited), file upload size limits (FREE: disabled, PLUS: 10MB, PRO: 50MB), professional report limits (PRO only: 3/month), automatic monthly counter resets, 402 Payment Required responses with upgrade prompts. **Error Format**: Returns detailed JSON with `error`, `message`, `tier`, `limit`, `current_count`, `upgrade_url`. **Next Steps**: File upload validation, frontend 402 handling, professional report limits. See PAYWALL.md for complete implementation guide.
+
+1. **Email Notification System (2025-11-13) - DEPLOYED** - Full SendGrid integration for turn-taking notifications. Files modified: `backend/app/services/email_service.py` (NEW), `backend/app/routes/rooms.py` (lines 23, 1299-1311, 1499-1511), `backend/requirements.txt` (added sendgrid>=6.10.0), `SENDGRID_SETUP.md` (NEW - comprehensive setup guide), `backend/test_email.py` (NEW - testing script). Features: HTML emails with brand styling, turn notifications, break notifications, graceful error handling. Disabled by default via `EMAIL_NOTIFICATIONS_ENABLED=false` env var. **STATUS**: Waiting on domain DNS configuration to verify sender domain. See `SENDGRID_SETUP.md` for full setup instructions.
 
 1. **Professional PDF Report Generation (2025-11-12)** - Resolution page now includes "Generate Report" button that creates therapist-style PDF reports using Claude API. Reports include: Presenting Issues, Conversation Summary, Observations, Assessment, and Recommendations. Generated on-demand (button press) to save tokens, stored in S3 bucket. Button transitions: "Generate Report" → "Generating..." → "Download Report (PDF)". Backend: `POST /rooms/{id}/generate-report`, Service: `backend/app/services/report_generator.py` (uses ReportLab + Claude Sonnet 4.5), Frontend: ResolutionComplete.jsx lines 14-15, 55-68, 180-248. Migration: `20251112_add_professional_report_url.py`. Cost: ~$0.03-0.05 per report.
 
