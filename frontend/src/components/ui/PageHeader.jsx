@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '../ui';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Universal Page Header Component
@@ -15,6 +16,7 @@ import { Logo } from '../ui';
 export default function PageHeader({ backgroundColor = 'transparent', showMenu = true, menuTextColor = '#FFFFFF' }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { token, logout } = useAuth();
 
   // Check if mobile - safe for SSR
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -27,6 +29,12 @@ export default function PageHeader({ backgroundColor = 'transparent', showMenu =
     { label: 'About Us', path: '/about' },
     { label: 'Referrals', path: '/referrals' },
   ];
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    navigate('/login');
+  };
 
   return (
     <div style={{
@@ -65,6 +73,19 @@ export default function PageHeader({ backgroundColor = 'transparent', showMenu =
                   {item.label}
                 </button>
               ))}
+
+              {/* Logout button - only show if user is logged in */}
+              {token && (
+                <>
+                  <div style={styles.menuDivider} />
+                  <button
+                    onClick={handleLogout}
+                    style={{...styles.menuItem, ...styles.logoutButton}}
+                  >
+                    Log Out
+                  </button>
+                </>
+              )}
             </div>
           )}
         </>
@@ -130,5 +151,14 @@ const styles = {
     textAlign: 'left',
     cursor: 'pointer',
     transition: 'background 0.2s',
+  },
+  menuDivider: {
+    height: '1px',
+    backgroundColor: '#E5E7EB',
+    margin: '8px 0',
+  },
+  logoutButton: {
+    color: '#DC2626',
+    fontWeight: '500',
   },
 };
