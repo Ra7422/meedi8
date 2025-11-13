@@ -18,7 +18,7 @@ from app.services.main_room_mediator import start_main_room, process_main_room_r
 # from app.services.solo_coach import start_solo_session, process_solo_response
 # from app.services.therapy_report import generate_professional_report
 from app.services.whisper_service import transcribe_audio
-from app.services.subscription_service import require_feature_access, increment_voice_usage, check_room_creation_limit, increment_room_counter
+from app.services.subscription_service import require_feature_access, increment_voice_usage, check_room_creation_limit, increment_room_counter, check_file_upload_allowed
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
 from app.services.email_service import send_turn_notification, send_break_notification
 from app.schemas.room import StartCoachingRequest, StartCoachingResponse, CoachingResponseRequest, CoachingResponseOut, FinalizeCoachingResponse, LobbyInfoResponse, MainRoomSummariesResponse, MainRoomStartResponse, MainRoomRespondRequest, MainRoomRespondResponse
@@ -2065,10 +2065,12 @@ async def upload_file_main_room(
     if current_user not in room.participants:
         raise HTTPException(status_code=403, detail="Not a participant")
 
-    # Validate file size (max 10MB)
+    # Read file bytes for validation
     file_bytes = await file.read()
-    if len(file_bytes) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File too large (max 10MB)")
+    file_size_bytes = len(file_bytes)
+
+    # PAYWALL: Check file upload allowed and enforce size limits by tier
+    check_file_upload_allowed(current_user.id, file_size_bytes, db)
 
     # Validate file type
     allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.txt'}
