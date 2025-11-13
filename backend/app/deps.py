@@ -51,6 +51,37 @@ def get_current_subscription(
     return get_or_create_subscription(db, user.id)
 
 
+def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> User | None:
+    """
+    Optional authentication - returns User if authenticated, None if not.
+    Use this for endpoints that support both authenticated and guest access.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    auth = request.headers.get("Authorization")
+
+    if not auth or not auth.lower().startswith("bearer "):
+        logger.info(f"👤 No auth header, treating as guest on {request.url.path}")
+        return None
+
+    token = auth.split(" ", 1)[1].strip()
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = int(payload.get("sub"))
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            logger.info(f"✅ Authenticated user: {user.email}")
+            return user
+        else:
+            logger.warning(f"❌ Token valid but user {user_id} not found")
+            return None
+    except Exception as e:
+        logger.warning(f"⚠️ Token decode failed, treating as guest: {type(e).__name__}")
+        return None
+
+
 def require_admin(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

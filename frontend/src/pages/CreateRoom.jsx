@@ -69,14 +69,8 @@ export default function CreateRoom() {
         return;
       }
 
-      // Check screening before proceeding to step 2
-      if (user && !user.has_completed_screening) {
-        // Save current form data to sessionStorage before redirecting
-        sessionStorage.setItem('pendingRoomCreation', JSON.stringify({ title, category, initialIssue, step: 1 }));
-        navigate('/screening-carousel');
-        return;
-      }
-
+      // Skip screening - let users start mediating immediately
+      // Screening can be done later from profile if needed
       setStep(2);
     } else {
       handleCreate();
