@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Wallet Debug Info</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .info-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .status.good {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.bad {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Stripe Wallet Debug Info</h1>
+
+    <div class="info-box">
+        <h3>Current Domain</h3>
+        <code id="domain"></code>
+        <div id="domain-status"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>HTTPS Status</h3>
+        <div id="https-status"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Browser Info</h3>
+        <div id="browser-info"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Safari Version (if Safari)</h3>
+        <div id="safari-version"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Payment Request API Available</h3>
+        <div id="payment-request"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Apple Pay Availability</h3>
+        <div id="apple-pay"></div>
+    </div>
+
+    <div class="info-box">
+        <h3>Recommendations</h3>
+        <div id="recommendations"></div>
+    </div>
+
+    <script>
+        // Get current domain
+        const domain = window.location.hostname;
+        document.getElementById('domain').textContent = domain;
+
+        // Registered domains in Stripe
+        const registeredDomains = ['meedi8.com', 'www.meedi8.com', 'meedi8.vercel.app'];
+        const isDomainRegistered = registeredDomains.includes(domain);
+
+        document.getElementById('domain-status').innerHTML = isDomainRegistered
+            ? '<div class="status good">✓ This domain is registered in Stripe</div>'
+            : '<div class="status bad">✗ This domain is NOT registered in Stripe</div><div>Registered domains: ' + registeredDomains.join(', ') + '</div>';
+
+        // HTTPS check
+        const isHttps = window.location.protocol === 'https:';
+        document.getElementById('https-status').innerHTML = isHttps
+            ? '<div class="status good">✓ HTTPS enabled</div>'
+            : '<div class="status bad">✗ HTTP only - Apple Pay requires HTTPS</div>';
+
+        // Browser detection
+        const userAgent = navigator.userAgent;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+        const isChrome = /chrome/i.test(userAgent);
+        const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+
+        let browserInfo = 'User Agent: ' + userAgent + '<br><br>';
+        browserInfo += isSafari ? '<div class="status good">✓ Safari detected</div>' : '';
+        browserInfo += isChrome ? '<div class="status warning">Chrome detected (Apple Pay only works in Safari on iOS)</div>' : '';
+        browserInfo += isIOS ? '<div class="status good">✓ iOS device detected</div>' : '';
+        document.getElementById('browser-info').innerHTML = browserInfo;
+
+        // Safari version (for iOS)
+        const safariVersionMatch = userAgent.match(/Version\/(\d+\.\d+)/);
+        if (safariVersionMatch) {
+            const safariVersion = parseFloat(safariVersionMatch[1]);
+            document.getElementById('safari-version').innerHTML = safariVersion >= 17
+                ? `<div class="status good">✓ Safari ${safariVersion} (requires 17+)</div>`
+                : `<div class="status bad">✗ Safari ${safariVersion} - Apple Pay requires Safari 17+</div>`;
+        } else {
+            document.getElementById('safari-version').innerHTML = '<div class="status warning">Not Safari or version not detected</div>';
+        }
+
+        // Payment Request API check
+        if (window.PaymentRequest) {
+            document.getElementById('payment-request').innerHTML = '<div class="status good">✓ Payment Request API available</div>';
+        } else {
+            document.getElementById('payment-request').innerHTML = '<div class="status bad">✗ Payment Request API not available</div>';
+        }
+
+        // Apple Pay check
+        if (window.ApplePaySession) {
+            if (ApplePaySession.canMakePayments()) {
+                document.getElementById('apple-pay').innerHTML = '<div class="status good">✓ Apple Pay is available on this device</div>';
+            } else {
+                document.getElementById('apple-pay').innerHTML = '<div class="status warning">Apple Pay API exists but canMakePayments() returned false</div><div>This usually means no cards are configured in Apple Wallet</div>';
+            }
+        } else {
+            document.getElementById('apple-pay').innerHTML = '<div class="status bad">✗ Apple Pay not available</div><div>This browser/device does not support Apple Pay</div>';
+        }
+
+        // Generate recommendations
+        let recommendations = [];
+
+        if (!isDomainRegistered) {
+            recommendations.push('❌ Register this domain in Stripe Dashboard: Settings → Payment methods → Apple Pay → Add domain');
+        }
+
+        if (!isHttps) {
+            recommendations.push('❌ Access the site via HTTPS');
+        }
+
+        if (isIOS && !isSafari) {
+            recommendations.push('❌ Use Safari browser on iOS - Apple Pay doesn\'t work in Chrome/other browsers on iOS');
+        }
+
+        if (safariVersionMatch && parseFloat(safariVersionMatch[1]) < 17) {
+            recommendations.push('❌ Update iOS to get Safari 17 or later');
+        }
+
+        if (!window.ApplePaySession && isIOS) {
+            recommendations.push('⚠️ Apple Pay API not detected - Check iOS settings');
+        }
+
+        if (window.ApplePaySession && !ApplePaySession.canMakePayments()) {
+            recommendations.push('⚠️ Add at least one card to Apple Wallet');
+        }
+
+        if (recommendations.length === 0) {
+            recommendations.push('✅ All checks passed! Apple Pay should work on this domain.');
+            recommendations.push('If Apple Pay still doesn\'t show in Express Checkout, wait a few minutes for Stripe to verify the domain, or check your Stripe Dashboard for domain verification status.');
+        }
+
+        document.getElementById('recommendations').innerHTML = recommendations.map(r => '<div style="margin: 10px 0;">' + r + '</div>').join('');
+    </script>
+</body>
+</html>
