@@ -44,8 +44,8 @@ export default function Signup() {
       return;
     }
 
-    // Default redirect to onboarding for new users
-    navigate('/onboarding');
+    // Default redirect to home page (streamlined free account flow)
+    navigate('/');
   };
 
   async function handleSubmit(e) {
