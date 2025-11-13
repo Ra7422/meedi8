@@ -165,34 +165,84 @@ def create_portal_session(customer_id: str, return_url: str) -> str:
 
 
 def handle_checkout_complete(db: Session, session: dict):
-    """Handle successful checkout completion"""
-    user_id = int(session.get("metadata", {}).get("user_id"))
-    subscription_id = session.get("subscription")
+    """
+    Handle successful checkout completion.
 
-    if not user_id or not subscription_id:
-        print("Missing user_id or subscription_id in checkout session")
+    Supports both authenticated and guest checkouts:
+    - Authenticated: user_id in metadata, link to existing account
+    - Guest: guest_checkout=true in metadata, create new user account
+    """
+    metadata = session.get("metadata", {})
+    subscription_id = session.get("subscription")
+    is_guest_checkout = metadata.get("guest_checkout") == "true"
+
+    if not subscription_id:
+        print("⚠️ Missing subscription_id in checkout session")
         return
 
     # Get Stripe subscription details
     stripe_subscription = stripe.Subscription.retrieve(subscription_id)
     price_id = stripe_subscription["items"]["data"][0]["price"]["id"]
     tier = get_tier_from_price_id(price_id)
+    customer_id = stripe_subscription.get("customer")
 
-    # Update user's subscription
-    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-    if subscription:
-        subscription.tier = tier
-        subscription.status = SubscriptionStatus.ACTIVE
-        subscription.stripe_subscription_id = subscription_id
-        subscription.stripe_price_id = price_id
-        subscription.updated_at = datetime.utcnow()
+    # Handle guest checkout - create new user account
+    if is_guest_checkout:
+        # Get customer email from Stripe
+        customer = stripe.Customer.retrieve(customer_id)
+        customer_email = customer.get("email")
 
-        # Update limits for paid tiers
-        if tier in [SubscriptionTier.PLUS, SubscriptionTier.PRO]:
-            subscription.voice_conversations_limit = 999999  # Unlimited
+        if not customer_email:
+            print("⚠️ Guest checkout missing customer email")
+            return
 
-        db.commit()
-        print(f"✅ Subscription activated for user {user_id}: {tier.value}")
+        # Check if user already exists with this email
+        existing_user = db.query(User).filter(User.email == customer_email).first()
+        if existing_user:
+            print(f"ℹ️ User already exists for {customer_email}, linking subscription")
+            user = existing_user
+        else:
+            # Create new user account (password will be set later via success page)
+            import secrets
+            temp_password = secrets.token_urlsafe(32)  # Temporary, user will reset
+
+            user = User(
+                email=customer_email,
+                name=customer_email.split("@")[0],  # Use email prefix as default name
+                password_hash=temp_password,  # Temporary password
+                stripe_customer_id=customer_id,
+                has_completed_screening=False  # Will complete on first login
+            )
+            db.add(user)
+            db.flush()  # Get user.id without committing
+            print(f"✅ Created new user account for guest: {customer_email}")
+
+        user_id = user.id
+    else:
+        # Authenticated checkout - get user_id from metadata
+        user_id = metadata.get("user_id")
+        if not user_id:
+            print("⚠️ Missing user_id in authenticated checkout session")
+            return
+        user_id = int(user_id)
+
+    # Get or create subscription for user
+    from app.services.subscription_service import get_or_create_subscription
+    subscription = get_or_create_subscription(db, user_id)
+
+    # Update subscription
+    subscription.tier = tier
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.stripe_subscription_id = subscription_id
+    subscription.stripe_price_id = price_id
+    subscription.updated_at = datetime.utcnow()
+
+    # Update limits for paid tiers
+    if tier in [SubscriptionTier.PLUS, SubscriptionTier.PRO]:
+        subscription.voice_conversations_limit = 999999  # Unlimited
+
+    db.commit()
+    print(f"✅ Subscription activated for user {user_id}: {tier.value}")
 
 
 def handle_subscription_updated(db: Session, subscription_data: dict):
