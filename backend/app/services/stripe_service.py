@@ -73,7 +73,7 @@ def create_checkout_session(db: Session, user: User, tier: str, interval: str, s
 
     checkout_session = stripe.checkout.Session.create(
         customer=customer_id,
-        payment_method_types=['card'],
+        payment_method_types=['card', 'apple_pay', 'google_pay', 'link'],
         line_items=[{
             'price': price_id,
             'quantity': 1,
@@ -117,7 +117,7 @@ def create_guest_checkout_session(tier: str, interval: str, success_url: str, ca
     price_id = get_price_id(tier, interval)
 
     session_params = {
-        'payment_method_types': ['card'],
+        'payment_method_types': ['card', 'apple_pay', 'google_pay', 'link'],
         'line_items': [{
             'price': price_id,
             'quantity': 1,
