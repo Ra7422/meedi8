@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
+import EmbeddedCheckout from "../components/EmbeddedCheckout";
 
 export default function Subscription() {
   const { token } = useAuth();
@@ -13,6 +14,7 @@ export default function Subscription() {
   const [isWideScreen, setIsWideScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth > 900 : true
   );
+  const [checkoutSession, setCheckoutSession] = useState(null);
 
   useEffect(() => {
     loadSubscription();
@@ -61,12 +63,28 @@ export default function Subscription() {
         { tier, interval },
         token
       );
-      // Redirect to Stripe Checkout
-      window.location.href = response.checkout_url;
+      // Set checkout session to trigger embedded checkout modal
+      setCheckoutSession({
+        clientSecret: response.client_secret,
+        sessionId: response.session_id,
+        tier,
+        interval
+      });
     } catch (error) {
       alert("Failed to start checkout: " + error.message);
+    } finally {
       setProcessing(false);
     }
+  };
+
+  const handleCheckoutComplete = () => {
+    // Redirect to success page
+    navigate(`/subscription/success?session_id=${checkoutSession.sessionId}`);
+  };
+
+  const handleCloseCheckout = () => {
+    setCheckoutSession(null);
+    setProcessing(false);
   };
 
   const handleManageSubscription = async () => {
@@ -615,6 +633,65 @@ export default function Subscription() {
           </button>
         </div>
       </div>
+
+      {/* Embedded Checkout Modal */}
+      {checkoutSession && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            <button
+              onClick={handleCloseCheckout}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '8px',
+                lineHeight: '1'
+              }}
+            >
+              ×
+            </button>
+            <h2 style={{
+              fontFamily: "'Nunito', sans-serif",
+              color: '#6750A4',
+              marginBottom: '20px',
+              fontSize: '24px',
+              fontWeight: '700'
+            }}>
+              Complete Your {checkoutSession.tier === 'plus' ? 'Plus' : 'Pro'} Subscription
+            </h2>
+            <EmbeddedCheckout
+              clientSecret={checkoutSession.clientSecret}
+              onComplete={handleCheckoutComplete}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

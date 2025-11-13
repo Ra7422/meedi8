@@ -19,6 +19,8 @@
     "@plasmicapp/host": "^1.0.227",
     "@plasmicapp/loader-react": "^1.0.402",
     "@react-oauth/google": "^0.12.2",
+    "@stripe/react-stripe-js": "^5.3.0",
+    "@stripe/stripe-js": "^8.4.0",
     "axios": "^1.12.2",
     "canvas-confetti": "^1.9.4",
     "react": "^19.1.1",

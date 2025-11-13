@@ -89,14 +89,15 @@ Meedi8 uses Stripe for subscription management with three tiers:
 6. Copy the webhook secret (format: `whsec_xxxxxxxxxxxxx`)
 7. Save as: `STRIPE_WEBHOOK_SECRET`
 
-## Step 5: Configure Railway Environment Variables
+## Step 5: Configure Environment Variables
+
+### Railway (Backend)
 
 Add the following environment variables to Railway:
 
 ```bash
 # Stripe API Keys (use test keys for development)
 STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxx
-STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
 
 # Stripe Price IDs - REPLACE with your actual Price IDs from Step 2
@@ -111,6 +112,22 @@ STRIPE_PRICE_PRO_YEARLY=price_xxxxxxxxxxxxx
 2. Click **Variables** tab
 3. Add each variable above
 4. Railway will auto-redeploy after adding variables
+
+### Vercel (Frontend)
+
+Add the Stripe publishable key to Vercel for embedded checkout:
+
+```bash
+# Stripe Publishable Key (use test key for development)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
+```
+
+**How to add to Vercel:**
+1. Go to Vercel project → **meedi8**
+2. Click **Settings** → **Environment Variables**
+3. Add `VITE_STRIPE_PUBLISHABLE_KEY`
+4. Add value for Production, Preview, and Development environments
+5. Redeploy the frontend after adding
 
 ## Step 6: Update Frontend URLs
 
@@ -381,6 +398,40 @@ AND rooms_created_this_month >= rooms_per_month_limit;
 
 ---
 
+## Embedded Checkout Implementation
+
+Meedi8 uses Stripe's **Embedded Checkout** to keep users on-site during payment instead of redirecting to Stripe's hosted page.
+
+### How It Works
+
+1. **User clicks upgrade button** → Frontend calls `/subscriptions/create-checkout`
+2. **Backend creates Stripe session** with `ui_mode='embedded'` and returns `client_secret`
+3. **Frontend displays embedded form** in modal using `@stripe/react-stripe-js`
+4. **User completes payment** → Stripe redirects to success page
+5. **Webhook activates subscription** → `checkout.session.completed` event
+
+### Files Changed for Embedded Checkout
+
+**Backend:**
+- `backend/app/services/stripe_service.py:74-94` - Added `ui_mode='embedded'`, returns `client_secret` instead of `checkout_url`
+- `backend/app/routes/subscriptions.py:35-37` - Updated response model to return `client_secret`
+
+**Frontend:**
+- `frontend/src/components/EmbeddedCheckout.jsx` (NEW) - Stripe embedded checkout component
+- `frontend/src/pages/Subscription.jsx:48-88, 637-694` - Updated to show embedded checkout modal instead of redirect
+- `frontend/package.json` - Added `@stripe/stripe-js` and `@stripe/react-stripe-js` dependencies
+
+### Environment Variable Required
+
+**Frontend must have:**
+```
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx  # or pk_live_xxxxx for production
+```
+
+Without this variable, the embedded checkout will show an error message asking the user to configure Stripe.
+
+---
+
 **Last Updated**: 2025-11-13
-**Version**: 1.0.0
-**Status**: Ready for implementation
+**Version**: 1.1.0
+**Status**: Embedded checkout implementation complete

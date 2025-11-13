@@ -55,7 +55,7 @@ def get_or_create_stripe_customer(db: Session, user: User) -> str:
 
 def create_checkout_session(db: Session, user: User, tier: str, interval: str, success_url: str, cancel_url: str) -> dict:
     """
-    Create Stripe Checkout session for subscription.
+    Create Stripe Checkout session for subscription (embedded mode).
 
     Args:
         db: Database session
@@ -63,10 +63,10 @@ def create_checkout_session(db: Session, user: User, tier: str, interval: str, s
         tier: "plus" or "pro"
         interval: "monthly" or "yearly"
         success_url: URL to redirect after successful payment
-        cancel_url: URL to redirect if user cancels
+        cancel_url: URL to redirect if user cancels (unused in embedded mode)
 
     Returns:
-        dict with checkout_url and session_id
+        dict with client_secret and session_id for embedded checkout
     """
     customer_id = get_or_create_stripe_customer(db, user)
     price_id = get_price_id(tier, interval)
@@ -79,8 +79,8 @@ def create_checkout_session(db: Session, user: User, tier: str, interval: str, s
             'quantity': 1,
         }],
         mode='subscription',
-        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=cancel_url,
+        ui_mode='embedded',
+        return_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
         metadata={
             "user_id": user.id,
             "tier": tier,
@@ -94,7 +94,7 @@ def create_checkout_session(db: Session, user: User, tier: str, interval: str, s
     )
 
     return {
-        "checkout_url": checkout_session.url,
+        "client_secret": checkout_session.client_secret,
         "session_id": checkout_session.id
     }
 

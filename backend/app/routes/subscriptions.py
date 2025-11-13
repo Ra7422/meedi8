@@ -33,7 +33,7 @@ class CreateCheckoutRequest(BaseModel):
 
 
 class CheckoutResponse(BaseModel):
-    checkout_url: str
+    client_secret: str
     session_id: str
 
 
