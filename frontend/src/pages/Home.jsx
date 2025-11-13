@@ -12,6 +12,20 @@ import faqIcon from '../assets/icons/FAQ_icon.png';
 export default function Home() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
+  const [isDesktop, setIsDesktop] = React.useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+  );
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleMediationClick = () => {
     if (!token) {
@@ -97,22 +111,17 @@ export default function Home() {
     },
     cardsContainer: {
       display: 'flex',
-      flexDirection: 'column',
-      gap: '24px',
-      marginBottom: '40px',
-      '@media (min-width: 768px)': {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: '32px',
-        marginBottom: '60px',
-        maxWidth: '1100px',
-        margin: '0 auto 60px auto',
-      },
+      flexDirection: isDesktop ? 'row' : 'column',
+      justifyContent: isDesktop ? 'center' : 'flex-start',
+      gap: isDesktop ? '32px' : '24px',
+      marginBottom: isDesktop ? '60px' : '40px',
+      maxWidth: isDesktop ? '1100px' : '100%',
+      margin: isDesktop ? '0 auto 60px auto' : '0 0 40px 0',
     },
     card: {
       backgroundColor: '#FFFFFF',
-      borderRadius: '16px',
-      padding: '24px',
+      borderRadius: isDesktop ? '24px' : '16px',
+      padding: isDesktop ? '32px' : '24px',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
       border: '3px solid',
       transition: 'all 0.3s ease',
@@ -120,15 +129,9 @@ export default function Home() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '20px',
-      '@media (min-width: 768px)': {
-        flexDirection: 'column',
-        padding: '32px',
-        borderRadius: '24px',
-        gap: '24px',
-        maxWidth: '480px',
-        flex: '1',
-      },
+      gap: isDesktop ? '24px' : '20px',
+      maxWidth: isDesktop ? '480px' : '100%',
+      flex: isDesktop ? '1' : 'none',
     },
     cardMediation: {
       borderColor: '#7DD3C0',
