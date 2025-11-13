@@ -117,95 +117,56 @@ function Header() {
       position: 'absolute',
       top: '50px',
       right: '0',
-      background: '#6750A4',
-      border: '2px solid #FFFFFF',
+      background: '#FFFFFF',
+      border: '1px solid #E0E0E0',
       borderRadius: '12px',
-      padding: '24px 32px',
-      minWidth: '400px',
-      boxShadow: '0 8px 24px rgba(103, 80, 164, 0.3)',
+      padding: '16px 0',
+      minWidth: '260px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
       zIndex: 1000,
-    },
-    menuGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '12px',
-      marginBottom: '16px',
     },
     menuItem: {
       display: 'block',
-      padding: '8px 12px',
-      color: '#FFFFFF',
+      padding: '14px 24px',
+      color: '#333333',
       textDecoration: 'none',
-      fontSize: '15px',
-      fontWeight: '600',
+      fontSize: '16px',
+      fontWeight: '500',
       cursor: 'pointer',
       background: 'none',
       border: 'none',
-      borderRadius: '8px',
       fontFamily: "'Nunito', sans-serif",
       transition: 'all 0.2s',
-      textAlign: 'center',
+      textAlign: 'left',
+      width: '100%',
     },
     menuItemHover: {
-      color: '#CCB2FF',
+      background: '#F5F5F5',
     },
-    authButtonsContainer: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '12px',
-      marginTop: '8px',
-    },
-    authButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '10px 16px',
+    signupButton: {
+      display: 'block',
+      margin: '12px 16px 8px 16px',
+      padding: '12px 20px',
       color: '#6750A4',
       textDecoration: 'none',
-      fontSize: '14px',
+      fontSize: '15px',
       fontWeight: '700',
       cursor: 'pointer',
-      background: '#FFFFFF',
-      border: 'none',
-      borderRadius: '8px',
+      background: '#F5EFFF',
+      border: '2px solid #CCB2FF',
+      borderRadius: '10px',
       fontFamily: "'Nunito', sans-serif",
       transition: 'all 0.2s',
       textAlign: 'center',
     },
-    authButtonHover: {
+    signupButtonHover: {
       background: '#CCB2FF',
       color: '#FFFFFF',
     },
-    logoutButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '10px 16px',
-      color: '#FFFFFF',
-      fontSize: '14px',
-      fontWeight: '700',
-      cursor: 'pointer',
-      background: 'rgba(255, 255, 255, 0.2)',
-      border: 'none',
-      borderRadius: '8px',
-      fontFamily: "'Nunito', sans-serif",
-      transition: 'all 0.2s',
-      textAlign: 'center',
-      width: '100%',
-      marginTop: '8px',
-    },
-    logoutButtonHover: {
-      background: '#FFFFFF',
-      color: '#6750A4',
-    },
-    userInfo: {
-      padding: '0 0 12px 0',
-      color: '#CCB2FF',
-      fontSize: '14px',
-      fontWeight: '700',
-      borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-      marginBottom: '16px',
-      textAlign: 'center',
+    menuDivider: {
+      height: '1px',
+      background: '#E0E0E0',
+      margin: '8px 0',
     },
   };
 
@@ -227,99 +188,57 @@ function Header() {
 
         {menuOpen && (
           <div style={styles.menuDropdown}>
-          {user && (
-            <div style={styles.userInfo}>
-              {user.name || user.email}
-            </div>
-          )}
-
-          <div style={styles.menuGrid}>
-            <Link
-              to="/rooms"
-              style={{...styles.menuItem, ...(hoveredItem === 'rooms' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('rooms')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >My Rooms</Link>
-            <Link
-              to="/create"
-              style={{...styles.menuItem, ...(hoveredItem === 'create' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('create')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >New Mediation</Link>
-            <Link
-              to="/solo/start"
-              style={{...styles.menuItem, ...(hoveredItem === 'solo' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('solo')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >Solo Reflection</Link>
-            <Link
-              to="/profile"
-              style={{...styles.menuItem, ...(hoveredItem === 'profile' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('profile')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >Profile</Link>
-            <Link
-              to="/faq"
-              style={{...styles.menuItem, ...(hoveredItem === 'faq' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('faq')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >FAQ</Link>
             <Link
               to="/about"
               style={{...styles.menuItem, ...(hoveredItem === 'about' ? styles.menuItemHover : {})}}
               onClick={() => setMenuOpen(false)}
               onMouseEnter={() => setHoveredItem('about')}
               onMouseLeave={() => setHoveredItem(null)}
-            >About</Link>
+            >
+              How It Works
+            </Link>
             <Link
               to="/subscription"
-              style={{...styles.menuItem, ...(hoveredItem === 'subscription' ? styles.menuItemHover : {})}}
+              style={{...styles.menuItem, ...(hoveredItem === 'pricing' ? styles.menuItemHover : {})}}
               onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('subscription')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >Pricing</Link>
-            <Link
-              to="/referrals"
-              style={{...styles.menuItem, ...(hoveredItem === 'referrals' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('referrals')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >Referrals</Link>
-          </div>
-
-          {/* Auth buttons section */}
-          {user ? (
-            <button
-              onClick={() => { handleLogout(); setMenuOpen(false); }}
-              style={{...styles.logoutButton, ...(hoveredItem === 'logout' ? styles.logoutButtonHover : {})}}
-              onMouseEnter={() => setHoveredItem('logout')}
+              onMouseEnter={() => setHoveredItem('pricing')}
               onMouseLeave={() => setHoveredItem(null)}
             >
-              Logout
-            </button>
-          ) : (
-            <div style={styles.authButtonsContainer}>
-              <Link
-                to="/login"
-                style={{...styles.authButton, ...(hoveredItem === 'login' ? styles.authButtonHover : {})}}
-                onClick={() => setMenuOpen(false)}
-                onMouseEnter={() => setHoveredItem('login')}
-                onMouseLeave={() => setHoveredItem(null)}
-              >Login</Link>
-              <Link
-                to="/signup"
-                style={{...styles.authButton, ...(hoveredItem === 'signup' ? styles.authButtonHover : {})}}
-                onClick={() => setMenuOpen(false)}
-                onMouseEnter={() => setHoveredItem('signup')}
-                onMouseLeave={() => setHoveredItem(null)}
-              >Sign Up</Link>
-            </div>
-          )}
+              Pricing
+            </Link>
+            <Link
+              to="/faq"
+              style={{...styles.menuItem, ...(hoveredItem === 'faq' ? styles.menuItemHover : {})}}
+              onClick={() => setMenuOpen(false)}
+              onMouseEnter={() => setHoveredItem('faq')}
+              onMouseLeave={() => setHoveredItem(null)}
+            >
+              FAQ
+            </Link>
+            <Link
+              to="/about"
+              style={{...styles.menuItem, ...(hoveredItem === 'aboutus' ? styles.menuItemHover : {})}}
+              onClick={() => setMenuOpen(false)}
+              onMouseEnter={() => setHoveredItem('aboutus')}
+              onMouseLeave={() => setHoveredItem(null)}
+            >
+              About Us
+            </Link>
+
+            {!user && (
+              <>
+                <div style={styles.menuDivider}></div>
+                <Link
+                  to="/signup"
+                  style={{...styles.signupButton, ...(hoveredItem === 'signup' ? styles.signupButtonHover : {})}}
+                  onClick={() => setMenuOpen(false)}
+                  onMouseEnter={() => setHoveredItem('signup')}
+                  onMouseLeave={() => setHoveredItem(null)}
+                >
+                  New here? Create an account
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>
