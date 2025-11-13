@@ -215,15 +215,6 @@ function Header() {
             >
               FAQ
             </Link>
-            <Link
-              to="/about"
-              style={{...styles.menuItem, ...(hoveredItem === 'aboutus' ? styles.menuItemHover : {})}}
-              onClick={() => setMenuOpen(false)}
-              onMouseEnter={() => setHoveredItem('aboutus')}
-              onMouseLeave={() => setHoveredItem(null)}
-            >
-              About Us
-            </Link>
 
             {!user && (
               <>
