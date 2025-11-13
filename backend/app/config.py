@@ -20,10 +20,10 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
 
     # Stripe Price IDs
-    STRIPE_PRICE_PLUS_MONTHLY: str = "price_1SPo09HXmcf1Lx99xoAB0lEZ"
-    STRIPE_PRICE_PLUS_YEARLY: str = "price_1SPo3yHXmcf1Lx99XOiPRSv2"
-    STRIPE_PRICE_PRO_MONTHLY: str = "price_1SPo14HXmcf1Lx99PCT2Nxvh"
-    STRIPE_PRICE_PRO_YEARLY: str = "price_1SPo3HHXmcf1Lx99a91O2NNp"
+    STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST3SOI6BakpcqZhMdACodvT"
+    STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST3RqI6BakpcqZhg8F3UcAd"
+    STRIPE_PRICE_PRO_MONTHLY: str = "price_1ST3W6I6BakpcqZhLTITlNHJ"
+    STRIPE_PRICE_PRO_YEARLY: str = "price_1ST3W6I6BakpcqZhYykzYUG9"
 
     # Frontend URL for redirects
     FRONTEND_URL: str = "https://meedi8.com"
