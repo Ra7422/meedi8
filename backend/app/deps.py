@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
 from jose import jwt, JWTError, ExpiredSignatureError
 from sqlalchemy.orm import Session
@@ -51,7 +52,7 @@ def get_current_subscription(
     return get_or_create_subscription(db, user.id)
 
 
-def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> User | None:
+def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
     """
     Optional authentication - returns User if authenticated, None if not.
     Use this for endpoints that support both authenticated and guest access.
