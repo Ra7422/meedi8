@@ -149,6 +149,95 @@ def create_guest_checkout_session(tier: str, interval: str, success_url: str, ca
     }
 
 
+def create_subscription_with_payment_intent(
+    db: Session,
+    user: User,
+    tier: str,
+    interval: str
+) -> dict:
+    """
+    Create Stripe Subscription with PaymentIntent for Express Checkout Element.
+
+    This approach shows actual price in Apple Pay/Google Pay sheets and provides
+    native wallet payment experience.
+
+    Returns:
+        client_secret: For mounting Express Checkout Element
+        subscription_id: For tracking
+        payment_intent_id: For webhook correlation
+    """
+    customer_id = get_or_create_stripe_customer(db, user)
+    price_id = get_price_id(tier, interval)
+
+    # Create subscription with payment_behavior='default_incomplete'
+    # This creates subscription in incomplete status, waiting for payment
+    subscription = stripe.Subscription.create(
+        customer=customer_id,
+        items=[{'price': price_id}],
+        payment_behavior='default_incomplete',  # CRITICAL: Don't auto-charge
+        payment_settings={
+            'payment_method_types': ['card', 'link'],
+            'save_default_payment_method': 'on_subscription',  # Save for recurring
+        },
+        expand=['latest_invoice.payment_intent'],  # Get PaymentIntent details
+        metadata={
+            'user_id': str(user.id),
+            'tier': tier,
+            'interval': interval
+        }
+    )
+
+    # Extract PaymentIntent client_secret
+    payment_intent = subscription.latest_invoice.payment_intent
+
+    return {
+        'client_secret': payment_intent.client_secret,
+        'subscription_id': subscription.id,
+        'payment_intent_id': payment_intent.id
+    }
+
+
+def create_guest_subscription_with_payment_intent(
+    tier: str,
+    interval: str,
+    customer_email: str = None
+) -> dict:
+    """
+    Create subscription for unauthenticated users with Express Checkout.
+    Similar to authenticated flow but without existing customer.
+    """
+    price_id = get_price_id(tier, interval)
+
+    # Create subscription parameters
+    subscription_params = {
+        'items': [{'price': price_id}],
+        'payment_behavior': 'default_incomplete',
+        'payment_settings': {
+            'payment_method_types': ['card', 'link'],
+            'save_default_payment_method': 'on_subscription',
+        },
+        'expand': ['latest_invoice.payment_intent'],
+        'metadata': {
+            'tier': tier,
+            'interval': interval,
+            'guest_checkout': 'true'
+        }
+    }
+
+    # Pre-fill customer email if provided
+    if customer_email:
+        subscription_params['customer_email'] = customer_email
+
+    subscription = stripe.Subscription.create(**subscription_params)
+    payment_intent = subscription.latest_invoice.payment_intent
+
+    return {
+        'client_secret': payment_intent.client_secret,
+        'subscription_id': subscription.id,
+        'payment_intent_id': payment_intent.id
+    }
+
+
 def create_portal_session(customer_id: str, return_url: str) -> str:
     """
     Create Stripe Customer Portal session for managing subscription.
@@ -291,3 +380,97 @@ def handle_subscription_deleted(db: Session, subscription_data: dict):
 
     db.commit()
     print(f"✅ Subscription cancelled: {stripe_sub_id}")
+
+
+def handle_payment_intent_succeeded(db: Session, payment_intent: dict):
+    """
+    Handle successful payment for Express Checkout subscriptions.
+    Activates subscription after PaymentIntent succeeds.
+    """
+    # Get subscription ID from invoice
+    invoice_id = payment_intent.get("invoice")
+
+    if not invoice_id:
+        print("⚠️ No invoice found for PaymentIntent")
+        return
+
+    try:
+        # Retrieve full invoice to get subscription
+        invoice = stripe.Invoice.retrieve(invoice_id)
+        subscription_id = invoice.get("subscription")
+
+        if not subscription_id:
+            print("⚠️ No subscription found in invoice")
+            return
+
+        # Retrieve full subscription
+        stripe_subscription = stripe.Subscription.retrieve(subscription_id)
+
+        # Extract metadata
+        metadata = stripe_subscription.get("metadata", {})
+        customer_id = stripe_subscription.get("customer")
+        price_id = stripe_subscription["items"]["data"][0]["price"]["id"]
+        tier = get_tier_from_price_id(price_id)
+
+        # Handle guest checkout or authenticated user
+        is_guest_checkout = metadata.get("guest_checkout") == "true"
+
+        if is_guest_checkout:
+            # Create user account for guest checkout
+            customer = stripe.Customer.retrieve(customer_id)
+            customer_email = customer.get("email")
+
+            if not customer_email:
+                print("⚠️ Guest checkout missing customer email")
+                return
+
+            # Check if user already exists with this email
+            existing_user = db.query(User).filter(User.email == customer_email).first()
+            if existing_user:
+                print(f"ℹ️ User already exists for {customer_email}, linking subscription")
+                user = existing_user
+            else:
+                # Create new user account
+                import secrets
+                user = User(
+                    email=customer_email,
+                    name=customer_email.split("@")[0],  # Use email prefix as default name
+                    password_hash=secrets.token_urlsafe(32),  # Temporary password
+                    stripe_customer_id=customer_id,
+                    has_completed_screening=False
+                )
+                db.add(user)
+                db.flush()  # Get user.id without committing
+                print(f"✅ Created new user account for guest: {customer_email}")
+
+            user_id = user.id
+        else:
+            # Authenticated checkout - get user_id from metadata
+            user_id = metadata.get("user_id")
+            if not user_id:
+                print("⚠️ Missing user_id in subscription metadata")
+                return
+            user_id = int(user_id)
+
+        # Get or create subscription for user
+        from app.services.subscription_service import get_or_create_subscription
+        subscription = get_or_create_subscription(db, user_id)
+
+        # Update subscription
+        subscription.tier = tier
+        subscription.status = SubscriptionStatus.ACTIVE
+        subscription.stripe_subscription_id = subscription_id
+        subscription.stripe_price_id = price_id
+        subscription.updated_at = datetime.utcnow()
+
+        # Update limits for paid tiers
+        if tier in [SubscriptionTier.PLUS, SubscriptionTier.PRO]:
+            subscription.voice_conversations_limit = 999999  # Unlimited
+
+        db.commit()
+        print(f"✅ Subscription activated via PaymentIntent for user {user_id}: {tier.value}")
+
+    except Exception as e:
+        print(f"❌ Error handling PaymentIntent: {e}")
+        import traceback
+        traceback.print_exc()

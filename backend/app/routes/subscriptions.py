@@ -13,10 +13,13 @@ from app.models.user import User
 from app.services.stripe_service import (
     create_checkout_session,
     create_guest_checkout_session,
+    create_subscription_with_payment_intent,
+    create_guest_subscription_with_payment_intent,
     create_portal_session,
     handle_checkout_complete,
     handle_subscription_updated,
-    handle_subscription_deleted
+    handle_subscription_deleted,
+    handle_payment_intent_succeeded
 )
 from app.services.subscription_service import get_or_create_subscription
 from app.config import settings
@@ -50,6 +53,12 @@ class SubscriptionStatusResponse(BaseModel):
 
 class PortalResponse(BaseModel):
     portal_url: str
+
+
+class ExpressCheckoutResponse(BaseModel):
+    client_secret: str
+    subscription_id: str
+    payment_intent_id: str
 
 
 # ========================================
@@ -136,6 +145,56 @@ def create_checkout(
         )
 
 
+@router.post("/create-express-checkout", response_model=ExpressCheckoutResponse)
+def create_express_checkout(
+    request: CreateCheckoutRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    """
+    Create Stripe Subscription with PaymentIntent for Express Checkout Element.
+
+    This provides native Apple Pay/Google Pay buttons that trigger the device's
+    payment sheet directly (Face ID/Touch ID confirmation).
+
+    Works for both authenticated and unauthenticated users:
+    - Authenticated: Links subscription to existing account
+    - Unauthenticated: Creates account after payment via webhook
+
+    Returns client_secret for mounting Express Checkout Element.
+    """
+    if request.tier not in ["plus", "pro"]:
+        raise HTTPException(status_code=400, detail="Invalid tier. Must be 'plus' or 'pro'")
+
+    if request.interval not in ["monthly", "yearly"]:
+        raise HTTPException(status_code=400, detail="Invalid interval. Must be 'monthly' or 'yearly'")
+
+    try:
+        if current_user:
+            # Authenticated user checkout
+            result = create_subscription_with_payment_intent(
+                db=db,
+                user=current_user,
+                tier=request.tier,
+                interval=request.interval
+            )
+        else:
+            # Guest checkout - creates account after payment
+            result = create_guest_subscription_with_payment_intent(
+                tier=request.tier,
+                interval=request.interval
+            )
+
+        return ExpressCheckoutResponse(**result)
+
+    except Exception as e:
+        print(f"Express checkout creation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create subscription: {str(e)}"
+        )
+
+
 @router.post("/create-portal", response_model=PortalResponse)
 def create_portal(
     current_user: User = Depends(get_current_user),
@@ -210,8 +269,12 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     print(f"🔔 Stripe webhook received: {event_type}")
 
     if event_type == "checkout.session.completed":
-        # Payment successful, activate subscription
+        # Payment successful, activate subscription (Embedded Checkout)
         handle_checkout_complete(db, data)
+
+    elif event_type == "payment_intent.succeeded":
+        # Payment successful, activate subscription (Express Checkout)
+        handle_payment_intent_succeeded(db, data)
 
     elif event_type == "customer.subscription.updated":
         # Subscription updated (renewal, plan change, etc.)

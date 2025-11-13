@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
-import EmbeddedCheckout from "../components/EmbeddedCheckout";
+import ExpressCheckoutForm from "../components/ExpressCheckoutForm";
 
 export default function Subscription() {
   const { token } = useAuth();
@@ -50,19 +50,20 @@ export default function Subscription() {
 
   const handleUpgrade = async (tier, interval) => {
     // Works for both authenticated and unauthenticated users
-    // Unauthenticated users enter email in Stripe checkout
+    // Express Checkout shows native Apple Pay/Google Pay buttons
     setProcessing(true);
     try {
       const response = await apiRequest(
-        "/subscriptions/create-checkout",
+        "/subscriptions/create-express-checkout",
         "POST",
         { tier, interval },
         token  // Can be null for unauthenticated users
       );
-      // Set checkout session to trigger embedded checkout modal
+      // Set checkout session to trigger Express Checkout modal
       setCheckoutSession({
         clientSecret: response.client_secret,
-        sessionId: response.session_id,
+        subscriptionId: response.subscription_id,
+        paymentIntentId: response.payment_intent_id,
         tier,
         interval
       });
@@ -74,8 +75,8 @@ export default function Subscription() {
   };
 
   const handleCheckoutComplete = () => {
-    // Redirect to success page
-    navigate(`/subscription/success?session_id=${checkoutSession.sessionId}`);
+    // Redirect to success page with subscription ID
+    navigate(`/subscription/success?subscription_id=${checkoutSession.subscriptionId}`);
   };
 
   const handleCloseCheckout = () => {
@@ -822,7 +823,7 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Embedded Checkout Modal */}
+      {/* Express Checkout Modal */}
       {checkoutSession && (
         <div style={{
           position: 'fixed',
@@ -841,7 +842,7 @@ export default function Subscription() {
             background: 'white',
             borderRadius: '16px',
             padding: '24px',
-            maxWidth: '800px',
+            maxWidth: '600px',
             width: '100%',
             maxHeight: '90vh',
             overflow: 'auto',
@@ -873,9 +874,14 @@ export default function Subscription() {
             }}>
               Complete Your {checkoutSession.tier === 'plus' ? 'Plus' : 'Pro'} Subscription
             </h2>
-            <EmbeddedCheckout
+            <ExpressCheckoutForm
               clientSecret={checkoutSession.clientSecret}
-              onComplete={handleCheckoutComplete}
+              onSuccess={handleCheckoutComplete}
+              onError={(error) => {
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
+                handleCloseCheckout();
+              }}
             />
           </div>
         </div>
