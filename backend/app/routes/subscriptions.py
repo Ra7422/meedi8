@@ -97,8 +97,7 @@ def create_checkout(
         raise HTTPException(status_code=400, detail="Invalid interval. Must be 'monthly' or 'yearly'")
 
     # Get frontend URL from environment or use default
-    # In production, Railway will have FRONTEND_URL set
-    frontend_url = "https://clean-air-med.vercel.app"  # Your production frontend URL
+    frontend_url = settings.FRONTEND_URL
     success_url = f"{frontend_url}/subscription/success"
     cancel_url = f"{frontend_url}/subscription/cancelled"
 
@@ -143,7 +142,7 @@ def create_portal(
         )
 
     # Return to subscription page after managing subscription
-    frontend_url = "https://clean-air-med.vercel.app"
+    frontend_url = settings.FRONTEND_URL
     return_url = f"{frontend_url}/subscription"
 
     try:

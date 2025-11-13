@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PRO_MONTHLY: str = "price_1SPo14HXmcf1Lx99PCT2Nxvh"
     STRIPE_PRICE_PRO_YEARLY: str = "price_1SPo3HHXmcf1Lx99a91O2NNp"
 
+    # Frontend URL for redirects
+    FRONTEND_URL: str = "https://meedi8.com"
+
     # comma-separated
     CORS_ORIGINS: str = (
         "http://localhost:5173,"
