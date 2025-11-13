@@ -171,6 +171,7 @@ def create_subscription_with_payment_intent(
 
     # Create subscription with payment_behavior='default_incomplete'
     # This creates subscription in incomplete status, waiting for payment
+    # NOTE: Using confirmation_secret instead of payment_intent (Stripe Basil API change)
     subscription = stripe.Subscription.create(
         customer=customer_id,
         items=[{'price': price_id}],
@@ -179,7 +180,7 @@ def create_subscription_with_payment_intent(
             'payment_method_types': ['card', 'link'],
             'save_default_payment_method': 'on_subscription',  # Save for recurring
         },
-        expand=['latest_invoice.payment_intent'],  # Get PaymentIntent details
+        expand=['latest_invoice.confirmation_secret', 'pending_setup_intent'],
         metadata={
             'user_id': str(user.id),
             'tier': tier,
@@ -187,13 +188,26 @@ def create_subscription_with_payment_intent(
         }
     )
 
-    # Extract PaymentIntent client_secret
-    payment_intent = subscription.latest_invoice.payment_intent
+    # Get client_secret using confirmation_secret (new Stripe API)
+    client_secret = None
+    intent_id = None
+
+    if subscription.pending_setup_intent:
+        # Free trial or $0 subscription
+        client_secret = subscription.pending_setup_intent.client_secret
+        intent_id = subscription.pending_setup_intent.id
+    elif subscription.latest_invoice and hasattr(subscription.latest_invoice, 'confirmation_secret'):
+        # Paid subscription
+        client_secret = subscription.latest_invoice.confirmation_secret.client_secret
+        if hasattr(subscription.latest_invoice.confirmation_secret, 'payment_intent'):
+            intent_id = subscription.latest_invoice.confirmation_secret.payment_intent
+    else:
+        raise ValueError("No client_secret available from subscription")
 
     return {
-        'client_secret': payment_intent.client_secret,
+        'client_secret': client_secret,
         'subscription_id': subscription.id,
-        'payment_intent_id': payment_intent.id
+        'payment_intent_id': intent_id
     }
 
 
@@ -228,6 +242,7 @@ def create_guest_subscription_with_payment_intent(
         print(f"✓ Created customer: {customer.id}")
 
         # Create subscription with the customer ID
+        # NOTE: Using confirmation_secret instead of payment_intent (Stripe Basil API change)
         subscription_params = {
             'customer': customer.id,  # CRITICAL: Must provide customer ID
             'items': [{'price': price_id}],
@@ -236,7 +251,7 @@ def create_guest_subscription_with_payment_intent(
                 'payment_method_types': ['card', 'link'],
                 'save_default_payment_method': 'on_subscription',
             },
-            'expand': ['latest_invoice.payment_intent'],
+            'expand': ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
             'metadata': {
                 'tier': tier,
                 'interval': interval,
@@ -248,42 +263,39 @@ def create_guest_subscription_with_payment_intent(
         subscription = stripe.Subscription.create(**subscription_params)
         print(f"✓ Created subscription: {subscription.id}")
 
-        # The latest_invoice might be just an ID, need to retrieve it if it's not expanded
-        if isinstance(subscription.latest_invoice, str):
-            print(f"⚠ latest_invoice is a string ID, retrieving invoice...")
-            invoice = stripe.Invoice.retrieve(
-                subscription.latest_invoice,
-                expand=['payment_intent']
-            )
-            payment_intent = invoice.payment_intent
+        # Get client_secret - Stripe returns different intent types based on amount
+        # For paid subscriptions: Use confirmation_secret (contains PaymentIntent)
+        # For free trials or $0: Use pending_setup_intent (SetupIntent)
+        client_secret = None
+        intent_id = None
+
+        if subscription.pending_setup_intent:
+            # Free trial or $0 subscription - uses SetupIntent
+            print(f"✓ Using SetupIntent for free/trial subscription")
+            client_secret = subscription.pending_setup_intent.client_secret
+            intent_id = subscription.pending_setup_intent.id
+        elif subscription.latest_invoice and hasattr(subscription.latest_invoice, 'confirmation_secret'):
+            # Paid subscription - uses PaymentIntent via confirmation_secret
+            print(f"✓ Using confirmation_secret for paid subscription")
+            client_secret = subscription.latest_invoice.confirmation_secret.client_secret
+            # Extract PaymentIntent ID from confirmation_secret if available
+            if hasattr(subscription.latest_invoice.confirmation_secret, 'payment_intent'):
+                intent_id = subscription.latest_invoice.confirmation_secret.payment_intent
         else:
-            # Already expanded - but might still not have payment_intent attribute
-            try:
-                payment_intent = subscription.latest_invoice.payment_intent
-            except AttributeError:
-                # latest_invoice doesn't have payment_intent attribute - retrieve it manually
-                print(f"⚠ latest_invoice missing payment_intent attribute, retrieving invoice...")
-                invoice = stripe.Invoice.retrieve(
-                    subscription.latest_invoice.id,
-                    expand=['payment_intent']
-                )
-                payment_intent = invoice.payment_intent
+            print(f"❌ ERROR: No confirmation_secret or pending_setup_intent found")
+            print(f"   Subscription: {subscription.id}")
+            print(f"   Latest invoice: {subscription.latest_invoice}")
+            raise ValueError("No client_secret available - subscription may not require payment")
 
-        if not payment_intent:
-            print(f"❌ ERROR: No payment_intent found. Invoice: {subscription.latest_invoice}")
-            raise ValueError("No payment_intent found in subscription")
+        if not client_secret:
+            raise ValueError("Failed to extract client_secret from subscription")
 
-        print(f"✓ Extracted payment_intent: {payment_intent.id if hasattr(payment_intent, 'id') else payment_intent}")
-
-        # Handle if payment_intent is still just an ID string
-        if isinstance(payment_intent, str):
-            print(f"⚠ payment_intent is a string ID, retrieving payment_intent...")
-            payment_intent = stripe.PaymentIntent.retrieve(payment_intent)
+        print(f"✓ Extracted client_secret successfully")
 
         return {
-            'client_secret': payment_intent.client_secret,
+            'client_secret': client_secret,
             'subscription_id': subscription.id,
-            'payment_intent_id': payment_intent.id
+            'payment_intent_id': intent_id
         }
     except Exception as e:
         print(f"❌ Error in create_guest_subscription_with_payment_intent: {str(e)}")
