@@ -33,6 +33,7 @@ import ReferralsDetail from "./pages/ReferralsDetail";
 import Start from "./pages/Start";
 import FAQ from "./pages/FAQ";
 import About from "./pages/About";
+import Terms from "./pages/Terms";
 import ScreeningTest from "./pages/ScreeningTest";
 import ScreeningCarousel from "./pages/ScreeningCarousel";
 import Profile from "./pages/Profile";
@@ -266,6 +267,7 @@ export default function App() {
           <Route path="/start" element={<PrivateRoute><Start /></PrivateRoute>} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/about" element={<About />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="/screening-test" element={<PrivateRoute><ScreeningTest /></PrivateRoute>} />
           <Route path="/screening-carousel" element={<PrivateRoute><ScreeningCarousel /></PrivateRoute>} />
           <Route path="/rooms" element={<PrivateRoute><Rooms /></PrivateRoute>} />

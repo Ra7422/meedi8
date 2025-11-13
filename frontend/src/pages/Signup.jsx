@@ -163,7 +163,7 @@ export default function Signup() {
               style={styles.checkbox}
             />
             <span style={styles.checkboxText}>
-              By signing up, you agree to our Terms & Privacy Policy.
+              By signing up, you agree to our <a href="/terms" target="_blank" style={styles.termsLink}>Terms & Conditions</a>.
             </span>
           </label>
 
@@ -378,6 +378,11 @@ const styles = {
   },
   checkboxText: {
     lineHeight: '1.4',
+  },
+  termsLink: {
+    color: '#7DD3C0',
+    textDecoration: 'underline',
+    cursor: 'pointer',
   },
   forgotPassword: {
     textAlign: 'right',
