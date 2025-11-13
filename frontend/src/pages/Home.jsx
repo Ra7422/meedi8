@@ -101,10 +101,12 @@ export default function Home() {
       gap: '24px',
       marginBottom: '40px',
       '@media (min-width: 768px)': {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
+        flexDirection: 'row',
+        justifyContent: 'center',
         gap: '32px',
         marginBottom: '60px',
+        maxWidth: '1100px',
+        margin: '0 auto 60px auto',
       },
     },
     card: {
@@ -120,10 +122,12 @@ export default function Home() {
       alignItems: 'center',
       gap: '20px',
       '@media (min-width: 768px)': {
-        flexDirection: 'row',
-        padding: '40px',
+        flexDirection: 'column',
+        padding: '32px',
         borderRadius: '24px',
-        gap: '32px',
+        gap: '24px',
+        maxWidth: '480px',
+        flex: '1',
       },
     },
     cardMediation: {
@@ -150,10 +154,6 @@ export default function Home() {
       textAlign: 'center',
       justifyContent: 'space-between',
       width: '100%',
-      '@media (min-width: 768px)': {
-        alignItems: 'flex-start',
-        textAlign: 'left',
-      },
     },
     cardTitle: {
       fontSize: '22px',
