@@ -8,10 +8,11 @@ from pydantic import BaseModel
 import stripe
 
 from app.db import get_db
-from app.deps import get_current_user
+from app.deps import get_current_user, get_current_user_optional
 from app.models.user import User
 from app.services.stripe_service import (
     create_checkout_session,
+    create_guest_checkout_session,
     create_portal_session,
     handle_checkout_complete,
     handle_subscription_updated,
@@ -77,18 +78,22 @@ def get_subscription_status(
 @router.post("/create-checkout", response_model=CheckoutResponse)
 def create_checkout(
     request: CreateCheckoutRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """
-    Create Stripe Checkout session for subscription upgrade.
+    Create Stripe Checkout session for subscription.
+
+    Works for both authenticated and unauthenticated users:
+    - Authenticated: Links subscription to existing account
+    - Unauthenticated: Creates checkout, user completes registration after payment
 
     Args:
         tier: "plus" or "pro"
         interval: "monthly" or "yearly"
 
     Returns:
-        Checkout URL to redirect user to
+        client_secret and session_id for embedded checkout
     """
     if request.tier not in ["plus", "pro"]:
         raise HTTPException(status_code=400, detail="Invalid tier. Must be 'plus' or 'pro'")
@@ -102,14 +107,24 @@ def create_checkout(
     cancel_url = f"{frontend_url}/subscription/cancelled"
 
     try:
-        result = create_checkout_session(
-            db=db,
-            user=current_user,
-            tier=request.tier,
-            interval=request.interval,
-            success_url=success_url,
-            cancel_url=cancel_url
-        )
+        # If user is authenticated, use regular checkout
+        if current_user:
+            result = create_checkout_session(
+                db=db,
+                user=current_user,
+                tier=request.tier,
+                interval=request.interval,
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
+        else:
+            # If not authenticated, use guest checkout (email collected in Stripe)
+            result = create_guest_checkout_session(
+                tier=request.tier,
+                interval=request.interval,
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
 
         return CheckoutResponse(**result)
 

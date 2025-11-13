@@ -99,6 +99,56 @@ def create_checkout_session(db: Session, user: User, tier: str, interval: str, s
     }
 
 
+def create_guest_checkout_session(tier: str, interval: str, success_url: str, cancel_url: str, customer_email: str = None) -> dict:
+    """
+    Create Stripe Checkout session for unauthenticated guest users.
+    Email is collected during checkout, user account created via webhook after payment.
+
+    Args:
+        tier: "plus" or "pro"
+        interval: "monthly" or "yearly"
+        success_url: URL to redirect after successful payment
+        cancel_url: URL to redirect if user cancels
+        customer_email: Optional pre-filled email (from OAuth or form)
+
+    Returns:
+        dict with client_secret and session_id for embedded checkout
+    """
+    price_id = get_price_id(tier, interval)
+
+    session_params = {
+        'payment_method_types': ['card'],
+        'line_items': [{
+            'price': price_id,
+            'quantity': 1,
+        }],
+        'mode': 'subscription',
+        'ui_mode': 'embedded',
+        'return_url': success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        'metadata': {
+            "tier": tier,
+            "interval": interval,
+            "guest_checkout": "true"  # Flag for webhook to create user
+        },
+        'subscription_data': {
+            "metadata": {
+                "tier": tier
+            }
+        }
+    }
+
+    # Pre-fill email if provided (e.g., from OAuth)
+    if customer_email:
+        session_params['customer_email'] = customer_email
+
+    checkout_session = stripe.checkout.Session.create(**session_params)
+
+    return {
+        "client_secret": checkout_session.client_secret,
+        "session_id": checkout_session.id
+    }
+
+
 def create_portal_session(customer_id: str, return_url: str) -> str:
     """
     Create Stripe Customer Portal session for managing subscription.
