@@ -16,6 +16,7 @@ export default function Subscription() {
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
   const [checkoutSession, setCheckoutSession] = useState(null);
+  const [expandedTier, setExpandedTier] = useState(null);
 
   useEffect(() => {
     loadSubscription();
@@ -48,27 +49,36 @@ export default function Subscription() {
     setLoading(false);
   };
 
-  const handleUpgrade = async (tier, interval) => {
-    // Works for both authenticated and unauthenticated users
-    // Express Checkout shows native Apple Pay/Google Pay buttons
+  const handleExpandCheckout = async (tier) => {
+    // Expand the checkout section for this tier and load payment methods
+    if (expandedTier === tier) {
+      // Collapse if already expanded
+      setExpandedTier(null);
+      setCheckoutSession(null);
+      return;
+    }
+
     setProcessing(true);
+    setExpandedTier(tier);
+
     try {
       const response = await apiRequest(
         "/subscriptions/create-express-checkout",
         "POST",
-        { tier, interval },
+        { tier, interval: billingInterval },
         token  // Can be null for unauthenticated users
       );
-      // Set checkout session to trigger Express Checkout modal
+      // Set checkout session to show Express Checkout buttons
       setCheckoutSession({
         clientSecret: response.client_secret,
         subscriptionId: response.subscription_id,
         paymentIntentId: response.payment_intent_id,
         tier,
-        interval
+        interval: billingInterval
       });
     } catch (error) {
-      alert("Failed to start checkout: " + error.message);
+      alert("Failed to load payment methods: " + error.message);
+      setExpandedTier(null);
     } finally {
       setProcessing(false);
     }
@@ -77,11 +87,6 @@ export default function Subscription() {
   const handleCheckoutComplete = () => {
     // Redirect to success page with subscription ID
     navigate(`/subscription/success?subscription_id=${checkoutSession.subscriptionId}`);
-  };
-
-  const handleCloseCheckout = () => {
-    setCheckoutSession(null);
-    setProcessing(false);
   };
 
   const handleManageSubscription = async () => {
@@ -410,27 +415,56 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "plus" ? (
-            <button
-              onClick={() => handleUpgrade("plus", billingInterval)}
-              disabled={processing}
-              style={{
-                padding: "14px",
-                background: "#7C6CB6",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "700",
-                fontFamily: "'Nunito', sans-serif",
-                cursor: processing ? "not-allowed" : "pointer",
-                fontSize: "16px",
-                transition: "all 0.2s",
-                boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
-                width: "100%",
-                opacity: processing ? 0.6 : 1
-              }}
-            >
-              {processing ? "Opening..." : "Get Plus"}
-            </button>
+            <div style={{ width: "100%" }}>
+              <button
+                onClick={() => handleExpandCheckout("plus")}
+                disabled={processing}
+                style={{
+                  padding: "14px",
+                  background: "#7C6CB6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: expandedTier === "plus" ? "12px 12px 0 0" : "12px",
+                  fontWeight: "700",
+                  fontFamily: "'Nunito', sans-serif",
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
+                  width: "100%",
+                  opacity: processing ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                {processing && expandedTier === "plus" ? "Loading..." : "Get Plus"}
+                {!processing && <span style={{ fontSize: "12px" }}>{expandedTier === "plus" ? "▲" : "▼"}</span>}
+              </button>
+
+              {/* Embedded Express Checkout */}
+              {expandedTier === "plus" && checkoutSession && checkoutSession.tier === "plus" && (
+                <div style={{
+                  border: "2px solid #7C6CB6",
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  padding: "16px",
+                  background: "#F5F3FF"
+                }}>
+                  <ExpressCheckoutForm
+                    clientSecret={checkoutSession.clientSecret}
+                    onSuccess={handleCheckoutComplete}
+                    onError={(error) => {
+                      console.error('Payment error:', error);
+                      alert('Payment failed: ' + error.message);
+                      setExpandedTier(null);
+                      setCheckoutSession(null);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{
               padding: "14px",
@@ -520,27 +554,56 @@ export default function Subscription() {
           </ul>
 
           {currentTier !== "pro" ? (
-            <button
-              onClick={() => handleUpgrade("pro", billingInterval)}
-              disabled={processing}
-              style={{
-                padding: "14px",
-                background: "#7DD3C0",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "700",
-                fontFamily: "'Nunito', sans-serif",
-                cursor: processing ? "not-allowed" : "pointer",
-                fontSize: "16px",
-                transition: "all 0.2s",
-                boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
-                width: "100%",
-                opacity: processing ? 0.6 : 1
-              }}
-            >
-              {processing ? "Opening..." : "Get Pro"}
-            </button>
+            <div style={{ width: "100%" }}>
+              <button
+                onClick={() => handleExpandCheckout("pro")}
+                disabled={processing}
+                style={{
+                  padding: "14px",
+                  background: "#7DD3C0",
+                  color: "white",
+                  border: "none",
+                  borderRadius: expandedTier === "pro" ? "12px 12px 0 0" : "12px",
+                  fontWeight: "700",
+                  fontFamily: "'Nunito', sans-serif",
+                  cursor: processing ? "not-allowed" : "pointer",
+                  fontSize: "16px",
+                  transition: "all 0.2s",
+                  boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
+                  width: "100%",
+                  opacity: processing ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                {processing && expandedTier === "pro" ? "Loading..." : "Get Pro"}
+                {!processing && <span style={{ fontSize: "12px" }}>{expandedTier === "pro" ? "▲" : "▼"}</span>}
+              </button>
+
+              {/* Embedded Express Checkout */}
+              {expandedTier === "pro" && checkoutSession && checkoutSession.tier === "pro" && (
+                <div style={{
+                  border: "2px solid #7DD3C0",
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  padding: "16px",
+                  background: "#E8F9F5"
+                }}>
+                  <ExpressCheckoutForm
+                    clientSecret={checkoutSession.clientSecret}
+                    onSuccess={handleCheckoutComplete}
+                    onError={(error) => {
+                      console.error('Payment error:', error);
+                      alert('Payment failed: ' + error.message);
+                      setExpandedTier(null);
+                      setCheckoutSession(null);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div style={{
               padding: "14px",
@@ -588,69 +651,6 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Express Checkout Modal */}
-      {checkoutSession && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '24px',
-            maxWidth: '600px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            position: 'relative'
-          }}>
-            <button
-              onClick={handleCloseCheckout}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'transparent',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#666',
-                padding: '8px',
-                lineHeight: '1'
-              }}
-            >
-              ×
-            </button>
-            <h2 style={{
-              fontFamily: "'Nunito', sans-serif",
-              color: '#6750A4',
-              marginBottom: '20px',
-              fontSize: '24px',
-              fontWeight: '700'
-            }}>
-              Complete Your {checkoutSession.tier === 'plus' ? 'Plus' : 'Pro'} Subscription
-            </h2>
-            <ExpressCheckoutForm
-              clientSecret={checkoutSession.clientSecret}
-              onSuccess={handleCheckoutComplete}
-              onError={(error) => {
-                console.error('Payment error:', error);
-                alert('Payment failed: ' + error.message);
-                handleCloseCheckout();
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
