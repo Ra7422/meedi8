@@ -265,20 +265,6 @@ export default function Subscription() {
           boxShadow: currentTier === "free" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)"
         }}>
           <div style={{ marginBottom: "24px" }}>
-            <h3 style={{
-              fontSize: "28px",
-              marginBottom: "8px",
-              fontFamily: "'Nunito', sans-serif",
-              fontWeight: "700",
-              color: "#6750A4"
-            }}>FREE TIER</h3>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              marginBottom: "12px",
-              color: "#6B7280",
-              fontFamily: "'Nunito', sans-serif"
-            }}>Trial & Text Only</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -288,11 +274,6 @@ export default function Subscription() {
             }}>
               £0<span style={{ fontSize: "18px", fontWeight: "400", color: "#6B7280" }}>/month</span>
             </div>
-            <p style={{
-              color: "#888",
-              fontSize: "15px",
-              fontFamily: "'Nunito', sans-serif"
-            }}>Perfect for trying Meedi8</p>
           </div>
 
           <ul style={{
@@ -302,23 +283,23 @@ export default function Subscription() {
             fontFamily: "'Nunito', sans-serif"
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Text-based mediation</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Individual coaching with Meedi</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Basic conversation summary</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>7-day access to transcript</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Email support</span>
             </li>
           </ul>
@@ -366,20 +347,6 @@ export default function Subscription() {
           </div>
 
           <div style={{ marginBottom: "24px" }}>
-            <h3 style={{
-              fontSize: "28px",
-              marginBottom: "8px",
-              fontFamily: "'Nunito', sans-serif",
-              fontWeight: "700",
-              color: "#6750A4"
-            }}>PLUS TIER</h3>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              marginBottom: "12px",
-              color: "#6B7280",
-              fontFamily: "'Nunito', sans-serif"
-            }}>Voice & Evidence</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -392,11 +359,6 @@ export default function Subscription() {
                 /{billingInterval === 'monthly' ? 'month' : 'year'}
               </span>
             </div>
-            <p style={{
-              color: "#888",
-              fontSize: "15px",
-              fontFamily: "'Nunito', sans-serif"
-            }}>For natural voice conversations</p>
           </div>
 
           <ul style={{
@@ -406,35 +368,35 @@ export default function Subscription() {
             fontFamily: "'Nunito', sans-serif"
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Free</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited text mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Voice-enabled mediations</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 10MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Automatic transcription</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>30-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Download basic session summaries</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority email support</span>
             </li>
           </ul>
@@ -582,20 +544,6 @@ export default function Subscription() {
           boxShadow: currentTier === "pro" ? "0 8px 24px rgba(125, 211, 192, 0.2)" : "0 4px 12px rgba(0,0,0,0.08)"
         }}>
           <div style={{ marginBottom: "24px" }}>
-            <h3 style={{
-              fontSize: "28px",
-              marginBottom: "8px",
-              fontFamily: "'Nunito', sans-serif",
-              fontWeight: "700",
-              color: "#6750A4"
-            }}>PRO TIER</h3>
-            <div style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              marginBottom: "12px",
-              color: "#6B7280",
-              fontFamily: "'Nunito', sans-serif"
-            }}>Complete Professional Service</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -608,11 +556,6 @@ export default function Subscription() {
                 /{billingInterval === 'monthly' ? 'month' : 'year'}
               </span>
             </div>
-            <p style={{
-              color: "#888",
-              fontSize: "15px",
-              fontFamily: "'Nunito', sans-serif"
-            }}>Complete audio experience with professional insights</p>
           </div>
 
           <ul style={{
@@ -622,39 +565,39 @@ export default function Subscription() {
             fontFamily: "'Nunito', sans-serif"
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Plus</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited voice mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Meedi AI voice responses</strong> (two-way voice conversations)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 50MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>3 professional evaluation reports per month</strong> (additional reports £4.99 each)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>90-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Advanced relationship pattern analytics</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority support (24-hour response)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <span style={{ fontSize: "18px" }}>✅</span>
+              <img src="data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='10' fill='%237DD3C0'/%3E%3Cpath d='M6 10L9 13L14 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Export to share with therapists</span>
             </li>
           </ul>
