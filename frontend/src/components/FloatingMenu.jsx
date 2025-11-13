@@ -61,7 +61,11 @@ export default function FloatingMenu({
   const menuItems = [
     { label: "Sessions", path: "/sessions" },
     { label: "New Mediation", path: "/create" },
-    { label: "Subscription", path: "/subscription" }
+    { label: "How It Works", path: "/onboarding" },
+    { label: "Pricing", path: "/subscription" },
+    { label: "FAQ", path: "/faq" },
+    { label: "About Us", path: "/about" },
+    { label: "Referrals", path: "/referrals" }
   ];
 
   return (

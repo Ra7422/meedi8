@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
 import WaveDecoration from "../components/WaveDecoration";
 import CategoryIcon from "../components/ui/CategoryIcon";
+import FloatingMenu from "../components/FloatingMenu";
 
 const categories = [
   { id: 'work', label: 'Work' },
