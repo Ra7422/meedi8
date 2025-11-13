@@ -18,7 +18,7 @@ from app.services.main_room_mediator import start_main_room, process_main_room_r
 # from app.services.solo_coach import start_solo_session, process_solo_response
 # from app.services.therapy_report import generate_professional_report
 from app.services.whisper_service import transcribe_audio
-from app.services.subscription_service import require_feature_access, increment_voice_usage
+from app.services.subscription_service import require_feature_access, increment_voice_usage, check_room_creation_limit, increment_room_counter
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
 from app.services.email_service import send_turn_notification, send_break_notification
 from app.schemas.room import StartCoachingRequest, StartCoachingResponse, CoachingResponseRequest, CoachingResponseOut, FinalizeCoachingResponse, LobbyInfoResponse, MainRoomSummariesResponse, MainRoomStartResponse, MainRoomRespondRequest, MainRoomRespondResponse
@@ -68,6 +68,9 @@ def create_room(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # PAYWALL: Check room creation limit before allowing room creation
+    check_room_creation_limit(current_user.id, db)
+
     # Support room_type parameter (mediation or solo)
     room_type = getattr(room_data, 'room_type', 'mediation')  # Default to mediation for backward compatibility
 
@@ -87,6 +90,10 @@ def create_room(
     db.add(room)
     db.commit()
     db.refresh(room)
+
+    # PAYWALL: Increment room counter after successful creation
+    increment_room_counter(current_user.id, db)
+
     return room
 
 @router.post("/{room_id}/join")
