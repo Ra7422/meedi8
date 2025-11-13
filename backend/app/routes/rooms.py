@@ -20,6 +20,7 @@ from app.services.main_room_mediator import start_main_room, process_main_room_r
 from app.services.whisper_service import transcribe_audio
 from app.services.subscription_service import require_feature_access, increment_voice_usage
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
+from app.services.email_service import send_turn_notification, send_break_notification
 from app.schemas.room import StartCoachingRequest, StartCoachingResponse, CoachingResponseRequest, CoachingResponseOut, FinalizeCoachingResponse, LobbyInfoResponse, MainRoomSummariesResponse, MainRoomStartResponse, MainRoomRespondRequest, MainRoomRespondResponse
 from app.models.room import Room, Turn
 from app.schemas.room import RoomCreate, RoomResponse, IntakeRequest, IntakeResponse, TurnResponse, TurnFeedItem, AIQuestionOut, MediateOut, RespondRequest, RespondOut, SignalRequest
@@ -1295,6 +1296,20 @@ def respond_main_room(
         next_speaker_id = None
         addressed_user_name = None
 
+    # Send email notification to next speaker (if they're not the current user)
+    if next_speaker_id and next_speaker_id != current_user.id:
+        next_speaker = other_user  # We already determined this above
+        try:
+            send_turn_notification(
+                to_email=next_speaker.email,
+                to_name=clean_user_name(next_speaker),
+                room_id=room_id,
+                other_person_name=current_user_name
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"⚠️  Failed to send email notification: {e}")
+
     return MainRoomRespondResponse(
         ai_response=result.get("ai_response"),
         resolution=result.get("resolution"),
@@ -1480,6 +1495,20 @@ def request_break(
     room.break_requested_by_id = current_user.id
     room.break_requested_at = func.now()
     db.commit()
+
+    # Send email notification to other participant
+    other_participant = next((p for p in room.participants if p.id != current_user.id), None)
+    if other_participant:
+        try:
+            send_break_notification(
+                to_email=other_participant.email,
+                to_name=clean_user_name(other_participant),
+                room_id=room_id,
+                requester_name=clean_user_name(current_user)
+            )
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"⚠️  Failed to send break notification email: {e}")
 
     return {"status": "break_requested"}
 

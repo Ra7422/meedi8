@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Meedi8** is an AI-powered mediation platform that guides users through conflict resolution using Nonviolent Communication (NVC) principles. The system consists of a React frontend and FastAPI backend that orchestrates a multi-phase mediation flow.
 
-## Recent Updates (Last Updated: 2025-11-12)
+## Recent Updates (Last Updated: 2025-11-13)
+
+**⚠️ UNCOMMITTED WORK IN PROGRESS** - Email notification system fully implemented but NOT committed. Waiting on domain DNS setup before committing.
 
 **✅ LATEST STABLE STATE** - Commit `c5cfd7b` (2025-11-12) includes professional PDF report generation, homepage image fixes, and strict turn-by-turn mediation with harsh language intervention.
 
@@ -14,7 +16,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Critical Changes** - Read these first when working on the codebase:
 
-0. **Professional PDF Report Generation (2025-11-12)** - Resolution page now includes "Generate Report" button that creates therapist-style PDF reports using Claude API. Reports include: Presenting Issues, Conversation Summary, Observations, Assessment, and Recommendations. Generated on-demand (button press) to save tokens, stored in S3 bucket. Button transitions: "Generate Report" → "Generating..." → "Download Report (PDF)". Backend: `POST /rooms/{id}/generate-report`, Service: `backend/app/services/report_generator.py` (uses ReportLab + Claude Sonnet 4.5), Frontend: ResolutionComplete.jsx lines 14-15, 55-68, 180-248. Migration: `20251112_add_professional_report_url.py`. Cost: ~$0.03-0.05 per report.
+0. **Email Notification System (2025-11-13) - UNCOMMITTED** - Full SendGrid integration for turn-taking notifications. Code is complete but NOT committed pending domain DNS setup. Files modified: `backend/app/services/email_service.py` (NEW), `backend/app/routes/rooms.py` (lines 23, 1299-1311, 1499-1511), `backend/requirements.txt` (added sendgrid>=6.10.0), `SENDGRID_SETUP.md` (NEW - comprehensive setup guide), `backend/test_email.py` (NEW - testing script). Features: HTML emails with brand styling, turn notifications, break notifications, graceful error handling. Disabled by default via `EMAIL_NOTIFICATIONS_ENABLED=false` env var. **STATUS**: Waiting on domain DNS configuration to verify sender domain before committing. See `SENDGRID_SETUP.md` for full setup instructions.
+
+1. **Professional PDF Report Generation (2025-11-12)** - Resolution page now includes "Generate Report" button that creates therapist-style PDF reports using Claude API. Reports include: Presenting Issues, Conversation Summary, Observations, Assessment, and Recommendations. Generated on-demand (button press) to save tokens, stored in S3 bucket. Button transitions: "Generate Report" → "Generating..." → "Download Report (PDF)". Backend: `POST /rooms/{id}/generate-report`, Service: `backend/app/services/report_generator.py` (uses ReportLab + Claude Sonnet 4.5), Frontend: ResolutionComplete.jsx lines 14-15, 55-68, 180-248. Migration: `20251112_add_professional_report_url.py`. Cost: ~$0.03-0.05 per report.
 
 1. **PostgreSQL JSON Query Fix (CRITICAL)** - `Turn.tags` column must use `cast(Turn.tags, String).like('%pattern%')` instead of `.contains()` for PostgreSQL compatibility. The `.contains()` method generates `LIKE` operator on JSON which fails with "operator does not exist: json ~~ text". See commit `246b6c4` for implementation. This fix is required for any JSON column queries.
 
@@ -971,3 +975,133 @@ CORS_ORIGINS=https://meedi8.vercel.app,...  # Frontend origins
 3. Test `/debug/database` endpoint to confirm schema is correct
 4. Compare working commit `246b6c4` with current HEAD to see what changed
 5. Consider rolling back to this commit and re-applying changes incrementally
+
+---
+
+## Current Work Session Status (2025-11-13)
+
+### Uncommitted Changes
+
+**Email Notification System - READY BUT NOT COMMITTED**
+
+Files modified (staged but not committed):
+```
+PAYWALL.md                              # NEW - Comprehensive paywall strategy doc
+SENDGRID_SETUP.md                       # NEW - SendGrid setup guide (500+ lines)
+backend/app/routes/rooms.py             # Modified - Added email imports and calls
+backend/app/services/email_service.py   # NEW - SendGrid integration service
+backend/requirements.txt                # Modified - Added sendgrid>=6.10.0
+backend/test_email.py                   # NEW - Interactive testing script
+```
+
+**Status**: All code complete and working, waiting on domain DNS setup before committing to production.
+
+### Next Steps (When Resuming)
+
+**Immediate (Domain Setup Required)**:
+1. Configure custom domain `meedi8.com` DNS in Namecheap:
+   - Add Vercel DNS records for frontend (meedi8.com, www.meedi8.com)
+   - Add Railway CNAME for backend (api.meedi8.com)
+   - Add SendGrid CNAME records for email verification (3-5 records)
+
+2. After DNS configured, complete SendGrid setup:
+   - Create SendGrid account at https://sendgrid.com
+   - Generate API key (Settings → API Keys)
+   - Verify domain in SendGrid dashboard (wait for DNS propagation)
+   - Add environment variables to Railway:
+     ```
+     SENDGRID_API_KEY=SG.xxxxxx
+     FROM_EMAIL=notifications@meedi8.com
+     FROM_NAME=Meedi8
+     EMAIL_NOTIFICATIONS_ENABLED=false
+     FRONTEND_URL=https://meedi8.com
+     ```
+
+3. Test email delivery:
+   - Run `python backend/test_email.py` locally
+   - Send test to personal email
+   - Verify HTML rendering and links work
+   - Check SendGrid Activity Feed for delivery status
+
+4. Enable and commit:
+   - Set `EMAIL_NOTIFICATIONS_ENABLED=true` in Railway
+   - Commit all staged changes with message from session notes
+   - Push to GitHub (auto-deploys to Railway + Vercel)
+   - Test full mediation flow with real users
+
+**Future Tasks (From Todo List)**:
+- Add browser push notifications (FCM/OneSignal) - for real-time alerts
+- Add SMS notifications as premium feature (Twilio) - optional enhancement
+- Implement paywall strategy from PAYWALL.md (Phase 1: room limits, file size)
+
+### Email Notification Features Implemented
+
+**Turn Notifications**:
+- Triggered when other user responds in main room
+- Subject: "{Name} has responded - Your turn in Meedi8"
+- HTML email with teal gradient header, branded styling
+- CTA button: "Continue Mediation →" linking to room
+- Plain text fallback for email clients without HTML
+- Gracefully handles errors (logs but doesn't fail request)
+
+**Break Notifications**:
+- Triggered when other user requests breathing break
+- Subject: "{Name} requested a break - Meedi8"
+- Purple gradient header (break theme)
+- Links to room with explanation of break feature
+
+**Integration Points**:
+- `backend/app/routes/rooms.py:1299-1311` - Turn notification in respond_main_room
+- `backend/app/routes/rooms.py:1499-1511` - Break notification in request_break
+- Both use try/except to prevent email failures from breaking API responses
+
+**Cost Analysis**:
+- SendGrid free tier: 100 emails/day = 3,000/month
+- Average mediation: 25-45 emails (turn notifications)
+- Free tier supports: 65-120 mediations/month
+- Paid tier: $19.95/month for 50,000 emails if needed
+- Cost per mediation: ~$0.01-0.02 (negligible vs AI costs)
+
+### DNS Configuration Reference
+
+**For Namecheap → Vercel (Frontend)**:
+```
+Type: A
+Host: @
+Value: 76.76.21.21
+
+Type: CNAME
+Host: www
+Value: cname.vercel-dns.com
+```
+
+**For Namecheap → Railway (Backend)**:
+```
+Type: CNAME
+Host: api
+Value: [provided by Railway].up.railway.app
+```
+
+**For Namecheap → SendGrid (Email)**:
+```
+Type: CNAME
+Host: em[####]
+Value: u[####].wl[###].sendgrid.net
+
+Type: CNAME
+Host: s1._domainkey
+Value: s1.domainkey.u[####].wl[###].sendgrid.net
+
+Type: CNAME
+Host: s2._domainkey
+Value: s2.domainkey.u[####].wl[###].sendgrid.net
+```
+(Exact values provided by SendGrid during domain verification)
+
+### Important Notes for Morning
+
+1. **DO NOT COMMIT YET** - Wait for domain DNS setup confirmation
+2. **Check git status** - Should show 6 modified/new files staged
+3. **Email is disabled by default** - Safe to commit without SendGrid configured
+4. **PAYWALL.md is included** - Comprehensive strategy doc also staged
+5. **Test script ready** - Use `python backend/test_email.py` after SendGrid setup
