@@ -216,7 +216,20 @@ function Header() {
               FAQ
             </Link>
 
-            {!user && (
+            {user ? (
+              <>
+                <div style={styles.menuDivider}></div>
+                <Link
+                  to="/profile"
+                  style={{...styles.menuItem, ...(hoveredItem === 'profile' ? styles.menuItemHover : {})}}
+                  onClick={() => setMenuOpen(false)}
+                  onMouseEnter={() => setHoveredItem('profile')}
+                  onMouseLeave={() => setHoveredItem(null)}
+                >
+                  My Profile
+                </Link>
+              </>
+            ) : (
               <>
                 <div style={styles.menuDivider}></div>
                 <Link
