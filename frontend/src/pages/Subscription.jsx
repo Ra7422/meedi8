@@ -17,6 +17,7 @@ export default function Subscription() {
   );
   const [checkoutSession, setCheckoutSession] = useState(null);
   const [expandedTier, setExpandedTier] = useState(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   useEffect(() => {
     loadSubscription();
@@ -84,9 +85,41 @@ export default function Subscription() {
     }
   };
 
+  const handleOpenCardModal = async (tier) => {
+    // Open modal with full payment form for manual card entry
+    setProcessing(true);
+    setShowCardModal(true);
+
+    try {
+      const response = await apiRequest(
+        "/subscriptions/create-express-checkout",
+        "POST",
+        { tier, interval: billingInterval },
+        token
+      );
+      setCheckoutSession({
+        clientSecret: response.client_secret,
+        subscriptionId: response.subscription_id,
+        paymentIntentId: response.payment_intent_id,
+        tier,
+        interval: billingInterval
+      });
+    } catch (error) {
+      alert("Failed to load payment methods: " + error.message);
+      setShowCardModal(false);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleCheckoutComplete = () => {
     // Redirect to success page with subscription ID
     navigate(`/subscription/success?subscription_id=${checkoutSession.subscriptionId}`);
+  };
+
+  const handleCloseModal = () => {
+    setShowCardModal(false);
+    setCheckoutSession(null);
   };
 
   const handleManageSubscription = async () => {
@@ -462,6 +495,31 @@ export default function Subscription() {
                       setCheckoutSession(null);
                     }}
                   />
+                  <div style={{
+                    textAlign: "center",
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid #E5E7EB"
+                  }}>
+                    <button
+                      onClick={() => {
+                        setExpandedTier(null);
+                        handleOpenCardModal("plus");
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#7C6CB6",
+                        fontSize: "14px",
+                        fontFamily: "'Nunito', sans-serif",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: "4px 8px"
+                      }}
+                    >
+                      Pay by card?
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -601,6 +659,31 @@ export default function Subscription() {
                       setCheckoutSession(null);
                     }}
                   />
+                  <div style={{
+                    textAlign: "center",
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid #E5E7EB"
+                  }}>
+                    <button
+                      onClick={() => {
+                        setExpandedTier(null);
+                        handleOpenCardModal("pro");
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#7DD3C0",
+                        fontSize: "14px",
+                        fontFamily: "'Nunito', sans-serif",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: "4px 8px"
+                      }}
+                    >
+                      Pay by card?
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -650,6 +733,70 @@ export default function Subscription() {
           </button>
         </div>
       </div>
+
+      {/* Card Payment Modal */}
+      {showCardModal && checkoutSession && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            <button
+              onClick={handleCloseModal}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '8px',
+                lineHeight: '1'
+              }}
+            >
+              ×
+            </button>
+            <h2 style={{
+              fontFamily: "'Nunito', sans-serif",
+              color: '#6750A4',
+              marginBottom: '20px',
+              fontSize: '24px',
+              fontWeight: '700'
+            }}>
+              Complete Your {checkoutSession.tier === 'plus' ? 'Plus' : 'Pro'} Subscription
+            </h2>
+            <ExpressCheckoutForm
+              clientSecret={checkoutSession.clientSecret}
+              onSuccess={handleCheckoutComplete}
+              onError={(error) => {
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
+                handleCloseModal();
+              }}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );
