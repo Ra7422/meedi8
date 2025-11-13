@@ -257,8 +257,17 @@ def create_guest_subscription_with_payment_intent(
             )
             payment_intent = invoice.payment_intent
         else:
-            # Already expanded
-            payment_intent = subscription.latest_invoice.payment_intent
+            # Already expanded - but might still not have payment_intent attribute
+            try:
+                payment_intent = subscription.latest_invoice.payment_intent
+            except AttributeError:
+                # latest_invoice doesn't have payment_intent attribute - retrieve it manually
+                print(f"⚠ latest_invoice missing payment_intent attribute, retrieving invoice...")
+                invoice = stripe.Invoice.retrieve(
+                    subscription.latest_invoice.id,
+                    expand=['payment_intent']
+                )
+                payment_intent = invoice.payment_intent
 
         if not payment_intent:
             print(f"❌ ERROR: No payment_intent found. Invoice: {subscription.latest_invoice}")
@@ -266,7 +275,7 @@ def create_guest_subscription_with_payment_intent(
 
         print(f"✓ Extracted payment_intent: {payment_intent.id if hasattr(payment_intent, 'id') else payment_intent}")
 
-        # Handle if payment_intent is still just an ID
+        # Handle if payment_intent is still just an ID string
         if isinstance(payment_intent, str):
             print(f"⚠ payment_intent is a string ID, retrieving payment_intent...")
             payment_intent = stripe.PaymentIntent.retrieve(payment_intent)
