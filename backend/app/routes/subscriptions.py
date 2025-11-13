@@ -58,7 +58,7 @@ class PortalResponse(BaseModel):
 class ExpressCheckoutResponse(BaseModel):
     client_secret: str
     subscription_id: str
-    payment_intent_id: str
+    payment_intent_id: Optional[str] = None  # Optional - may not be available from confirmation_secret
 
 
 # ========================================
