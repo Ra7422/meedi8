@@ -256,7 +256,14 @@ export default function Subscription() {
               fontFamily: "'Nunito', sans-serif",
               fontWeight: "700",
               color: "#6750A4"
-            }}>Free</h3>
+            }}>FREE TIER</h3>
+            <div style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              marginBottom: "12px",
+              color: "#6B7280",
+              fontFamily: "'Nunito', sans-serif"
+            }}>Trial & Text Only</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -270,7 +277,7 @@ export default function Subscription() {
               color: "#888",
               fontSize: "15px",
               fontFamily: "'Nunito', sans-serif"
-            }}>Perfect for trying out Meedi</p>
+            }}>Perfect for trying Meedi8</p>
           </div>
 
           <ul style={{
@@ -285,11 +292,19 @@ export default function Subscription() {
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>1 trial voice conversation</span>
+              <span>Individual coaching with Meedi</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>Download transcripts</span>
+              <span>Basic conversation summary</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>7-day access to transcript</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Email support</span>
             </li>
           </ul>
 
@@ -342,7 +357,14 @@ export default function Subscription() {
               fontFamily: "'Nunito', sans-serif",
               fontWeight: "700",
               color: "#6750A4"
-            }}>Plus</h3>
+            }}>PLUS TIER</h3>
+            <div style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              marginBottom: "12px",
+              color: "#6B7280",
+              fontFamily: "'Nunito', sans-serif"
+            }}>Voice & Evidence</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -374,7 +396,15 @@ export default function Subscription() {
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span><strong>Unlimited voice recording</strong></span>
+              <span>Unlimited text mediations</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span><strong>Voice-enabled mediations</strong></span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Upload evidence files (up to 10MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
@@ -382,7 +412,15 @@ export default function Subscription() {
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>Email support</span>
+              <span>30-day transcript storage</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Download basic session summaries</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Priority email support</span>
             </li>
           </ul>
 
@@ -439,7 +477,14 @@ export default function Subscription() {
               fontFamily: "'Nunito', sans-serif",
               fontWeight: "700",
               color: "#6750A4"
-            }}>Pro</h3>
+            }}>PRO TIER</h3>
+            <div style={{
+              fontSize: "14px",
+              fontWeight: "600",
+              marginBottom: "12px",
+              color: "#6B7280",
+              fontFamily: "'Nunito', sans-serif"
+            }}>Complete Professional Service</div>
             <div style={{
               fontSize: "40px",
               fontWeight: "700",
@@ -456,7 +501,7 @@ export default function Subscription() {
               color: "#888",
               fontSize: "15px",
               fontFamily: "'Nunito', sans-serif"
-            }}>Complete audio experience</p>
+            }}>Complete audio experience with professional insights</p>
           </div>
 
           <ul style={{
@@ -471,19 +516,35 @@ export default function Subscription() {
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span><strong>Meedi voice responses</strong></span>
+              <span>Unlimited voice mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>Full audio conversations</span>
+              <span><strong>Meedi AI voice responses</strong> (two-way voice conversations)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>Priority support</span>
+              <span>Upload evidence files (up to 50MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
               <span style={{ fontSize: "18px" }}>✅</span>
-              <span>Advanced analytics</span>
+              <span><strong>3 professional evaluation reports per month</strong> (additional reports £4.99 each)</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>90-day transcript storage</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Advanced relationship pattern analytics</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Priority support (24-hour response)</span>
+            </li>
+            <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <span>Export to share with therapists</span>
             </li>
           </ul>
 
