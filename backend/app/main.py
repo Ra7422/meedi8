@@ -27,10 +27,11 @@ def health():
 
 @app.get("/debug/env")
 def debug_env():
-    """Debug endpoint to check if AWS env vars are loaded"""
+    """Debug endpoint to check if env vars are loaded"""
     import os
     # Get all env vars that contain 'AWS' to debug what Railway actually has
     aws_vars = {k: v[:10] + "..." if v else "EMPTY" for k, v in os.environ.items() if "AWS" in k}
+    telegram_vars = {k: v[:10] + "..." if v else "EMPTY" for k, v in os.environ.items() if "TELEGRAM" in k}
     return {
         "AWS_ACCESS_KEY_ID": "present" if os.getenv("AWS_ACCESS_KEY_ID") else "missing",
         "AWS_SECRET_ACCESS_KEY": "present" if os.getenv("AWS_SECRET_ACCESS_KEY") else "missing",
@@ -39,7 +40,11 @@ def debug_env():
         "AWS_REGION": os.getenv("AWS_REGION", "missing"),
         "OPENAI_API_KEY": "present" if os.getenv("OPENAI_API_KEY") else "missing",
         "ANTHROPIC_API_KEY": "present" if os.getenv("ANTHROPIC_API_KEY") else "missing",
-        "all_aws_vars": aws_vars  # Shows all AWS-related variables Railway has
+        "TELEGRAM_API_ID": "present" if os.getenv("TELEGRAM_API_ID") else "missing",
+        "TELEGRAM_API_HASH": "present" if os.getenv("TELEGRAM_API_HASH") else "missing",
+        "TELEGRAM_SESSION_ENCRYPTION_KEY": "present" if os.getenv("TELEGRAM_SESSION_ENCRYPTION_KEY") else "missing",
+        "all_aws_vars": aws_vars,  # Shows all AWS-related variables Railway has
+        "all_telegram_vars": telegram_vars  # Shows all Telegram-related variables Railway has
     }
 
 @app.get("/debug/database")

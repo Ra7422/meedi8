@@ -126,6 +126,8 @@ export default function TelegramConnect() {
     setLoading(true);
     setError("");
 
+    console.log("[TelegramConnect] Loading contacts...");
+
     try {
       const response = await apiRequest("/telegram/contacts", "GET", null, token);
       setContacts(response.chats || []);
