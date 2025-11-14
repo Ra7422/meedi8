@@ -5,6 +5,7 @@ import { apiRequest } from "../api/client";
 import ExpressCheckoutForm from "../components/ExpressCheckoutForm";
 import PaymentForm from "../components/PaymentForm";
 import thumbsUpIcon from "../assets/icons/thumbs_up.png";
+import meediStanding from "../assets/illustrations/meedi standing.svg";
 
 export default function Subscription() {
   const { token } = useAuth();
@@ -155,6 +156,22 @@ export default function Subscription() {
       overflow: 'hidden',
       fontFamily: "'Nunito', sans-serif",
     }}>
+      {/* Meedi illustration - top left corner */}
+      <img
+        src={meediStanding}
+        alt="Meedi"
+        style={{
+          position: 'absolute',
+          top: '20pt',
+          left: '0',
+          width: '150px',
+          height: 'auto',
+          transform: 'scaleX(-1)', // Flip horizontally
+          zIndex: 0,
+          opacity: 0.8,
+        }}
+      />
+
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 20px", position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ marginBottom: "40px", textAlign: "center" }}>
