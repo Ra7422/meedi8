@@ -207,9 +207,14 @@ class TelegramService:
         try:
             dialogs = []
 
+            logger.info(f"Starting dialog fetch with limit={limit}")
+
             # Fetch all dialogs - don't filter by archived status
             # This ensures we get ALL chats regardless of folder/archive state
+            # Note: iter_dialogs can take time for accounts with many chats
+            dialog_count = 0
             async for dialog in client.iter_dialogs(limit=limit):
+                dialog_count += 1
                 entity = dialog.entity
 
                 # Determine chat type
@@ -259,11 +264,23 @@ class TelegramService:
                     "pinned": is_pinned
                 })
 
-            logger.info(f"Fetched {len(dialogs)} dialogs from Telegram")
+                # Log progress every 10 dialogs for debugging
+                if dialog_count % 10 == 0:
+                    logger.info(f"Processed {dialog_count} dialogs so far...")
+
+            logger.info(f"Successfully fetched {len(dialogs)} dialogs from Telegram (iterated through {dialog_count} total)")
+
+            if len(dialogs) == 0:
+                logger.warning("No dialogs found! This could indicate:")
+                logger.warning("  1. Account has no chats (unlikely)")
+                logger.warning("  2. Session permissions issue")
+                logger.warning("  3. Telegram API rate limiting")
+                logger.warning("  4. iter_dialogs filtering issue")
+
             return dialogs
 
         except Exception as e:
-            logger.error(f"Error fetching dialogs: {e}")
+            logger.error(f"Error fetching dialogs: {e}", exc_info=True)
             raise
         finally:
             await client.disconnect()
