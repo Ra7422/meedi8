@@ -1,70 +1,22 @@
 import React, { useState } from 'react';
 
 /**
- * FAQ Page - Sectioned and Collapsible Questions
+ * FAQ Page - Compact Grid Accordion Layout
  *
  * Features:
- * - Sections with color-coded headers
- * - Collapsible Q&A pairs with down arrow icons
- * - Questions in dark text, answers in lighter purple
- * - Background matches page gradient
+ * - Row-based organization with color coding
+ * - Row 1: 4 purple sections
+ * - Row 2: 4 teal sections
+ * - Row 3: Practical Usage (teal) + Safety (red) side by side
  */
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState(null);
 
-  // FAQ organized by sections with color themes
-  const faqSections = [
-    {
-      title: "Safety & Crisis Support",
-      color: "#EF4444", // Red for safety/urgent
-      questions: [
-        {
-          question: "What if I feel unsafe during a mediation session?",
-          answer: "Your safety is our top priority. If at any point you feel unsafe, you can exit the session immediately by clicking the \"Need Help\" button or closing the app. You can also use the \"Exit Privately\" option which ends your session without notifying the other person. We'll provide you with crisis resources and support contact information. If you're in immediate danger, please call emergency services or a crisis hotline."
-        },
-        {
-          question: "What happens if the AI detects concerning language or behavior?",
-          answer: "Meedi8 monitors conversations for safety concerns like threats, abusive language, or mentions of self-harm. If concerning patterns are detected, the session will pause immediately and you'll receive safety resources including hotlines and support services. In serious cases, you may be connected with a human counselor who can provide professional support. The other person won't be told why the session paused."
-        },
-        {
-          question: "Does Meedi8 report abuse or dangerous situations to authorities?",
-          answer: "Meedi8 does not proactively report to authorities. Our role is to provide you with resources and connect you with professional support services when needed. However, we encourage anyone experiencing abuse or in danger to contact local authorities, domestic violence hotlines, or emergency services. We display these resources when safety concerns are detected."
-        },
-        {
-          question: "Can I exit a session privately without the other person knowing?",
-          answer: "Yes. You can use the \"Exit Privately\" option at any time. This ends your participation without sending a notification to the other person or explaining why you left. Your safety and comfort are more important than completing a session. You won't be required to give a reason for leaving."
-        },
-        {
-          question: "What if someone mentions self-harm or suicide?",
-          answer: "If self-harm or suicide is mentioned, Meedi8 will immediately pause the mediation and display crisis resources including suicide prevention hotlines, text lines, and emergency contacts specific to your location. We strongly encourage you to reach out to these professional services. A human counselor may follow up to check on your wellbeing."
-        }
-      ]
-    },
-    {
-      title: "Getting Started",
-      color: "#7DD3C0", // Teal brand color
-      questions: [
-        {
-          question: "What is Meedi8?",
-          answer: "Meedi8 is a mediation platform that helps people resolve conflicts calmly and fairly. We provide a safe space where both sides can be heard without interruptions or judgment, guided by Meedi, your friendly mediator."
-        },
-        {
-          question: "How does the coaching work?",
-          answer: "Meedi guides the conversation between both parties, ensuring equal speaking time and helping each person express their perspective. Meedi asks clarifying questions, summarizes key points, and helps identify common ground for resolution."
-        },
-        {
-          question: "What types of conflicts can Meedi8 help with?",
-          answer: "Meedi8 works well for work disagreements, family tensions, romantic relationship issues, money disputes, and general interpersonal conflicts. For serious issues involving safety, abuse, or legal matters, we recommend professional in-person mediation or therapy."
-        },
-        {
-          question: "What if the other person won't participate?",
-          answer: "While we can't force participation, we provide tools to make joining easy. You can send a private invitation link, and our platform is designed to be welcoming and non-threatening. If they're hesitant, you can start with your own coaching session first."
-        }
-      ]
-    },
+  // Row 1: Purple sections (4 wide)
+  const row1Sections = [
     {
       title: "During a Session",
-      color: "#6750A4", // Purple
+      color: "#D3C1FF",
       questions: [
         {
           question: "Is my coaching session private?",
@@ -89,8 +41,100 @@ export default function FAQ() {
       ]
     },
     {
+      title: "Human Support",
+      color: "#D3C1FF",
+      questions: [
+        {
+          question: "Is there a real human available if the AI can't help?",
+          answer: "Yes. When situations become complex or safety concerns arise, you can be connected with a licensed therapist or mediator. Premium and Family plans include faster access to human support. Human professionals can also review your AI mediation summaries to provide guidance."
+        },
+        {
+          question: "When would I be connected to a licensed therapist?",
+          answer: "You'll be offered connection to a licensed professional when: the AI detects safety concerns like abuse or self-harm, the conflict involves legal or custody issues, you or the other person specifically request human help, or the situation is beyond what AI mediation can appropriately handle. You can also request human support anytime through the app."
+        },
+        {
+          question: "How quickly can I speak to a human professional?",
+          answer: "For safety emergencies, we aim to connect you with a professional within 15 minutes. For non-urgent professional support, premium users typically receive responses within 24 hours. Free tier users can be referred to partner therapy services. In all cases, immediate crisis resources and hotlines are always displayed instantly."
+        }
+      ]
+    },
+    {
+      title: "Limitations & Appropriate Use",
+      color: "#D3C1FF",
+      questions: [
+        {
+          question: "Is Meedi8 a replacement for couples therapy or counseling?",
+          answer: "No. Meedi8 is designed to help with everyday conflicts and communication challenges, but it's not a substitute for professional therapy. If you're dealing with trauma, mental health conditions, ongoing abuse, or deep relationship issues, we strongly recommend working with a licensed therapist. Meedi8 can complement therapy but shouldn't replace it for serious situations."
+        },
+        {
+          question: "Can I use mediation transcripts in court or legal proceedings?",
+          answer: "We don't recommend using Meedi8 conversations as legal evidence. The platform is designed for informal conflict resolution and honest communication, not legal proceedings. If your situation involves custody, divorce, or other legal matters, you should work with a qualified mediator or lawyer. Check with legal professionals before sharing any transcripts."
+        },
+        {
+          question: "What types of conflicts is Meedi8 NOT suitable for?",
+          answer: "Meedi8 is not appropriate for situations involving active abuse, violence, or threats, ongoing domestic violence or coercive control, severe mental health crises, legal disputes requiring formal mediation or court involvement, situations where one person has significant power over the other's safety or wellbeing, or conflicts involving children's immediate safety. For these situations, please contact appropriate professionals, legal services, or emergency support."
+        },
+        {
+          question: "What age do I need to be to use Meedi8?",
+          answer: "You must be 18 years or older to create a Meedi8 account and use the service. If you're under 18 and experiencing conflict, please talk to a trusted adult, school counselor, or contact youth support services in your area."
+        }
+      ]
+    },
+    {
+      title: "Account & Subscription",
+      color: "#D3C1FF",
+      questions: [
+        {
+          question: "How much does it cost?",
+          answer: "We offer flexible pricing plans to fit your needs. You can view our subscription options on the Pricing page, with plans starting from basic mediation access to premium features with unlimited sessions."
+        },
+        {
+          question: "Can I cancel my subscription anytime?",
+          answer: "Yes. You can cancel your subscription at any time from your account settings. If you cancel, you'll keep access to premium features until the end of your billing period. After that, your account reverts to the free tier. Your conversation history and data remain unless you choose to delete them."
+        },
+        {
+          question: "What's the difference between free and paid plans?",
+          answer: "The free tier gives you 1 active mediation per month with basic features and includes ads. Paid plans offer unlimited mediations, conversation history, advanced emotional insights, voice-to-text features, priority human support, and no ads. Premium plans also include relationship pattern tracking and faster access to professional help when needed. Family plans support up to 4 users in one household."
+        },
+        {
+          question: "Do both people need to pay, or just one?",
+          answer: "Only one person needs a paid subscription. When you create a mediation and invite someone, they can participate fully regardless of whether they have a paid account. Your subscription covers that conversation. However, if they want to start their own mediations, they would need their own subscription."
+        },
+        {
+          question: "What happens to my data if I cancel?",
+          answer: "Your data remains in your account if you cancel your subscription. You'll revert to the free tier and can still access your conversation history, though you'll be limited to 1 active mediation per month going forward. If you want to permanently delete your data, you need to delete your account separately from the account settings page."
+        }
+      ]
+    },
+  ];
+
+  // Row 2: Teal sections (4 wide)
+  const row2Sections = [
+    {
+      title: "Getting Started",
+      color: "#7DD3C0",
+      questions: [
+        {
+          question: "What is Meedi8?",
+          answer: "Meedi8 is a mediation platform that helps people resolve conflicts calmly and fairly. We provide a safe space where both sides can be heard without interruptions or judgment, guided by Meedi, your friendly mediator."
+        },
+        {
+          question: "How does the coaching work?",
+          answer: "Meedi guides the conversation between both parties, ensuring equal speaking time and helping each person express their perspective. Meedi asks clarifying questions, summarizes key points, and helps identify common ground for resolution."
+        },
+        {
+          question: "What types of conflicts can Meedi8 help with?",
+          answer: "Meedi8 works well for work disagreements, family tensions, romantic relationship issues, money disputes, and general interpersonal conflicts. For serious issues involving safety, abuse, or legal matters, we recommend professional in-person mediation or therapy."
+        },
+        {
+          question: "What if the other person won't participate?",
+          answer: "While we can't force participation, we provide tools to make joining easy. You can send a private invitation link, and our platform is designed to be welcoming and non-threatening. If they're hesitant, you can start with your own coaching session first."
+        }
+      ]
+    },
+    {
       title: "Data & Privacy",
-      color: "#10B981", // Green
+      color: "#7DD3C0",
       questions: [
         {
           question: "How long is my data kept?",
@@ -115,26 +159,8 @@ export default function FAQ() {
       ]
     },
     {
-      title: "Human Support",
-      color: "#F59E0B", // Amber/Orange
-      questions: [
-        {
-          question: "Is there a real human available if the AI can't help?",
-          answer: "Yes. When situations become complex or safety concerns arise, you can be connected with a licensed therapist or mediator. Premium and Family plans include faster access to human support. Human professionals can also review your AI mediation summaries to provide guidance."
-        },
-        {
-          question: "When would I be connected to a licensed therapist?",
-          answer: "You'll be offered connection to a licensed professional when: the AI detects safety concerns like abuse or self-harm, the conflict involves legal or custody issues, you or the other person specifically request human help, or the situation is beyond what AI mediation can appropriately handle. You can also request human support anytime through the app."
-        },
-        {
-          question: "How quickly can I speak to a human professional?",
-          answer: "For safety emergencies, we aim to connect you with a professional within 15 minutes. For non-urgent professional support, premium users typically receive responses within 24 hours. Free tier users can be referred to partner therapy services. In all cases, immediate crisis resources and hotlines are always displayed instantly."
-        }
-      ]
-    },
-    {
       title: "Platform & Technical",
-      color: "#3B82F6", // Blue
+      color: "#7DD3C0",
       questions: [
         {
           question: "What devices can I use Meedi8 on?",
@@ -155,30 +181,30 @@ export default function FAQ() {
       ]
     },
     {
-      title: "Limitations & Appropriate Use",
-      color: "#8B5CF6", // Purple/Violet
+      title: "Special Situations",
+      color: "#7DD3C0",
       questions: [
         {
-          question: "Is Meedi8 a replacement for couples therapy or counseling?",
-          answer: "No. Meedi8 is designed to help with everyday conflicts and communication challenges, but it's not a substitute for professional therapy. If you're dealing with trauma, mental health conditions, ongoing abuse, or deep relationship issues, we strongly recommend working with a licensed therapist. Meedi8 can complement therapy but shouldn't replace it for serious situations."
+          question: "Can I use this for workplace conflicts?",
+          answer: "Yes. Meedi8 can help with workplace interpersonal conflicts like disagreements with colleagues, communication issues with managers, or team friction. Choose \"Work\" as your topic category when creating a mediation. However, for formal workplace disputes involving HR, discrimination, or legal issues, you should follow your company's official procedures."
         },
         {
-          question: "Can I use mediation transcripts in court or legal proceedings?",
-          answer: "We don't recommend using Meedi8 conversations as legal evidence. The platform is designed for informal conflict resolution and honest communication, not legal proceedings. If your situation involves custody, divorce, or other legal matters, you should work with a qualified mediator or lawyer. Check with legal professionals before sharing any transcripts."
+          question: "Can I mediate with family members like parents or siblings?",
+          answer: "Yes. Meedi8 works for family conflicts including parent-adult child relationships, sibling disputes, extended family disagreements, and household conflicts. Choose \"Family\" as your category. However, Meedi8 is designed for adults (18+) and not suitable for conflicts involving minor children's welfare or safety, which require professional family services."
         },
         {
-          question: "What types of conflicts is Meedi8 NOT suitable for?",
-          answer: "Meedi8 is not appropriate for situations involving active abuse, violence, or threats, ongoing domestic violence or coercive control, severe mental health crises, legal disputes requiring formal mediation or court involvement, situations where one person has significant power over the other's safety or wellbeing, or conflicts involving children's immediate safety. For these situations, please contact appropriate professionals, legal services, or emergency support."
-        },
-        {
-          question: "What age do I need to be to use Meedi8?",
-          answer: "You must be 18 years or older to create a Meedi8 account and use the service. If you're under 18 and experiencing conflict, please talk to a trusted adult, school counselor, or contact youth support services in your area."
+          question: "Can I invite a supporter or advocate to join?",
+          answer: "Currently, Meedi8 mediations are designed for two people. However, you can share transcripts with a trusted friend, therapist, or advocate outside the session. Family plans support multiple household members who can mediate in different combinations. If you need formal mediation with multiple parties or advocates present, we recommend working with a professional human mediator."
         }
       ]
     },
+  ];
+
+  // Row 3: Practical Usage (teal) + Safety (red)
+  const row3Sections = [
     {
       title: "Practical Usage",
-      color: "#14B8A6", // Teal
+      color: "#7DD3C0",
       questions: [
         {
           question: "What if we don't reach an agreement?",
@@ -207,138 +233,163 @@ export default function FAQ() {
       ]
     },
     {
-      title: "Account & Subscription",
-      color: "#EC4899", // Pink
+      title: "Safety & Crisis Support",
+      color: "#EF4444",
       questions: [
         {
-          question: "How much does it cost?",
-          answer: "We offer flexible pricing plans to fit your needs. You can view our subscription options on the Pricing page, with plans starting from basic mediation access to premium features with unlimited sessions."
+          question: "What if I feel unsafe during a mediation session?",
+          answer: "Your safety is our top priority. If at any point you feel unsafe, you can exit the session immediately by clicking the \"Need Help\" button or closing the app. You can also use the \"Exit Privately\" option which ends your session without notifying the other person. We'll provide you with crisis resources and support contact information. If you're in immediate danger, please call emergency services or a crisis hotline."
         },
         {
-          question: "Can I cancel my subscription anytime?",
-          answer: "Yes. You can cancel your subscription at any time from your account settings. If you cancel, you'll keep access to premium features until the end of your billing period. After that, your account reverts to the free tier. Your conversation history and data remain unless you choose to delete them."
+          question: "What happens if the AI detects concerning language or behavior?",
+          answer: "Meedi8 monitors conversations for safety concerns like threats, abusive language, or mentions of self-harm. If concerning patterns are detected, the session will pause immediately and you'll receive safety resources including hotlines and support services. In serious cases, you may be connected with a human counselor who can provide professional support. The other person won't be told why the session paused."
         },
         {
-          question: "What's the difference between free and paid plans?",
-          answer: "The free tier gives you 1 active mediation per month with basic features and includes ads. Paid plans offer unlimited mediations, conversation history, advanced emotional insights, voice-to-text features, priority human support, and no ads. Premium plans also include relationship pattern tracking and faster access to professional help when needed. Family plans support up to 4 users in one household."
+          question: "Does Meedi8 report abuse or dangerous situations to authorities?",
+          answer: "Meedi8 does not proactively report to authorities. Our role is to provide you with resources and connect you with professional support services when needed. However, we encourage anyone experiencing abuse or in danger to contact local authorities, domestic violence hotlines, or emergency services. We display these resources when safety concerns are detected."
         },
         {
-          question: "Do both people need to pay, or just one?",
-          answer: "Only one person needs a paid subscription. When you create a mediation and invite someone, they can participate fully regardless of whether they have a paid account. Your subscription covers that conversation. However, if they want to start their own mediations, they would need their own subscription."
+          question: "Can I exit a session privately without the other person knowing?",
+          answer: "Yes. You can use the \"Exit Privately\" option at any time. This ends your participation without sending a notification to the other person or explaining why you left. Your safety and comfort are more important than completing a session. You won't be required to give a reason for leaving."
         },
         {
-          question: "What happens to my data if I cancel?",
-          answer: "Your data remains in your account if you cancel your subscription. You'll revert to the free tier and can still access your conversation history, though you'll be limited to 1 active mediation per month going forward. If you want to permanently delete your data, you need to delete your account separately from the account settings page."
-        }
-      ]
-    },
-    {
-      title: "Special Situations",
-      color: "#06B6D4", // Cyan
-      questions: [
-        {
-          question: "Can I use this for workplace conflicts?",
-          answer: "Yes. Meedi8 can help with workplace interpersonal conflicts like disagreements with colleagues, communication issues with managers, or team friction. Choose \"Work\" as your topic category when creating a mediation. However, for formal workplace disputes involving HR, discrimination, or legal issues, you should follow your company's official procedures."
-        },
-        {
-          question: "Can I mediate with family members like parents or siblings?",
-          answer: "Yes. Meedi8 works for family conflicts including parent-adult child relationships, sibling disputes, extended family disagreements, and household conflicts. Choose \"Family\" as your category. However, Meedi8 is designed for adults (18+) and not suitable for conflicts involving minor children's welfare or safety, which require professional family services."
-        },
-        {
-          question: "Can I invite a supporter or advocate to join?",
-          answer: "Currently, Meedi8 mediations are designed for two people. However, you can share transcripts with a trusted friend, therapist, or advocate outside the session. Family plans support multiple household members who can mediate in different combinations. If you need formal mediation with multiple parties or advocates present, we recommend working with a professional human mediator."
+          question: "What if someone mentions self-harm or suicide?",
+          answer: "If self-harm or suicide is mentioned, Meedi8 will immediately pause the mediation and display crisis resources including suicide prevention hotlines, text lines, and emergency contacts specific to your location. We strongly encourage you to reach out to these professional services. A human counselor may follow up to check on your wellbeing."
         }
       ]
     }
   ];
 
-  const toggleQuestion = (sectionIndex, questionIndex) => {
-    const key = `${sectionIndex}-${questionIndex}`;
+  const toggleQuestion = (key) => {
     setOpenIndex(openIndex === key ? null : key);
   };
+
+  const renderSectionTile = (section, sectionIndex, rowPrefix) => (
+    <div
+      key={sectionIndex}
+      style={{
+        ...styles.sectionTile,
+        borderColor: section.color,
+      }}
+    >
+      {/* Section Header */}
+      <div style={{
+        ...styles.sectionHeader,
+        backgroundColor: section.color,
+      }}>
+        <h2 style={styles.sectionTitle}>{section.title}</h2>
+        <div style={styles.questionCount}>{section.questions.length} questions</div>
+      </div>
+
+      {/* Questions in this section */}
+      <div style={styles.questionsContainer}>
+        {section.questions.map((faq, questionIndex) => {
+          const key = `${rowPrefix}-${sectionIndex}-${questionIndex}`;
+          const isOpen = openIndex === key;
+
+          return (
+            <div key={questionIndex} style={styles.questionItem}>
+              <button
+                onClick={() => toggleQuestion(key)}
+                style={styles.questionButton}
+                aria-expanded={isOpen}
+              >
+                <span style={{
+                  ...styles.questionText,
+                  color: isOpen ? section.color : '#1f2937',
+                }}>
+                  {faq.question}
+                </span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  style={{
+                    ...styles.questionIcon,
+                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  <path
+                    d="M6 9L12 15L18 9"
+                    stroke={section.color}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              {/* Answer dropdown */}
+              {isOpen && (
+                <div style={styles.answerDropdown}>
+                  <p style={styles.answerText}>{faq.answer}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div style={styles.container}>
       {/* Top ellipse for depth */}
       <div style={styles.topEllipse} />
 
-      {/* Decorative ellipses behind content */}
-      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse1} />
-      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse2} />
-      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse3} />
-      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse4} />
-      <img src="/assets/illustrations/ellipse-decorative.svg" alt="" style={styles.decorativeEllipse5} />
-
       {/* Main content */}
       <div style={styles.content}>
-        {/* Heading */}
+        {/* Heading at top */}
         <h1 style={styles.heading}>FAQ</h1>
+        <p style={styles.subheading}>Click any section to explore questions</p>
 
-        {/* FAQ Sections */}
-        {faqSections.map((section, sectionIndex) => (
-          <div key={sectionIndex} style={styles.section}>
-            {/* Section Header */}
-            <h2 style={{...styles.sectionTitle, color: section.color}}>
-              {section.title}
-            </h2>
+        {/* Illustration */}
+        <div style={styles.illustrationContainer}>
+          <img
+            src="/assets/illustrations/lifesavers-sitting.svg"
+            alt="Lifesavers sitting"
+            style={styles.illustration}
+          />
+        </div>
 
-            {/* Questions in this section */}
-            <div style={styles.faqList}>
-              {section.questions.map((faq, questionIndex) => {
-                const key = `${sectionIndex}-${questionIndex}`;
-                const isOpen = openIndex === key;
+        {/* Row 1: Purple sections (4 wide) */}
+        <div className="faq-grid" style={styles.gridContainer}>
+          {row1Sections.map((section, idx) => renderSectionTile(section, idx, 'row1'))}
+        </div>
 
-                return (
-                  <div
-                    key={questionIndex}
-                    style={{
-                      ...styles.faqItem,
-                      backgroundColor: isOpen ? section.color : '#FFFFFF',
-                      border: `1px solid ${section.color}`,
-                    }}
-                  >
-                    <button
-                      onClick={() => toggleQuestion(sectionIndex, questionIndex)}
-                      style={styles.questionButton}
-                      aria-expanded={isOpen}
-                    >
-                      <h3 style={{
-                        ...styles.question,
-                        color: isOpen ? '#FFFFFF' : section.color,
-                      }}>{faq.question}</h3>
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        style={{
-                          ...styles.icon,
-                          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        }}
-                      >
-                        <path
-                          d="M6 9L12 15L18 9"
-                          stroke={isOpen ? '#FFFFFF' : section.color}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+        {/* Row 2: Teal sections (4 wide) */}
+        <div className="faq-grid" style={styles.gridContainer}>
+          {row2Sections.map((section, idx) => renderSectionTile(section, idx, 'row2'))}
+        </div>
 
-                    {isOpen && (
-                      <p style={{...styles.answer, color: '#FFFFFF'}}>{faq.answer}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        {/* Row 3: Practical Usage + Safety (2 wide) */}
+        <div className="faq-row3" style={styles.row3Container}>
+          {row3Sections.map((section, idx) => renderSectionTile(section, idx, 'row3'))}
+        </div>
       </div>
 
       {/* Bottom ellipse for depth */}
       <div style={styles.bottomEllipse} />
+
+      {/* Responsive grid media queries */}
+      <style>{`
+        @media (max-width: 1000px) {
+          .faq-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 768px) {
+          .faq-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .faq-row3 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .faq-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -380,41 +431,85 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     padding: '40px 20px 80px',
-    maxWidth: '900px',
+    maxWidth: '1400px',
     margin: '0 auto',
   },
   heading: {
-    fontSize: 'clamp(48px, 10vw, 72px)',
+    fontSize: 'clamp(36px, 8vw, 56px)',
     fontWeight: '300',
     color: '#7DD3C0',
     lineHeight: '1.2',
-    margin: '0 0 48px 0',
+    margin: '0 0 8px 0',
     textAlign: 'center',
     fontFamily: "'Nunito', sans-serif",
   },
-  section: {
-    width: '100%',
-    marginBottom: '48px',
-  },
-  sectionTitle: {
-    fontSize: 'clamp(24px, 5vw, 32px)',
-    fontWeight: '700',
-    lineHeight: '1.3',
-    margin: '0 0 24px 0',
+  subheading: {
+    fontSize: 'clamp(14px, 3vw, 16px)',
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: '1.4',
+    margin: '0 0 32px 0',
+    textAlign: 'center',
     fontFamily: "'Nunito', sans-serif",
   },
-  faqList: {
+  illustrationContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '32px',
+  },
+  illustration: {
+    width: '250px',
+    height: 'auto',
+  },
+  gridContainer: {
     width: '100%',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '16px',
+    marginBottom: '16px',
+  },
+  row3Container: {
+    width: '100%',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '16px',
+  },
+  sectionTile: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '12px',
+    border: '2px solid',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
   },
-  faqItem: {
-    width: '100%',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    transition: 'all 0.3s ease',
+  sectionHeader: {
+    padding: '16px',
+    color: '#FFFFFF',
+  },
+  sectionTitle: {
+    fontSize: 'clamp(16px, 3vw, 18px)',
+    fontWeight: '700',
+    lineHeight: '1.3',
+    margin: '0 0 4px 0',
+    fontFamily: "'Nunito', sans-serif",
+    color: '#FFFFFF',
+  },
+  questionCount: {
+    fontSize: '12px',
+    fontWeight: '400',
+    opacity: 0.9,
+    fontFamily: "'Nunito', sans-serif",
+  },
+  questionsContainer: {
+    padding: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  questionItem: {
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '8px',
   },
   questionButton: {
     width: '100%',
@@ -424,79 +519,32 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: 0,
+    padding: '8px 0',
     textAlign: 'left',
+    gap: '8px',
   },
-  question: {
-    fontSize: 'clamp(16px, 3.5vw, 19px)',
-    fontWeight: '700',
+  questionText: {
+    fontSize: 'clamp(13px, 2.5vw, 14px)',
+    fontWeight: '600',
     lineHeight: '1.4',
-    margin: 0,
     fontFamily: "'Nunito', sans-serif",
     flex: 1,
+    transition: 'color 0.2s ease',
   },
-  icon: {
+  questionIcon: {
     flexShrink: 0,
-    marginLeft: '16px',
     transition: 'transform 0.3s ease',
   },
-  answer: {
-    fontSize: 'clamp(14px, 3vw, 16px)',
+  answerDropdown: {
+    padding: '8px 0 0 0',
+    animation: 'slideDown 0.3s ease',
+  },
+  answerText: {
+    fontSize: 'clamp(12px, 2.5vw, 13px)',
     fontWeight: '400',
     color: '#6B7280',
-    lineHeight: '1.7',
-    margin: '16px 0 0 0',
+    lineHeight: '1.6',
+    margin: 0,
     fontFamily: "'Nunito', sans-serif",
-  },
-  // Decorative ellipse images scattered at 40% opacity
-  decorativeEllipse1: {
-    position: 'absolute',
-    top: '10%',
-    right: '5%',
-    width: '300px',
-    height: 'auto',
-    opacity: 0.4,
-    zIndex: 0,
-    pointerEvents: 'none',
-  },
-  decorativeEllipse2: {
-    position: 'absolute',
-    top: '25%',
-    left: '8%',
-    width: '450px',
-    height: 'auto',
-    opacity: 0.4,
-    zIndex: 0,
-    pointerEvents: 'none',
-  },
-  decorativeEllipse3: {
-    position: 'absolute',
-    top: '45%',
-    right: '10%',
-    width: '250px',
-    height: 'auto',
-    opacity: 0.4,
-    zIndex: 0,
-    pointerEvents: 'none',
-  },
-  decorativeEllipse4: {
-    position: 'absolute',
-    top: '65%',
-    left: '5%',
-    width: '380px',
-    height: 'auto',
-    opacity: 0.4,
-    zIndex: 0,
-    pointerEvents: 'none',
-  },
-  decorativeEllipse5: {
-    position: 'absolute',
-    top: '85%',
-    right: '15%',
-    width: '320px',
-    height: 'auto',
-    opacity: 0.4,
-    zIndex: 0,
-    pointerEvents: 'none',
   },
 };
