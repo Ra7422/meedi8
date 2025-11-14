@@ -5,6 +5,7 @@ import { Logo } from "../components/ui";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 import FloatingMenu from "../components/FloatingMenu";
+import TelegramLoginButton from '../components/TelegramLoginButton';
 
 /**
  * Sign Up Page - Matches Login Design
@@ -18,7 +19,7 @@ import FloatingMenu from "../components/FloatingMenu";
  * - Placeholder text inside inputs
  */
 export default function Signup() {
-  const { register, googleLogin, facebookLogin } = useAuth();
+  const { register, googleLogin, facebookLogin, telegramLogin } = useAuth();
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -106,16 +107,31 @@ export default function Signup() {
     setError("Facebook sign-up failed. Please try again.");
   }
 
+  async function handleTelegramResponse(response) {
+    setError("");
+    setLoading(true);
+    try {
+      await telegramLogin(response);
+      handlePostSignupRedirect();
+    } catch (e) {
+      setError(e.message || "Telegram sign-up failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Check if mobile - safe for SSR
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // Environment variables for OAuth
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
+  const TELEGRAM_BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME;
 
   // Check if OAuth is properly configured
   const hasGoogleOAuth = typeof window !== 'undefined' && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 20 && !GOOGLE_CLIENT_ID.includes('YOUR_');
   const hasFacebookOAuth = typeof window !== 'undefined' && FACEBOOK_APP_ID && FACEBOOK_APP_ID.length > 10 && !FACEBOOK_APP_ID.includes('YOUR_');
+  const hasTelegramOAuth = typeof window !== 'undefined' && TELEGRAM_BOT_NAME && !TELEGRAM_BOT_NAME.includes('YOUR_');
 
   return (
     <div style={styles.container}>
@@ -223,7 +239,7 @@ export default function Signup() {
           </div>
 
           {/* Social Login Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
             {hasGoogleOAuth ? (
               <div style={{ width: '100%', maxWidth: '400px' }}>
                 <GoogleLogin
@@ -251,6 +267,19 @@ export default function Signup() {
                 </svg>
                 Google
               </button>
+            )}
+
+            {/* Telegram Login Widget */}
+            {hasTelegramOAuth && (
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <TelegramLoginButton
+                  botName={TELEGRAM_BOT_NAME}
+                  dataOnauth={handleTelegramResponse}
+                  buttonSize="large"
+                  cornerRadius={12}
+                  requestAccess="write"
+                />
+              </div>
             )}
           </div>
         </form>

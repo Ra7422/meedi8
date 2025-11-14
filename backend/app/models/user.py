@@ -14,6 +14,13 @@ class User(Base):
     profile_picture_url = Column(String(500), nullable=True)  # Google OAuth profile picture URL
     has_completed_screening = Column(Boolean, default=False, nullable=False)  # First-time screening gate
 
+    # Telegram integration fields
+    telegram_id = Column(String(255), nullable=True, unique=True, index=True)  # Telegram user ID
+    telegram_username = Column(String(255), nullable=True)  # Telegram username (optional)
+    telegram_phone = Column(String(50), nullable=True)  # Phone number connected to Telegram
+    telegram_session_string = Column(String(1000), nullable=True)  # Encrypted Telethon session
+    telegram_connected_at = Column(DateTime(timezone=True), nullable=True)  # When user connected Telegram
+
     # Relationships
     rooms = relationship('Room', secondary='room_participants', back_populates='participants')
     subscription = relationship('Subscription', back_populates='user', uselist=False)

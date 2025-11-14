@@ -5,7 +5,7 @@ import { Logo } from "../components/ui";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 import FloatingMenu from "../components/FloatingMenu";
-// import TelegramLoginButton from 'react-telegram-login'; // Temporarily disabled - React version conflict
+import TelegramLoginButton from '../components/TelegramLoginButton';
 
 /**
  * Login Page - Exact Figma Match
@@ -207,7 +207,7 @@ export default function LoginNew() {
           </div>
 
           {/* Social Login Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
             {hasGoogleOAuth ? (
               <div style={{ width: '100%', maxWidth: '400px' }}>
                 <GoogleLogin
@@ -235,6 +235,19 @@ export default function LoginNew() {
                 </svg>
                 Google
               </button>
+            )}
+
+            {/* Telegram Login Widget */}
+            {hasTelegramOAuth && (
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <TelegramLoginButton
+                  botName={TELEGRAM_BOT_NAME}
+                  dataOnauth={handleTelegramResponse}
+                  buttonSize="large"
+                  cornerRadius={12}
+                  requestAccess="write"
+                />
+              </div>
             )}
           </div>
         </form>

@@ -37,6 +37,7 @@ import Terms from "./pages/Terms";
 import ScreeningTest from "./pages/ScreeningTest";
 import ScreeningCarousel from "./pages/ScreeningCarousel";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Home from "./pages/Home";
 import PlаsmicHost from "./plasmic-host";
 
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/rooms" element={<PrivateRoute><Rooms /></PrivateRoute>} />
           <Route path="/sessions" element={<PrivateRoute><SessionsDashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/create" element={<PrivateRoute><CreateRoom /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
