@@ -221,8 +221,35 @@ export default function LoginNew() {
               </div>
             )}
 
-            {/* Telegram Login Widget */}
-            <div style={{ flexShrink: 0 }}>
+            {/* Telegram Login - Custom Icon Button */}
+            <button
+              type="button"
+              onClick={() => {
+                // Trigger the hidden Telegram widget
+                const telegramContainer = document.getElementById('telegram-login-container');
+                if (telegramContainer) {
+                  const iframe = telegramContainer.querySelector('iframe');
+                  if (iframe) {
+                    // Simulate click on the Telegram iframe
+                    iframe.contentWindow?.postMessage('click', '*');
+                    // Fallback: try to trigger the button inside
+                    const button = telegramContainer.querySelector('button');
+                    if (button) button.click();
+                  }
+                }
+              }}
+              style={styles.telegramIconButton}
+              title="Sign in with Telegram"
+            >
+              <img
+                src="/assets/icons/telegram-icon.png"
+                alt="Telegram"
+                style={{ width: '40px', height: '40px' }}
+              />
+            </button>
+
+            {/* Hidden Telegram Widget */}
+            <div id="telegram-login-container" style={{ position: 'absolute', left: '-9999px', opacity: 0 }}>
               <TelegramLoginButton
                 botName="meedi8_bot"
                 dataOnauth={handleTelegramResponse}
@@ -479,6 +506,19 @@ const styles = {
   iconSvg: {
     width: '32px',
     height: '32px',
+  },
+  telegramIconButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '48px',
+    height: '48px',
+    border: 'none',
+    borderRadius: '50%',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    padding: 0,
   },
   mascotContainer: {
     position: 'fixed',
