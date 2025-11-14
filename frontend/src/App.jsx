@@ -39,6 +39,7 @@ import ScreeningCarousel from "./pages/ScreeningCarousel";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Home from "./pages/Home";
+import TelegramConnect from "./pages/TelegramConnect";
 import PlаsmicHost from "./plasmic-host";
 
 function PrivateRoute({ children }) {
@@ -110,6 +111,7 @@ export default function App() {
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/subscription/success" element={<PrivateRoute><SubscriptionSuccess /></PrivateRoute>} />
           <Route path="/subscription/cancelled" element={<PrivateRoute><SubscriptionCancelled /></PrivateRoute>} />
+          <Route path="/telegram" element={<PrivateRoute><TelegramConnect /></PrivateRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

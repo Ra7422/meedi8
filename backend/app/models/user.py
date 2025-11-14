@@ -25,3 +25,5 @@ class User(Base):
     rooms = relationship('Room', secondary='room_participants', back_populates='participants')
     subscription = relationship('Subscription', back_populates='user', uselist=False)
     health_profile = relationship('UserHealthProfile', back_populates='user', uselist=False)
+    telegram_session = relationship('TelegramSession', back_populates='user', uselist=False)
+    telegram_downloads = relationship('TelegramDownload', back_populates='user')
