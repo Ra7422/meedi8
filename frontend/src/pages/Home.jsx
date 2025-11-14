@@ -209,27 +209,31 @@ export default function Home() {
     },
     quickLinks: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '12px',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '16px',
       marginBottom: '32px',
+      maxWidth: '600px',
+      margin: '0 auto 32px auto',
       '@media (min-width: 768px)': {
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
+        gap: '20px',
         marginBottom: '40px',
+        margin: '0 auto 40px auto',
       },
     },
     quickLink: {
-      padding: '16px 12px',
-      backgroundColor: '#F5EFFF',
+      padding: '12px 16px',
+      backgroundColor: 'rgba(125, 211, 192, 0.1)',
       borderRadius: '12px',
       textAlign: 'center',
       cursor: 'pointer',
       transition: 'all 0.2s',
-      border: '2px solid transparent',
+      border: '1px solid #7DD3C0',
       textDecoration: 'none',
-      display: 'block',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       '@media (min-width: 768px)': {
-        padding: '20px',
+        padding: '16px 20px',
       },
     },
     quickLinkTitle: {
@@ -238,24 +242,24 @@ export default function Home() {
       color: '#6750A4',
       marginBottom: '0',
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '8px',
+      whiteSpace: 'nowrap',
       '@media (min-width: 768px)': {
-        flexDirection: 'row',
-        fontSize: '18px',
-        gap: '12px',
+        fontSize: '16px',
+        gap: '10px',
       },
     },
     quickLinkIcon: {
-      width: '40px',
-      height: '40px',
+      width: '32px',
+      height: '32px',
       objectFit: 'contain',
       flexShrink: 0,
       '@media (min-width: 768px)': {
-        width: '60px',
-        height: '60px',
+        width: '40px',
+        height: '40px',
       },
     },
     quickLinkDesc: {
@@ -394,12 +398,12 @@ export default function Home() {
             style={styles.quickLink}
             onClick={() => navigate('/profile')}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D3C1FF';
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.2)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.backgroundColor = '#F5EFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.1)';
             }}
           >
             <div style={styles.quickLinkTitle}>
@@ -412,12 +416,12 @@ export default function Home() {
             style={styles.quickLink}
             onClick={() => navigate('/subscription')}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D3C1FF';
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.2)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.backgroundColor = '#F5EFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.1)';
             }}
           >
             <div style={styles.quickLinkTitle}>
@@ -430,12 +434,12 @@ export default function Home() {
             style={styles.quickLink}
             onClick={() => navigate('/about')}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D3C1FF';
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.2)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.backgroundColor = '#F5EFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.1)';
             }}
           >
             <div style={styles.quickLinkTitle}>
@@ -448,12 +452,12 @@ export default function Home() {
             style={styles.quickLink}
             onClick={() => navigate('/faq')}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D3C1FF';
-              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.2)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.backgroundColor = '#F5EFFF';
+              e.currentTarget.style.borderColor = '#7DD3C0';
+              e.currentTarget.style.backgroundColor = 'rgba(125, 211, 192, 0.1)';
             }}
           >
             <div style={styles.quickLinkTitle}>
