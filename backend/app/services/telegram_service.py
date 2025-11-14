@@ -207,9 +207,9 @@ class TelegramService:
         try:
             dialogs = []
 
-            # Fetch dialogs including archived ones
-            # archived=None means fetch both archived and non-archived
-            async for dialog in client.iter_dialogs(limit=limit, archived=None):
+            # Fetch all dialogs - don't filter by archived status
+            # This ensures we get ALL chats regardless of folder/archive state
+            async for dialog in client.iter_dialogs(limit=limit):
                 entity = dialog.entity
 
                 # Determine chat type
