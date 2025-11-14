@@ -82,6 +82,11 @@ class DisconnectResponse(BaseModel):
     message: str
 
 
+class SessionStatusResponse(BaseModel):
+    is_connected: bool
+    phone_number: Optional[str] = None
+
+
 # ===== Helper Functions =====
 
 async def background_download_task(
@@ -423,6 +428,45 @@ async def get_download_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch download status"
+        )
+
+
+@router.get("/session-status", response_model=SessionStatusResponse)
+async def get_session_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Check if user has an active Telegram session.
+
+    Returns whether user is already connected and their phone number.
+    Frontend can use this to skip authentication steps if session exists.
+    """
+    try:
+        telegram_session = db.query(TelegramSession).filter(
+            TelegramSession.user_id == current_user.id,
+            TelegramSession.is_active == True
+        ).first()
+
+        if telegram_session:
+            return SessionStatusResponse(
+                is_connected=True,
+                phone_number=telegram_session.phone_number
+            )
+        else:
+            return SessionStatusResponse(
+                is_connected=False,
+                phone_number=None
+            )
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error checking session status: {e}")
+        # Return disconnected on error to be safe
+        return SessionStatusResponse(
+            is_connected=False,
+            phone_number=None
         )
 
 

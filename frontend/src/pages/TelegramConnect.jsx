@@ -25,6 +25,35 @@ export default function TelegramConnect() {
   const [error, setError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    checkExistingSession();
+  }, [token]);
+
+  const checkExistingSession = async () => {
+    if (!token) {
+      setCheckingSession(false);
+      return;
+    }
+
+    try {
+      const response = await apiRequest("/telegram/session-status", "GET", null, token);
+
+      if (response.is_connected) {
+        // User already has active session - skip to contacts
+        setPhoneNumber(response.phone_number || "");
+        setStep(3);
+        loadContacts();
+      }
+    } catch (err) {
+      // Session check failed - start from step 1
+      console.error("Session check failed:", err);
+    } finally {
+      setCheckingSession(false);
+    }
+  };
 
   // Handle phone submission - Step 1
   const handleSendCode = async () => {
@@ -158,6 +187,41 @@ export default function TelegramConnect() {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (checkingSession) {
+    return (
+      <div style={{
+        maxWidth: "800px",
+        margin: "0 auto",
+        padding: "40px 20px",
+        fontFamily: "'Nunito', sans-serif",
+        textAlign: "center"
+      }}>
+        <h1 style={{
+          fontSize: "32px",
+          fontWeight: "700",
+          color: "#1a202c",
+          margin: "0 0 12px 0"
+        }}>
+          Telegram Chat Import
+        </h1>
+        <p style={{
+          fontSize: "16px",
+          color: "#6b7280",
+          margin: "40px 0"
+        }}>
+          Checking your connection...
+        </p>
+        <div style={{
+          fontSize: "24px",
+          color: "#7DD3C0"
+        }}>
+          ⏳
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
