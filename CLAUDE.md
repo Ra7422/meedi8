@@ -8,13 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Updates (Last Updated: 2025-11-14)
 
-**✅ LATEST STABLE STATE** - Commit `e858e27` (2025-11-14) includes subscription page UX improvements: Stripe Express Checkout loading spinner optimization, Meedi illustration decorative element, and improved payment flow visual feedback.
+**✅ LATEST STABLE STATE** - Commit `25fe58c` (2025-11-14) includes Telegram integration improvements: profile picture display in floating menu, Telegram Client API setup with Telethon library for future group chat monitoring feature.
+
+**Previous Stable**: Commit `e858e27` (2025-11-14) - Subscription page UX improvements: Stripe Express Checkout loading spinner optimization, Meedi illustration decorative element, and improved payment flow visual feedback.
 
 **Previous Stable**: Commit `ff3df8d` (2025-11-13) - Phase 1 paywall implementation with room creation limits, email notification system (disabled by default), PAYWALL.md strategy doc, and SENDGRID_SETUP.md guide.
 
-**Previous Stable**: Commit `f9825c3` (2025-11-13) - Email notifications and paywall strategy documentation.
-
 **Critical Changes** - Read these first when working on the codebase:
+
+0. **Telegram Client API Setup (2025-11-14) - FOUNDATION ONLY** - Prepared infrastructure for Telegram group chat monitoring using Telethon library. **Commits**: `0f17eb2` (profile picture fix), `25fe58c` (Telethon dependency). **Current Status**: Phase 1 (OAuth auth) and Phase 2 (API setup) complete. Phase 3 (group chat monitoring) pending ethical/privacy strategy. **What's Working**: Telegram OAuth login with icon-only button, profile picture display in FloatingMenu, Telethon library installed (`telethon>=1.42.0`), API credentials configured locally (`TELEGRAM_API_ID`, `TELEGRAM_API_HASH`). **What's Not Implemented Yet**: Phone verification flow, group chat monitoring service, message analysis AI, user consent system. **Files Modified**: `FloatingMenu.jsx` (lines 75-106 hamburger icon revert, lines 391-406 profile picture on Profile button), `requirements.txt` (added telethon), `backend/.env` (API credentials - not committed). **Next Steps**: Design privacy-first approach (see Phase 3 plan below), implement phone verification, build monitoring service with Telethon event handlers, create AI conflict detection analysis.
+
+0. **Profile Picture in FloatingMenu (2025-11-14) - DEPLOYED** - Fixed profile picture display after misunderstanding user request. **Commit**: `0f17eb2`. **Implementation**: Hamburger menu button (☰) always shows as menu indicator, Profile button INSIDE the menu now displays user's OAuth profile picture (24px circular) with 👤 emoji fallback. **Files**: `FloatingMenu.jsx` lines 75-106 (reverted hamburger to always show icon), lines 367-407 (added profile picture to Profile button with flexbox layout). **Why This Matters**: User specifically wanted "hamburger so people know to click on it" while showing profile picture inside the menu for personalization.
 
 0. **Subscription Page UX Improvements (2025-11-14) - DEPLOYED** - Enhanced subscription page with better loading feedback and visual design. **Commits**: `ebcede2` (icon size revert), `ab6981f` (loading spinner), `e858e27` (Meedi illustration). **Key Features**:
    - **Stripe Express Checkout Loading Spinner**: Added `isElementReady` state that tracks when Stripe's `onReady` callback fires. Shows purple spinning loader with "Loading payment options..." text during the 0.5-1.5s delay while Stripe checks device payment methods (Apple Pay/Google Pay availability). Eliminates awkward blank purple box. Files: `ExpressCheckoutForm.jsx` lines 19, 55, 69-73, 220-233, 237-249; `index.html` lines 8-9 (preconnect hints for ~100-200ms improvement).
