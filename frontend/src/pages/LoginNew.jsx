@@ -210,7 +210,7 @@ export default function LoginNew() {
           <div style={{ display: 'flex', gap: '16px', width: '100%', justifyContent: 'center', alignItems: 'center' }}>
             {/* Google Login */}
             {hasGoogleOAuth && (
-              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', transform: 'scale(1.2)' }}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
