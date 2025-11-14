@@ -191,22 +191,25 @@ class TelegramService:
         return client
 
     @staticmethod
-    async def get_dialogs(encrypted_session: str, limit: int = 100) -> List[Dict]:
+    async def get_dialogs(encrypted_session: str, limit: int = 500) -> List[Dict]:
         """
-        Get user's recent chats/dialogs.
+        Get user's recent chats/dialogs including archived chats and folders.
 
         Args:
             encrypted_session: Encrypted session string
-            limit: Maximum number of dialogs to fetch
+            limit: Maximum number of dialogs to fetch (default 500 to get all chats)
 
         Returns:
-            List of dialog dictionaries with id, name, type, unread_count
+            List of dialog dictionaries with id, name, type, unread_count, folder, archived
         """
         client = await TelegramService.get_client_from_session(encrypted_session)
 
         try:
             dialogs = []
-            async for dialog in client.iter_dialogs(limit=limit):
+
+            # Fetch all dialogs including archived ones
+            # archived=None means fetch both archived and non-archived
+            async for dialog in client.iter_dialogs(limit=limit, archived=None):
                 entity = dialog.entity
 
                 # Determine chat type
@@ -215,6 +218,9 @@ class TelegramService:
                     chat_name = entity.first_name or ""
                     if entity.last_name:
                         chat_name += f" {entity.last_name}"
+                    # Add username if available
+                    if hasattr(entity, 'username') and entity.username:
+                        chat_name += f" (@{entity.username})"
                 elif isinstance(entity, Chat):
                     chat_type = "group"
                     chat_name = entity.title
@@ -225,16 +231,36 @@ class TelegramService:
                     chat_type = "unknown"
                     chat_name = str(entity.id)
 
+                # Get folder information
+                folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
+                folder_name = None
+                if folder_id == 1:
+                    folder_name = "Personal"
+                elif folder_id == 2:
+                    folder_name = "Work"
+                elif folder_id and folder_id > 2:
+                    folder_name = f"Folder {folder_id}"
+
+                # Check if archived
+                is_archived = dialog.archived if hasattr(dialog, 'archived') else False
+
                 dialogs.append({
                     "id": entity.id,
                     "name": chat_name,
                     "type": chat_type,
                     "unread_count": dialog.unread_count,
-                    "last_message_date": dialog.date.isoformat() if dialog.date else None
+                    "last_message_date": dialog.date.isoformat() if dialog.date else None,
+                    "folder_id": folder_id,
+                    "folder_name": folder_name,
+                    "archived": is_archived
                 })
 
+            logger.info(f"Fetched {len(dialogs)} dialogs from Telegram")
             return dialogs
 
+        except Exception as e:
+            logger.error(f"Error fetching dialogs: {e}")
+            raise
         finally:
             await client.disconnect()
 

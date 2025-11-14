@@ -525,15 +525,38 @@ export default function TelegramConnect() {
                     </h3>
                     <div style={{
                       display: "flex",
-                      gap: "12px",
+                      gap: "8px",
                       fontSize: "13px",
-                      color: "#6b7280"
+                      color: "#6b7280",
+                      flexWrap: "wrap"
                     }}>
                       <span>
                         {chat.chat_type === 'user' ? '👤' : chat.chat_type === 'group' ? '👥' : '📢'}
                         {' '}
                         {chat.chat_type}
                       </span>
+                      {chat.folder_name && (
+                        <span style={{
+                          background: "#F3F4F6",
+                          color: "#4B5563",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontWeight: "500"
+                        }}>
+                          📁 {chat.folder_name}
+                        </span>
+                      )}
+                      {chat.archived && (
+                        <span style={{
+                          background: "#FEF3C7",
+                          color: "#92400E",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontWeight: "500"
+                        }}>
+                          📦 Archived
+                        </span>
+                      )}
                       {chat.unread_count > 0 && (
                         <span style={{
                           background: "#7DD3C0",
