@@ -207,16 +207,16 @@ export default function LoginNew() {
           </div>
 
           {/* Social Login Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
             {hasGoogleOAuth ? (
-              <div style={{ width: '100%', maxWidth: '400px' }}>
+              <div style={{ width: '100%' }}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
                   text="signin_with"
                   shape="rectangular"
                   logo_alignment="left"
-                  width="400"
+                  width="364"
                   theme="outline"
                   size="large"
                 />
@@ -237,18 +237,16 @@ export default function LoginNew() {
               </button>
             )}
 
-            {/* Telegram Login Widget */}
-            {hasTelegramOAuth && (
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <TelegramLoginButton
-                  botName={TELEGRAM_BOT_NAME}
-                  dataOnauth={handleTelegramResponse}
-                  buttonSize="large"
-                  cornerRadius={12}
-                  requestAccess="write"
-                />
-              </div>
-            )}
+            {/* Telegram Login Widget - Always show for testing */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <TelegramLoginButton
+                botName="meedi8_bot"
+                dataOnauth={handleTelegramResponse}
+                buttonSize="large"
+                cornerRadius={12}
+                requestAccess={true}
+              />
+            </div>
           </div>
         </form>
 
