@@ -6,15 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Meedi8** is an AI-powered mediation platform that guides users through conflict resolution using Nonviolent Communication (NVC) principles. The system consists of a React frontend and FastAPI backend that orchestrates a multi-phase mediation flow.
 
-## Recent Updates (Last Updated: 2025-11-13)
+## Recent Updates (Last Updated: 2025-11-14)
 
-**✅ LATEST STABLE STATE** - Commit `ff3df8d` (2025-11-13) includes Phase 1 paywall implementation with room creation limits, email notification system (disabled by default), PAYWALL.md strategy doc, and SENDGRID_SETUP.md guide.
+**✅ LATEST STABLE STATE** - Commit `e858e27` (2025-11-14) includes subscription page UX improvements: Stripe Express Checkout loading spinner optimization, Meedi illustration decorative element, and improved payment flow visual feedback.
+
+**Previous Stable**: Commit `ff3df8d` (2025-11-13) - Phase 1 paywall implementation with room creation limits, email notification system (disabled by default), PAYWALL.md strategy doc, and SENDGRID_SETUP.md guide.
 
 **Previous Stable**: Commit `f9825c3` (2025-11-13) - Email notifications and paywall strategy documentation.
 
-**Previous Stable**: Commit `c5cfd7b` (2025-11-12) - Professional PDF report generation, homepage image fixes, and strict turn-by-turn mediation with harsh language intervention.
-
 **Critical Changes** - Read these first when working on the codebase:
+
+0. **Subscription Page UX Improvements (2025-11-14) - DEPLOYED** - Enhanced subscription page with better loading feedback and visual design. **Commits**: `ebcede2` (icon size revert), `ab6981f` (loading spinner), `e858e27` (Meedi illustration). **Key Features**:
+   - **Stripe Express Checkout Loading Spinner**: Added `isElementReady` state that tracks when Stripe's `onReady` callback fires. Shows purple spinning loader with "Loading payment options..." text during the 0.5-1.5s delay while Stripe checks device payment methods (Apple Pay/Google Pay availability). Eliminates awkward blank purple box. Files: `ExpressCheckoutForm.jsx` lines 19, 55, 69-73, 220-233, 237-249; `index.html` lines 8-9 (preconnect hints for ~100-200ms improvement).
+   - **Meedi Illustration Decoration**: Added horizontally flipped Meedi standing character in top left corner with 20pt top padding, 150px width, 0.8 opacity, positioned absolutely behind content. Provides brand consistency and visual interest. File: `Subscription.jsx` lines 8, 160-173.
+   - **Payment Flow**: User clicks tier button → Pulsing dots during API call → Purple container with spinner → Stripe device checks → Spinner fades out, payment buttons fade in (0.3s transition).
+   - **Technical Details**: Stripe's ExpressCheckoutElement has unavoidable delay for device wallet queries (security requirement). Using `onReady` callback is the official recommended approach per Stripe docs. SSR-safe spinner animation with `typeof document !== 'undefined'` check.
 
 0. **Stripe Payment-First Checkout (2025-11-13) - DEPLOYED** - Implemented frictionless payment flow where users can purchase subscriptions WITHOUT creating an account first. **Commits**: `91492fb` (frontend removal of auth barrier), `9f50c75` (webhook guest handler), `ec84a73` (wallet payment methods). **Flow**: Click "Get Plus/Pro" → Stripe embedded checkout (collects email + payment with Card/Apple Pay/Google Pay/Link support) → Payment succeeds → Webhook creates user account → Success page prompts OAuth sign-in. **Files**: `backend/app/services/stripe_service.py` (lines 76, 102-149, 167-245), `backend/app/routes/subscriptions.py` (lines 11, 14, 81-127), `frontend/src/pages/Subscription.jsx` (simplified, removed auth modal), `frontend/src/pages/SubscriptionSuccess.jsx` (auth detection). **Environment Variables Required on Railway**: `STRIPE_SECRET_KEY` (test: sk_test_51SSxzt...), `STRIPE_PRICE_PLUS_MONTHLY`, `STRIPE_PRICE_PLUS_YEARLY`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_PRO_YEARLY`. **Test Price IDs**: Plus Monthly (£9.99) price_1ST4GSIFSfYvttlAuK48AVkK, Plus Yearly (£99.99) price_1ST4HPIFSfYvttlA7wcumfd8, Pro Monthly (£19.99) price_1ST4EQIFSfYvttlACMstQcuO, Pro Yearly (£199.99) price_1ST4FDIFSfYvttlAyIghPKBf. **Payment Methods**: Card, Apple Pay, Google Pay, and Link (Stripe's one-click payment). Apple Pay requires HTTPS and appears automatically on Safari/iOS. Webhook at `/subscriptions/webhook` handles `checkout.session.completed` to create user accounts with temporary passwords.
 
