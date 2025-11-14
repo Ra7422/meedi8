@@ -191,23 +191,23 @@ class TelegramService:
         return client
 
     @staticmethod
-    async def get_dialogs(encrypted_session: str, limit: int = 500) -> List[Dict]:
+    async def get_dialogs(encrypted_session: str, limit: int = 100) -> List[Dict]:
         """
-        Get user's recent chats/dialogs including archived chats and folders.
+        Get user's recent chats/dialogs including pinned, folders, and archived.
 
         Args:
             encrypted_session: Encrypted session string
-            limit: Maximum number of dialogs to fetch (default 500 to get all chats)
+            limit: Maximum number of dialogs to fetch (default 100 most recent)
 
         Returns:
-            List of dialog dictionaries with id, name, type, unread_count, folder, archived
+            List of dialog dictionaries with id, name, type, unread_count, folder, archived, pinned
         """
         client = await TelegramService.get_client_from_session(encrypted_session)
 
         try:
             dialogs = []
 
-            # Fetch all dialogs including archived ones
+            # Fetch dialogs including archived ones
             # archived=None means fetch both archived and non-archived
             async for dialog in client.iter_dialogs(limit=limit, archived=None):
                 entity = dialog.entity
@@ -244,6 +244,9 @@ class TelegramService:
                 # Check if archived
                 is_archived = dialog.archived if hasattr(dialog, 'archived') else False
 
+                # Check if pinned (favorite)
+                is_pinned = dialog.pinned if hasattr(dialog, 'pinned') else False
+
                 dialogs.append({
                     "id": entity.id,
                     "name": chat_name,
@@ -252,7 +255,8 @@ class TelegramService:
                     "last_message_date": dialog.date.isoformat() if dialog.date else None,
                     "folder_id": folder_id,
                     "folder_name": folder_name,
-                    "archived": is_archived
+                    "archived": is_archived,
+                    "pinned": is_pinned
                 })
 
             logger.info(f"Fetched {len(dialogs)} dialogs from Telegram")

@@ -535,6 +535,17 @@ export default function TelegramConnect() {
                         {' '}
                         {chat.chat_type}
                       </span>
+                      {chat.pinned && (
+                        <span style={{
+                          background: "#FEF9C3",
+                          color: "#854D0E",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontWeight: "600"
+                        }}>
+                          ⭐ Pinned
+                        </span>
+                      )}
                       {chat.folder_name && (
                         <span style={{
                           background: "#F3F4F6",
