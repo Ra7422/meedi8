@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
 import ExpressCheckoutForm from "../components/ExpressCheckoutForm";
+import PaymentForm from "../components/PaymentForm";
 import thumbsUpIcon from "../assets/icons/thumbs_up.png";
 
 export default function Subscription() {
@@ -785,7 +786,7 @@ export default function Subscription() {
             }}>
               Complete Your {checkoutSession.tier === 'plus' ? 'Plus' : 'Pro'} Subscription
             </h2>
-            <ExpressCheckoutForm
+            <PaymentForm
               clientSecret={checkoutSession.clientSecret}
               onSuccess={handleCheckoutComplete}
               onError={(error) => {
