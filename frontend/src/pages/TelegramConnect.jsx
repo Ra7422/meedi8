@@ -130,7 +130,7 @@ export default function TelegramConnect() {
 
     try {
       const response = await apiRequest("/telegram/contacts", "GET", null, token);
-      setContacts(response.chats || []);
+      setContacts(response.contacts || []); // Fixed: backend returns .contacts not .chats
     } catch (err) {
       setError(err.message || "Failed to load chats");
     } finally {
