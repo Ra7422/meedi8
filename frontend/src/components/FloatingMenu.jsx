@@ -390,27 +390,29 @@ export default function FloatingMenu({
             </nav>
 
             {/* Menu Footer */}
-            <div style={{
-              padding: "16px 20px",
-              borderTop: "1px solid #e5e7eb"
-            }}>
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  background: "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "15px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                Logout
-              </button>
-            </div>
+            {user && (
+              <div style={{
+                padding: "16px 20px",
+                borderTop: "1px solid #e5e7eb"
+              }}>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
