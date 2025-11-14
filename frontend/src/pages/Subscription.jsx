@@ -326,23 +326,23 @@ export default function Subscription() {
             flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Text-based mediation</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Individual coaching with Meedi</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Basic conversation summary</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>7-day access to transcript</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Email support</span>
             </li>
           </ul>
@@ -433,35 +433,35 @@ export default function Subscription() {
             flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Free</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited text mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Voice-enabled mediations</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 10MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Automatic transcription</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>30-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Download basic session summaries</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority email support</span>
             </li>
           </ul>
@@ -656,39 +656,39 @@ export default function Subscription() {
             flexGrow: 1
           }}>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Everything in Plus</strong></span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Unlimited voice mediations</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>Meedi AI voice responses</strong> (two-way voice conversations)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Upload evidence files (up to 50MB per session)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span><strong>3 professional evaluation reports per month</strong> (additional reports £4.99 each)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>90-day transcript storage</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Advanced relationship pattern analytics</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Priority support (24-hour response)</span>
             </li>
             <li style={{ marginBottom: "12px", display: "flex", gap: "12px", alignItems: "start", color: "#6750A4", fontSize: "15px" }}>
-              <img src={thumbsUpIcon} alt="check" style={{ width: "40px", height: "40px", flexShrink: 0, marginTop: "2px" }} />
+              <img src={thumbsUpIcon} alt="check" style={{ width: "20px", height: "20px", flexShrink: 0, marginTop: "2px" }} />
               <span>Export to share with therapists</span>
             </li>
           </ul>
