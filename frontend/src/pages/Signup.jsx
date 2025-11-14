@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Logo } from "../components/ui";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
+import FloatingMenu from "../components/FloatingMenu";
 
 /**
  * Sign Up Page - Matches Login Design
@@ -26,7 +27,6 @@ export default function Signup() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   // Helper function to handle post-signup redirect
   const handlePostSignupRedirect = () => {
@@ -119,32 +119,18 @@ export default function Signup() {
 
   return (
     <div style={styles.container}>
+      {/* FloatingMenu component */}
+      <FloatingMenu />
+
       {/* Ellipse for depth at top */}
       <div style={styles.topEllipse} />
 
-      {/* Header with Logo and Menu */}
+      {/* Header with Logo */}
       <div style={styles.header}>
         <div style={styles.logoContainer}>
           <Logo size={isMobile ? 180 : 240} />
         </div>
-        <button style={styles.menuButton} onClick={() => setMenuOpen(!menuOpen)}>
-          <div style={styles.menuIcon}>
-            <div style={styles.menuBar}></div>
-            <div style={styles.menuBar}></div>
-            <div style={styles.menuBar}></div>
-          </div>
-        </button>
       </div>
-
-      {/* Dropdown menu */}
-      {menuOpen && (
-        <div style={styles.menuDropdown}>
-          <a href="#how-it-works" style={styles.menuItem}>How It Works</a>
-          <a href="#pricing" style={styles.menuItem}>Pricing</a>
-          <a href="#faq" style={styles.menuItem}>FAQ</a>
-          <a href="#about" style={styles.menuItem}>About Us</a>
-        </div>
-      )}
 
       {/* Main content */}
       <div style={styles.content}>

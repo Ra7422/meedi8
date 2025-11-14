@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Logo } from "../components/ui";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
+import FloatingMenu from "../components/FloatingMenu";
 // import TelegramLoginButton from 'react-telegram-login'; // Temporarily disabled - React version conflict
 
 /**
@@ -24,7 +25,6 @@ export default function LoginNew() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   // Helper function to handle post-login redirect
   const handlePostLoginRedirect = () => {
@@ -125,32 +125,18 @@ export default function LoginNew() {
 
   return (
     <div style={styles.container}>
+      {/* FloatingMenu component */}
+      <FloatingMenu />
+
       {/* Ellipse for depth at top */}
       <div style={styles.topEllipse} />
 
-      {/* Header with Logo and Menu */}
+      {/* Header with Logo */}
       <div style={styles.header}>
         <div style={styles.logoContainer}>
           <Logo size={isMobile ? 180 : 240} />
         </div>
-        <button style={styles.menuButton} onClick={() => setMenuOpen(!menuOpen)}>
-          <div style={styles.menuIcon}>
-            <div style={styles.menuBar}></div>
-            <div style={styles.menuBar}></div>
-            <div style={styles.menuBar}></div>
-          </div>
-        </button>
       </div>
-
-      {/* Dropdown menu */}
-      {menuOpen && (
-        <div style={styles.menuDropdown}>
-          <a href="#how-it-works" style={styles.menuItem}>How It Works</a>
-          <a href="#pricing" style={styles.menuItem}>Pricing</a>
-          <a href="#faq" style={styles.menuItem}>FAQ</a>
-          <a href="#about" style={styles.menuItem}>About Us</a>
-        </div>
-      )}
 
       {/* Main content */}
       <div style={styles.content}>
