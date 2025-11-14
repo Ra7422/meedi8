@@ -221,25 +221,42 @@ export default function LoginNew() {
               </div>
             )}
 
-            {/* Telegram Login - Custom Icon Button */}
-            <button
-              type="button"
-              onClick={() => {
-                // Open Telegram OAuth directly
-                const botName = 'meedi8_bot';
-                const origin = window.location.origin;
-                const authUrl = `https://oauth.telegram.org/auth?bot_id=8087184448&origin=${encodeURIComponent(origin)}&request_access=write&return_to=${encodeURIComponent(origin + '/login')}`;
-                window.location.href = authUrl;
-              }}
-              style={styles.telegramIconButton}
-              title="Sign in with Telegram"
-            >
-              <img
-                src="/assets/illustrations/Telegram_logo.svg"
-                alt="Telegram"
-                style={{ width: '48px', height: '48px', pointerEvents: 'none' }}
-              />
-            </button>
+            {/* Telegram Login */}
+            <div style={{
+              width: '58px',
+              height: '58px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              borderRadius: '50%',
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                zIndex: 1
+              }}>
+                <img
+                  src="/assets/illustrations/Telegram_logo.svg"
+                  alt="Telegram"
+                  style={{ width: '48px', height: '48px' }}
+                />
+              </div>
+              <div style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                <TelegramLoginButton
+                  botName="meedi8_bot"
+                  dataOnauth={handleTelegramResponse}
+                  buttonSize="large"
+                  cornerRadius={20}
+                  requestAccess={true}
+                  usePic={false}
+                />
+              </div>
+            </div>
           </div>
         </form>
 
