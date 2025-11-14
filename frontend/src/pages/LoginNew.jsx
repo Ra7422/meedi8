@@ -207,10 +207,10 @@ export default function LoginNew() {
           </div>
 
           {/* Social Login Buttons - Horizontal Row */}
-          <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', width: '100%', justifyContent: 'center', alignItems: 'center' }}>
             {/* Google Login */}
             {hasGoogleOAuth && (
-              <div style={{ flexShrink: 0 }}>
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -241,8 +241,8 @@ export default function LoginNew() {
               style={styles.telegramIconButton}
               title="Sign in with Telegram"
             >
-              <svg width="40" height="40" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="120" cy="120" r="120" fill="#0088cc"/>
+              <svg width="48" height="48" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="120" cy="120" r="120" fill="#0088CC"/>
                 <path d="M81.229 128.772l14.237 39.406s1.78 3.687 3.686 3.687 30.255-29.492 30.255-29.492l31.525-60.89L81.737 118.6" fill="#c8daea"/>
                 <path d="M100.106 138.878l-2.733 29.046s-1.144 8.9 7.754 0 17.415-15.763 17.415-15.763" fill="#a9c6d8"/>
                 <path d="M81.486 130.178l-17.8-5.467s-2.132-.877-1.4-2.83c.154-.395.396-.843.955-1.411 5.043-5.074 93.1-36.067 93.1-36.067s2.096-.654 3.36-.275c.554.165.962.378 1.229.986.12.277.191.606.21 1.007.016.386-.005.817-.03 1.305-.199 3.93-1.96 45.353-3.676 64.99 0 0-.139 2.04-1.315 2.908-.677.5-1.583.677-2.527.677-1.453 0-3.043-.428-3.9-.825-11.354-5.258-38.427-17.835-46.905-22.014-.277-.137-.84-.443-.968-1.007-.15-.667.183-1.184.423-1.425 3.067-3.085 44.223-43.242 46.48-47.1.11-.186.088-.337-.195-.248-3.03.937-56.66 36.997-59.54 39.122-.192.142-.542.22-.962.22-.403 0-.862-.073-1.328-.22z" fill="white"/>
@@ -512,14 +512,15 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '48px',
-    height: '48px',
+    width: '58px',
+    height: '58px',
     border: 'none',
     borderRadius: '50%',
     backgroundColor: 'transparent',
     cursor: 'pointer',
     transition: 'all 0.2s',
     padding: 0,
+    flexShrink: 0,
   },
   mascotContainer: {
     position: 'fixed',
