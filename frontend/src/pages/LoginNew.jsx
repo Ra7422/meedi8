@@ -232,6 +232,26 @@ export default function LoginNew() {
               borderRadius: '50%',
               position: 'relative'
             }}>
+              {/* Telegram widget in background - clickable */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 0,
+                opacity: 0.01  // Nearly invisible but still renders
+              }}>
+                <TelegramLoginButton
+                  botName="meedi8_bot"
+                  dataOnauth={handleTelegramResponse}
+                  buttonSize="large"
+                  cornerRadius={20}
+                  requestAccess={true}
+                  usePic={false}
+                />
+              </div>
+              {/* Custom icon overlay - visible but non-interactive */}
               <div style={{
                 position: 'absolute',
                 top: '50%',
@@ -244,16 +264,6 @@ export default function LoginNew() {
                   src="/assets/illustrations/Telegram_logo.svg"
                   alt="Telegram"
                   style={{ width: '48px', height: '48px' }}
-                />
-              </div>
-              <div style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <TelegramLoginButton
-                  botName="meedi8_bot"
-                  dataOnauth={handleTelegramResponse}
-                  buttonSize="large"
-                  cornerRadius={20}
-                  requestAccess={true}
-                  usePic={false}
                 />
               </div>
             </div>
