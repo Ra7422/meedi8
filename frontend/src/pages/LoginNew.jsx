@@ -244,7 +244,7 @@ export default function LoginNew() {
               <img
                 src="/assets/illustrations/Telegram_logo.svg"
                 alt="Telegram"
-                style={{ width: '48px', height: '48px' }}
+                style={{ width: '48px', height: '48px', pointerEvents: 'none' }}
               />
             </button>
 
@@ -520,6 +520,7 @@ const styles = {
     transition: 'all 0.2s',
     padding: 0,
     flexShrink: 0,
+    pointerEvents: 'auto',
   },
   mascotContainer: {
     position: 'fixed',
