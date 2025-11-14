@@ -16,6 +16,7 @@ function ExpressCheckoutForm({ clientSecret, onSuccess, onError }) {
   const elements = useElements();
   const [message, setMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isElementReady, setIsElementReady] = useState(false);
 
   const handleConfirm = async (event) => {
     if (!stripe || !elements) {
@@ -50,6 +51,8 @@ function ExpressCheckoutForm({ clientSecret, onSuccess, onError }) {
     if (event.availablePaymentMethods) {
       console.log('Available payment methods:', event.availablePaymentMethods);
     }
+    // Signal that buttons are now visible
+    setIsElementReady(true);
   };
 
   const handleClick = (event) => {
@@ -62,22 +65,37 @@ function ExpressCheckoutForm({ clientSecret, onSuccess, onError }) {
 
   return (
     <div style={styles.container}>
-      <ExpressCheckoutElement
-        onConfirm={handleConfirm}
-        onReady={handleReady}
-        onClick={handleClick}
-        options={{
-          buttonType: {
-            applePay: 'subscribe',    // Shows "Subscribe with Apple Pay"
-            googlePay: 'subscribe',   // Shows "Subscribe with Google Pay"
-          },
-          layout: {
-            maxColumns: 1,
-            maxRows: 3,
-            overflow: 'auto',
-          },
-        }}
-      />
+      {/* Loading overlay - shows until Stripe buttons are ready */}
+      {!isElementReady && (
+        <div style={styles.loadingOverlay}>
+          <div style={styles.loadingSpinner} />
+          <p style={styles.loadingText}>Loading payment options...</p>
+        </div>
+      )}
+
+      {/* Express Checkout Element - fades in when ready */}
+      <div style={{
+        opacity: isElementReady ? 1 : 0,
+        transition: 'opacity 0.3s ease-in',
+        minHeight: '100px',
+      }}>
+        <ExpressCheckoutElement
+          onConfirm={handleConfirm}
+          onReady={handleReady}
+          onClick={handleClick}
+          options={{
+            buttonType: {
+              applePay: 'subscribe',    // Shows "Subscribe with Apple Pay"
+              googlePay: 'subscribe',   // Shows "Subscribe with Google Pay"
+            },
+            layout: {
+              maxColumns: 1,
+              maxRows: 3,
+              overflow: 'auto',
+            },
+          }}
+        />
+      </div>
 
       {message && (
         <div style={styles.message}>
@@ -185,4 +203,47 @@ const styles = {
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(255, 255, 255, 0.95)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '12px',
+    zIndex: 10,
+  },
+  loadingSpinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid #E5E7EB',
+    borderTop: '3px solid #7C6CB6',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+  },
+  loadingText: {
+    marginTop: '12px',
+    fontSize: '14px',
+    color: '#6B7280',
+    fontFamily: "'Nunito', sans-serif",
+  },
 };
+
+// Add CSS for spinner animation
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  if (!document.head.querySelector('style[data-express-checkout-spinner]')) {
+    styleSheet.setAttribute('data-express-checkout-spinner', 'true');
+    document.head.appendChild(styleSheet);
+  }
+}
