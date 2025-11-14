@@ -398,8 +398,11 @@ class TelegramService:
                 db.add(telegram_message)
                 message_count += 1
 
-                # Commit in batches
+                # Commit in batches and update progress
                 if message_count % 100 == 0:
+                    # Update progress in download record
+                    download.message_count = message_count
+                    download.media_count = media_count
                     db.commit()
                     logger.info(f"Downloaded {message_count} messages from chat {chat_id}")
 

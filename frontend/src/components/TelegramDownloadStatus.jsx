@@ -232,12 +232,13 @@ export default function TelegramDownloadStatus({ downloadId, onClose }) {
               color: "#6b7280",
               marginBottom: "4px"
             }}>
-              Messages Downloaded
+              {status.status === "processing" ? "Messages Downloaded (Live)" : "Messages Downloaded"}
             </div>
             <div style={{
               fontSize: "24px",
               fontWeight: "700",
-              color: "#7DD3C0"
+              color: status.status === "processing" ? "#f59e0b" : "#7DD3C0",
+              transition: "color 0.3s ease"
             }}>
               {status.message_count.toLocaleString()}
             </div>
