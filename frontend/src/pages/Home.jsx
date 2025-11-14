@@ -209,7 +209,7 @@ export default function Home() {
     },
     quickLinks: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
+      gridTemplateColumns: 'repeat(4, 1fr)',
       gap: '12px',
       marginBottom: '32px',
       '@media (min-width: 768px)': {
