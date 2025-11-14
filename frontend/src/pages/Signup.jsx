@@ -257,16 +257,11 @@ export default function Signup() {
             <button
               type="button"
               onClick={() => {
-                // Trigger the hidden Telegram widget
-                const telegramContainer = document.getElementById('telegram-signup-container');
-                if (telegramContainer) {
-                  const iframe = telegramContainer.querySelector('iframe');
-                  if (iframe) {
-                    iframe.contentWindow?.postMessage('click', '*');
-                    const button = telegramContainer.querySelector('button');
-                    if (button) button.click();
-                  }
-                }
+                // Open Telegram OAuth directly
+                const botName = 'meedi8_bot';
+                const origin = window.location.origin;
+                const authUrl = `https://oauth.telegram.org/auth?bot_id=8087184448&origin=${encodeURIComponent(origin)}&request_access=write&return_to=${encodeURIComponent(origin + '/signup')}`;
+                window.location.href = authUrl;
               }}
               style={styles.telegramIconButton}
               title="Sign up with Telegram"
@@ -277,18 +272,6 @@ export default function Signup() {
                 style={{ width: '48px', height: '48px', pointerEvents: 'none' }}
               />
             </button>
-
-            {/* Hidden Telegram Widget */}
-            <div id="telegram-signup-container" style={{ position: 'absolute', left: '-9999px', opacity: 0 }}>
-              <TelegramLoginButton
-                botName="meedi8_bot"
-                dataOnauth={handleTelegramResponse}
-                buttonSize="large"
-                cornerRadius={20}
-                requestAccess={true}
-                usePic={false}
-              />
-            </div>
           </div>
         </form>
 
