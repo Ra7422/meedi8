@@ -362,6 +362,32 @@ export default function FloatingMenu({
                 }} />
               )}
 
+              {/* Profile button (only when logged in) */}
+              {user && (
+                <button
+                  onClick={() => {
+                    navigate("/profile");
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "14px 20px",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    fontSize: "16px",
+                    color: "#374151",
+                    cursor: "pointer",
+                    transition: "background 0.2s",
+                    fontWeight: "500"
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                >
+                  👤 Profile
+                </button>
+              )}
+
               {/* Regular navigation items */}
               {menuItems.map((item) => (
                 <button
