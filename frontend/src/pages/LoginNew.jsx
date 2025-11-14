@@ -216,7 +216,7 @@ export default function LoginNew() {
                   text="signin_with"
                   shape="rectangular"
                   logo_alignment="left"
-                  width="100%"
+                  width="400"
                   theme="outline"
                   size="large"
                 />

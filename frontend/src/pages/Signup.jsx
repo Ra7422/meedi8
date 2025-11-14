@@ -248,7 +248,7 @@ export default function Signup() {
                   text="signup_with"
                   shape="rectangular"
                   logo_alignment="left"
-                  width="100%"
+                  width="400"
                   theme="outline"
                   size="large"
                 />
