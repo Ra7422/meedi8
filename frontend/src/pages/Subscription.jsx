@@ -450,41 +450,101 @@ export default function Subscription() {
 
           {currentTier !== "plus" ? (
             <div style={{ width: "100%" }}>
-              <button
-                onClick={() => handleExpandCheckout("plus")}
-                disabled={processing}
-                style={{
+              {/* Show button when not expanded */}
+              {expandedTier !== "plus" && (
+                <button
+                  onClick={() => handleExpandCheckout("plus")}
+                  disabled={processing}
+                  style={{
+                    padding: "14px",
+                    background: "#7C6CB6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "12px",
+                    fontWeight: "700",
+                    fontFamily: "'Nunito', sans-serif",
+                    cursor: processing ? "not-allowed" : "pointer",
+                    fontSize: "16px",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
+                    width: "100%",
+                    opacity: processing && expandedTier === "plus" ? 0 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                >
+                  Get Plus
+                </button>
+              )}
+
+              {/* Show pulsing dots when loading */}
+              {processing && expandedTier === "plus" && !checkoutSession && (
+                <div style={{
                   padding: "14px",
-                  background: "#7C6CB6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: expandedTier === "plus" ? "12px 12px 0 0" : "12px",
-                  fontWeight: "700",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "16px",
-                  transition: "all 0.2s",
-                  boxShadow: "0 4px 12px rgba(124, 108, 182, 0.3)",
-                  width: "100%",
-                  opacity: processing ? 0.6 : 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px"
-                }}
-              >
-                {processing && expandedTier === "plus" ? "Loading..." : "Get Plus"}
-                {!processing && <span style={{ fontSize: "12px" }}>{expandedTier === "plus" ? "▲" : "▼"}</span>}
-              </button>
+                  gap: "6px",
+                  animation: "fadeIn 0.3s ease-in"
+                }}>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7C6CB6",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0s"
+                  }}></div>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7C6CB6",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0.2s"
+                  }}></div>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7C6CB6",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0.4s"
+                  }}></div>
+                  <style>{`
+                    @keyframes pulse {
+                      0%, 60%, 100% {
+                        opacity: 0.3;
+                        transform: scale(0.8);
+                      }
+                      30% {
+                        opacity: 1;
+                        transform: scale(1.2);
+                      }
+                    }
+                    @keyframes fadeIn {
+                      from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                      }
+                      to {
+                        opacity: 1;
+                        transform: translateY(0);
+                      }
+                    }
+                  `}</style>
+                </div>
+              )}
 
-              {/* Embedded Express Checkout */}
+              {/* Fade in Express Checkout when ready */}
               {expandedTier === "plus" && checkoutSession && checkoutSession.tier === "plus" && (
                 <div style={{
-                  border: "2px solid #7C6CB6",
-                  borderTop: "none",
-                  borderRadius: "0 0 12px 12px",
                   padding: "16px",
-                  background: "#F5F3FF"
+                  background: "#F5F3FF",
+                  borderRadius: "12px",
+                  animation: "fadeIn 0.4s ease-in"
                 }}>
                   <ExpressCheckoutForm
                     clientSecret={checkoutSession.clientSecret}
@@ -515,8 +575,11 @@ export default function Subscription() {
                         fontFamily: "'Nunito', sans-serif",
                         cursor: "pointer",
                         textDecoration: "underline",
-                        padding: "4px 8px"
+                        padding: "4px 8px",
+                        transition: "color 0.2s"
                       }}
+                      onMouseOver={(e) => e.target.style.color = "#6D5BA4"}
+                      onMouseOut={(e) => e.target.style.color = "#7C6CB6"}
                     >
                       Pay by card?
                     </button>
@@ -614,41 +677,79 @@ export default function Subscription() {
 
           {currentTier !== "pro" ? (
             <div style={{ width: "100%" }}>
-              <button
-                onClick={() => handleExpandCheckout("pro")}
-                disabled={processing}
-                style={{
+              {/* Show button when not expanded */}
+              {expandedTier !== "pro" && (
+                <button
+                  onClick={() => handleExpandCheckout("pro")}
+                  disabled={processing}
+                  style={{
+                    padding: "14px",
+                    background: "#7DD3C0",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "12px",
+                    fontWeight: "700",
+                    fontFamily: "'Nunito', sans-serif",
+                    cursor: processing ? "not-allowed" : "pointer",
+                    fontSize: "16px",
+                    transition: "all 0.3s ease",
+                    boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
+                    width: "100%",
+                    opacity: processing && expandedTier === "pro" ? 0 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                >
+                  Get Pro
+                </button>
+              )}
+
+              {/* Show pulsing dots when loading */}
+              {processing && expandedTier === "pro" && !checkoutSession && (
+                <div style={{
                   padding: "14px",
-                  background: "#7DD3C0",
-                  color: "white",
-                  border: "none",
-                  borderRadius: expandedTier === "pro" ? "12px 12px 0 0" : "12px",
-                  fontWeight: "700",
-                  fontFamily: "'Nunito', sans-serif",
-                  cursor: processing ? "not-allowed" : "pointer",
-                  fontSize: "16px",
-                  transition: "all 0.2s",
-                  boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)",
-                  width: "100%",
-                  opacity: processing ? 0.6 : 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px"
-                }}
-              >
-                {processing && expandedTier === "pro" ? "Loading..." : "Get Pro"}
-                {!processing && <span style={{ fontSize: "12px" }}>{expandedTier === "pro" ? "▲" : "▼"}</span>}
-              </button>
+                  gap: "6px",
+                  animation: "fadeIn 0.3s ease-in"
+                }}>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7DD3C0",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0s"
+                  }}></div>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7DD3C0",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0.2s"
+                  }}></div>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: "#7DD3C0",
+                    animation: "pulse 1.4s ease-in-out infinite",
+                    animationDelay: "0.4s"
+                  }}></div>
+                </div>
+              )}
 
-              {/* Embedded Express Checkout */}
+              {/* Fade in Express Checkout when ready */}
               {expandedTier === "pro" && checkoutSession && checkoutSession.tier === "pro" && (
                 <div style={{
-                  border: "2px solid #7DD3C0",
-                  borderTop: "none",
-                  borderRadius: "0 0 12px 12px",
                   padding: "16px",
-                  background: "#E8F9F5"
+                  background: "#E8F9F5",
+                  borderRadius: "12px",
+                  animation: "fadeIn 0.4s ease-in"
                 }}>
                   <ExpressCheckoutForm
                     clientSecret={checkoutSession.clientSecret}
@@ -679,8 +780,11 @@ export default function Subscription() {
                         fontFamily: "'Nunito', sans-serif",
                         cursor: "pointer",
                         textDecoration: "underline",
-                        padding: "4px 8px"
+                        padding: "4px 8px",
+                        transition: "color 0.2s"
                       }}
+                      onMouseOver={(e) => e.target.style.color = "#6AB8A8"}
+                      onMouseOut={(e) => e.target.style.color = "#7DD3C0"}
                     >
                       Pay by card?
                     </button>
