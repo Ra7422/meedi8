@@ -92,50 +92,17 @@ export default function FloatingMenu({
               ? "0 0 0 0 rgba(125, 211, 192, 1)"
               : "0 4px 6px rgba(0, 0, 0, 0.1)",
             transition: "transform 0.2s",
-            animation: showTooltip ? "pulse 2s infinite" : "none",
-            padding: 0,
-            overflow: "hidden"
+            animation: showTooltip ? "pulse 2s infinite" : "none"
           }}
         >
-          {/* Show profile picture if logged in and picture exists */}
-          {user && user.profile_picture_url ? (
-            isOpen ? (
-              // Show X icon when menu is open
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#374151">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
+          {/* Always show hamburger/X icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#374151">
+            {isOpen ? (
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             ) : (
-              // Show profile picture when menu is closed
-              <img
-                src={user.profile_picture_url}
-                alt="Profile"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "50%"
-                }}
-              />
-            )
-          ) : user && !user.profile_picture_url ? (
-            // Fallback to user emoji if logged in but no profile picture
-            isOpen ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#374151">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
-            ) : (
-              <span style={{ fontSize: "24px" }}>👤</span>
-            )
-          ) : (
-            // Show hamburger/X icon when not logged in
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#374151">
-              {isOpen ? (
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              ) : (
-                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
-              )}
-            </svg>
-          )}
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            )}
+          </svg>
         </button>
 
         {/* Tooltip */}
@@ -413,12 +380,29 @@ export default function FloatingMenu({
                     color: "#374151",
                     cursor: "pointer",
                     transition: "background 0.2s",
-                    fontWeight: "500"
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "none"}
                 >
-                  👤 Profile
+                  {user.profile_picture_url ? (
+                    <img
+                      src={user.profile_picture_url}
+                      alt="Profile"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        objectFit: "cover"
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: "20px" }}>👤</span>
+                  )}
+                  Profile
                 </button>
               )}
 
