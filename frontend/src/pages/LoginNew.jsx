@@ -221,123 +221,35 @@ export default function LoginNew() {
           </div>
 
           {/* Social Login Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-            {/* Row 1: Google and Facebook */}
-            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-              {hasGoogleOAuth ? (
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    text="signin_with"
-                    shape="rectangular"
-                    logo_alignment="left"
-                    width="100%"
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => alert('Google sign-in coming soon')}
-                  style={styles.socialButton}
-                >
-                  <svg style={styles.socialIcon} viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Google
-                </button>
-              )}
-
-              {hasFacebookOAuth ? (
-                <FacebookLogin
-                  appId={FACEBOOK_APP_ID}
-                  onSuccess={handleFacebookSuccess}
-                  onFail={handleFacebookError}
-                  onProfileSuccess={(response) => handleFacebookSuccess(response)}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '12px 16px',
-                    fontSize: '16px',
-                    fontWeight: '400',
-                    fontFamily: "'Nunito', sans-serif",
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    backgroundColor: 'white',
-                    color: '#1f2937',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="#1877F2">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                  Facebook
-                </FacebookLogin>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => alert('Facebook sign-in coming soon')}
-                  style={styles.socialButton}
-                >
-                  <svg style={styles.socialIcon} viewBox="0 0 24 24" fill="#1877F2">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                  Facebook
-                </button>
-              )}
-            </div>
-
-            {/* Row 2: X/Twitter and Telegram */}
-            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            {hasGoogleOAuth ? (
+              <div style={{ width: '100%', maxWidth: '400px' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="signin_with"
+                  shape="rectangular"
+                  logo_alignment="left"
+                  width="100%"
+                  theme="outline"
+                  size="large"
+                />
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => alert('X/Twitter OAuth coming soon - requires developer account setup')}
-                style={{
-                  ...styles.socialButton,
-                  flex: 1
-                }}
+                onClick={() => alert('Google sign-in coming soon')}
+                style={styles.socialButton}
               >
-                <svg style={styles.socialIcon} viewBox="0 0 24 24" fill="#000000">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                <svg style={styles.socialIcon} viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                X
+                Google
               </button>
-
-              {/* Temporarily disabled - React version conflict
-              {hasTelegramOAuth ? (
-                <div style={{ flex: 1 }}>
-                  <TelegramLoginButton
-                    botName={TELEGRAM_BOT_NAME}
-                    dataOnauth={handleTelegramResponse}
-                    buttonSize="large"
-                    cornerRadius={12}
-                    requestAccess="write"
-                  />
-                </div>
-              ) : (*/}
-              {false ? null : (
-                <button
-                  type="button"
-                  onClick={() => alert('Telegram sign-in coming soon')}
-                  style={{
-                    ...styles.socialButton,
-                    flex: 1
-                  }}
-                >
-                  <svg style={styles.socialIcon} viewBox="0 0 24 24" fill="#0088cc">
-                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.121.099.155.232.171.325.016.093.036.305.02.47z"/>
-                  </svg>
-                  Telegram
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </form>
 
@@ -351,6 +263,16 @@ export default function LoginNew() {
           style={styles.mascot}
         />
       </div>
+
+      {/* Override Google button border radius */}
+      <style>{`
+        div[data-plugin-name="Sign in with Google"] > div {
+          border-radius: 12px !important;
+        }
+        iframe[src*="accounts.google.com/gsi/button"] {
+          border-radius: 12px !important;
+        }
+      `}</style>
     </div>
   );
 }

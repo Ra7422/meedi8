@@ -237,9 +237,9 @@ export default function Signup() {
           </div>
 
           {/* Social Login Buttons */}
-          <div style={styles.socialButtons}>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
             {hasGoogleOAuth ? (
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: '100%', maxWidth: '400px' }}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
@@ -247,6 +247,8 @@ export default function Signup() {
                   shape="rectangular"
                   logo_alignment="left"
                   width="100%"
+                  theme="outline"
+                  size="large"
                 />
               </div>
             ) : (
@@ -264,48 +266,6 @@ export default function Signup() {
                 Google
               </button>
             )}
-
-            {hasFacebookOAuth ? (
-              <FacebookLogin
-                appId={FACEBOOK_APP_ID}
-                onSuccess={handleFacebookSuccess}
-                onFail={handleFacebookError}
-                onProfileSuccess={(response) => handleFacebookSuccess(response)}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  fontWeight: '400',
-                  fontFamily: "'Nunito', sans-serif",
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  backgroundColor: 'white',
-                  color: '#1f2937',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                Facebook
-              </FacebookLogin>
-            ) : (
-              <button
-                type="button"
-                onClick={() => alert('Facebook sign-up coming soon')}
-                style={styles.socialButton}
-              >
-                <svg style={styles.socialIcon} viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                Facebook
-              </button>
-            )}
           </div>
         </form>
 
@@ -319,6 +279,16 @@ export default function Signup() {
           style={styles.mascot}
         />
       </div>
+
+      {/* Override Google button border radius */}
+      <style>{`
+        div[data-plugin-name="Sign in with Google"] > div {
+          border-radius: 12px !important;
+        }
+        iframe[src*="accounts.google.com/gsi/button"] {
+          border-radius: 12px !important;
+        }
+      `}</style>
     </div>
   );
 }
