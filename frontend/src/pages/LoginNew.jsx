@@ -242,7 +242,7 @@ export default function LoginNew() {
               title="Sign in with Telegram"
             >
               <img
-                src="/src/assets/icons/Telegram_logo.svg"
+                src="/assets/illustrations/Telegram_logo.svg"
                 alt="Telegram"
                 style={{ width: '48px', height: '48px' }}
               />
