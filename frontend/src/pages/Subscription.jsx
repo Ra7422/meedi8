@@ -348,18 +348,36 @@ export default function Subscription() {
           </ul>
 
           {currentTier === "free" && (
-            <div style={{
-              padding: "14px",
-              background: "#E8F9F5",
-              borderRadius: "12px",
-              textAlign: "center",
-              fontWeight: "700",
-              color: "#1F7A5C",
-              fontFamily: "'Nunito', sans-serif",
-              fontSize: "16px"
-            }}>
+            <button
+              onClick={() => navigate('/rooms/create')}
+              style={{
+                padding: "14px",
+                background: "#7DD3C0",
+                borderRadius: "12px",
+                textAlign: "center",
+                fontWeight: "700",
+                color: "white",
+                fontFamily: "'Nunito', sans-serif",
+                fontSize: "16px",
+                border: "none",
+                cursor: "pointer",
+                width: "100%",
+                transition: "all 0.2s",
+                boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = "#6AB8A8";
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 16px rgba(125, 211, 192, 0.4)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = "#7DD3C0";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(125, 211, 192, 0.3)";
+              }}
+            >
               Start for FREE!
-            </div>
+            </button>
           )}
         </div>
 
