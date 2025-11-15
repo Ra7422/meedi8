@@ -259,7 +259,7 @@ export default function TelegramConnect() {
         maxWidth: "800px",
         margin: "0 auto",
         padding: "40px 20px",
-        fontFamily: "'Nunito', sans-serif",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
         textAlign: "center"
       }}>
         <h1 style={{
@@ -272,14 +272,14 @@ export default function TelegramConnect() {
         </h1>
         <p style={{
           fontSize: "16px",
-          color: "#6b7280",
+          color: "#8A8A8F",
           margin: "40px 0"
         }}>
           Checking your connection...
         </p>
         <div style={{
           fontSize: "24px",
-          color: "#7DD3C0"
+          color: "#0088CC"
         }}>
           ⏳
         </div>
@@ -292,7 +292,7 @@ export default function TelegramConnect() {
       maxWidth: "800px",
       margin: "0 auto",
       padding: "40px 20px",
-      fontFamily: "'Nunito', sans-serif"
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
     }}>
       {/* Header */}
       <div style={{
@@ -309,7 +309,7 @@ export default function TelegramConnect() {
         </h1>
         <p style={{
           fontSize: "16px",
-          color: "#6b7280",
+          color: "#8A8A8F",
           margin: 0
         }}>
           Connect your Telegram account to import chat history
@@ -334,7 +334,7 @@ export default function TelegramConnect() {
       {/* Step 1: Phone Verification */}
       {step === 1 && (
         <div style={{
-          background: "white",
+          background: "#FFFFFF",
           borderRadius: "16px",
           padding: "32px",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
@@ -343,14 +343,14 @@ export default function TelegramConnect() {
           <h2 style={{
             fontSize: "24px",
             fontWeight: "700",
-            color: "#7DD3C0",
+            color: "#0088CC",
             margin: "0 0 8px 0"
           }}>
             Step 1: Phone Number
           </h2>
           <p style={{
             fontSize: "15px",
-            color: "#6b7280",
+            color: "#8A8A8F",
             margin: "0 0 24px 0"
           }}>
             Enter your phone number with country code (e.g., +44 7123456789)
@@ -368,12 +368,12 @@ export default function TelegramConnect() {
               fontSize: "16px",
               border: "2px solid #e5e7eb",
               borderRadius: "12px",
-              fontFamily: "'Nunito', sans-serif",
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
               marginBottom: "16px",
               outline: "none",
               transition: "border-color 0.2s"
             }}
-            onFocus={(e) => e.target.style.borderColor = "#7DD3C0"}
+            onFocus={(e) => e.target.style.borderColor = "#0088CC"}
             onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
             onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
           />
@@ -387,21 +387,21 @@ export default function TelegramConnect() {
               fontSize: "16px",
               fontWeight: "700",
               color: "white",
-              background: loading || !phoneNumber.trim() ? "#d1d5db" : "#7DD3C0",
+              background: loading || !phoneNumber.trim() ? "#d1d5db" : "#0088CC",
               border: "none",
               borderRadius: "12px",
               cursor: loading || !phoneNumber.trim() ? "not-allowed" : "pointer",
               transition: "background 0.2s",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
             }}
             onMouseEnter={(e) => {
               if (!loading && phoneNumber.trim()) {
-                e.target.style.background = "#6BC5B8";
+                e.target.style.background = "#0077B3";
               }
             }}
             onMouseLeave={(e) => {
               if (!loading && phoneNumber.trim()) {
-                e.target.style.background = "#7DD3C0";
+                e.target.style.background = "#0088CC";
               }
             }}
           >
@@ -413,7 +413,7 @@ export default function TelegramConnect() {
       {/* Step 2: Code Verification */}
       {step === 2 && (
         <div style={{
-          background: "white",
+          background: "#FFFFFF",
           borderRadius: "16px",
           padding: "32px",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
@@ -422,14 +422,14 @@ export default function TelegramConnect() {
           <h2 style={{
             fontSize: "24px",
             fontWeight: "700",
-            color: "#7DD3C0",
+            color: "#0088CC",
             margin: "0 0 8px 0"
           }}>
             Step 2: Verification Code
           </h2>
           <p style={{
             fontSize: "15px",
-            color: "#6b7280",
+            color: "#8A8A8F",
             margin: "0 0 24px 0"
           }}>
             Enter the 6-digit code sent to your Telegram app
@@ -448,7 +448,7 @@ export default function TelegramConnect() {
               fontSize: "16px",
               border: "2px solid #e5e7eb",
               borderRadius: "12px",
-              fontFamily: "'Nunito', sans-serif",
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
               marginBottom: "16px",
               outline: "none",
               letterSpacing: "0.1em",
@@ -456,7 +456,7 @@ export default function TelegramConnect() {
               fontSize: "24px",
               fontWeight: "600"
             }}
-            onFocus={(e) => e.target.style.borderColor = "#7DD3C0"}
+            onFocus={(e) => e.target.style.borderColor = "#0088CC"}
             onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
             onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
           />
@@ -466,7 +466,7 @@ export default function TelegramConnect() {
             <>
               <p style={{
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "#8A8A8F",
                 margin: "0 0 8px 0",
                 fontWeight: "600"
               }}>
@@ -484,11 +484,11 @@ export default function TelegramConnect() {
                   fontSize: "16px",
                   border: "2px solid #e5e7eb",
                   borderRadius: "12px",
-                  fontFamily: "'Nunito', sans-serif",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                   marginBottom: "16px",
                   outline: "none"
                 }}
-                onFocus={(e) => e.target.style.borderColor = "#7DD3C0"}
+                onFocus={(e) => e.target.style.borderColor = "#0088CC"}
                 onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
                 onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
               />
@@ -504,21 +504,21 @@ export default function TelegramConnect() {
               fontSize: "16px",
               fontWeight: "700",
               color: "white",
-              background: loading || !code.trim() ? "#d1d5db" : "#7DD3C0",
+              background: loading || !code.trim() ? "#d1d5db" : "#0088CC",
               border: "none",
               borderRadius: "12px",
               cursor: loading || !code.trim() ? "not-allowed" : "pointer",
               transition: "background 0.2s",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
             }}
             onMouseEnter={(e) => {
               if (!loading && code.trim()) {
-                e.target.style.background = "#6BC5B8";
+                e.target.style.background = "#0077B3";
               }
             }}
             onMouseLeave={(e) => {
               if (!loading && code.trim()) {
-                e.target.style.background = "#7DD3C0";
+                e.target.style.background = "#0088CC";
               }
             }}
           >
@@ -534,11 +534,11 @@ export default function TelegramConnect() {
               marginTop: "12px",
               fontSize: "14px",
               fontWeight: "600",
-              color: "#6b7280",
+              color: "#8A8A8F",
               background: "transparent",
               border: "none",
               cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "'Nunito', sans-serif"
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
             }}
           >
             Back to phone number
@@ -549,7 +549,7 @@ export default function TelegramConnect() {
       {/* Step 3: Contact List */}
       {step === 3 && (
         <div style={{
-          background: "white",
+          background: "#FFFFFF",
           borderRadius: "16px",
           padding: "32px",
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
@@ -565,14 +565,14 @@ export default function TelegramConnect() {
               <h2 style={{
                 fontSize: "24px",
                 fontWeight: "700",
-                color: "#7DD3C0",
+                color: "#0088CC",
                 margin: "0 0 4px 0"
               }}>
                 Your Chats
               </h2>
               <p style={{
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "#8A8A8F",
                 margin: 0
               }}>
                 {contacts.length} chat{contacts.length !== 1 ? 's' : ''} found
@@ -590,7 +590,7 @@ export default function TelegramConnect() {
                 border: "2px solid #ef4444",
                 borderRadius: "8px",
                 cursor: loading ? "not-allowed" : "pointer",
-                fontFamily: "'Nunito', sans-serif"
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
               }}
             >
               Disconnect
@@ -601,7 +601,7 @@ export default function TelegramConnect() {
             <div style={{
               textAlign: "center",
               padding: "60px 20px",
-              color: "#6b7280"
+              color: "#8A8A8F"
             }}>
               <div style={{
                 fontSize: "24px",
@@ -613,7 +613,7 @@ export default function TelegramConnect() {
             <div style={{
               textAlign: "center",
               padding: "60px 20px",
-              color: "#6b7280"
+              color: "#8A8A8F"
             }}>
               <div style={{
                 fontSize: "24px",
@@ -639,9 +639,9 @@ export default function TelegramConnect() {
                     padding: "8px 16px",
                     fontSize: "14px",
                     fontWeight: "600",
-                    fontFamily: "'Nunito', sans-serif",
-                    color: selectedFolder === "all" ? "#7DD3C0" : "#6b7280",
-                    background: selectedFolder === "all" ? "#E8F9F5" : "transparent",
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                    color: selectedFolder === "all" ? "#0088CC" : "#8A8A8F",
+                    background: selectedFolder === "all" ? "#E3F2FD" : "transparent",
                     border: "none",
                     borderRadius: "8px",
                     cursor: loading ? "wait" : "pointer",
@@ -661,9 +661,9 @@ export default function TelegramConnect() {
                       padding: "8px 16px",
                       fontSize: "14px",
                       fontWeight: "600",
-                      fontFamily: "'Nunito', sans-serif",
-                      color: selectedFolder?.id === folder.id ? "#7DD3C0" : "#6b7280",
-                      background: selectedFolder?.id === folder.id ? "#E8F9F5" : "transparent",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                      color: selectedFolder?.id === folder.id ? "#0088CC" : "#8A8A8F",
+                      background: selectedFolder?.id === folder.id ? "#E3F2FD" : "transparent",
                       border: "none",
                       borderRadius: "8px",
                       cursor: loading ? "wait" : "pointer",
@@ -683,9 +683,9 @@ export default function TelegramConnect() {
                       padding: "8px 16px",
                       fontSize: "14px",
                       fontWeight: "600",
-                      fontFamily: "'Nunito', sans-serif",
-                      color: selectedFolder === "none" ? "#7DD3C0" : "#6b7280",
-                      background: selectedFolder === "none" ? "#E8F9F5" : "transparent",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                      color: selectedFolder === "none" ? "#0088CC" : "#8A8A8F",
+                      background: selectedFolder === "none" ? "#E3F2FD" : "transparent",
                       border: "none",
                       borderRadius: "8px",
                       cursor: loading ? "wait" : "pointer",
@@ -717,7 +717,7 @@ export default function TelegramConnect() {
                     alignItems: "center",
                     transition: "border-color 0.2s"
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "#7DD3C0"}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "#0088CC"}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = "#e5e7eb"}
                 >
                   <div style={{ flex: 1 }}>
@@ -733,7 +733,7 @@ export default function TelegramConnect() {
                       display: "flex",
                       gap: "8px",
                       fontSize: "13px",
-                      color: "#6b7280",
+                      color: "#8A8A8F",
                       flexWrap: "wrap"
                     }}>
                       <span>
@@ -787,7 +787,7 @@ export default function TelegramConnect() {
                       )}
                       {chat.unread_count > 0 && (
                         <span style={{
-                          background: "#7DD3C0",
+                          background: "#0088CC",
                           color: "white",
                           padding: "2px 8px",
                           borderRadius: "12px",
@@ -805,15 +805,15 @@ export default function TelegramConnect() {
                       fontSize: "14px",
                       fontWeight: "600",
                       color: "white",
-                      background: "#7DD3C0",
+                      background: "#0088CC",
                       border: "none",
                       borderRadius: "8px",
                       cursor: "pointer",
-                      fontFamily: "'Nunito', sans-serif",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                       transition: "background 0.2s"
                     }}
-                    onMouseEnter={(e) => e.target.style.background = "#6BC5B8"}
-                    onMouseLeave={(e) => e.target.style.background = "#7DD3C0"}
+                    onMouseEnter={(e) => e.target.style.background = "#0077B3"}
+                    onMouseLeave={(e) => e.target.style.background = "#0088CC"}
                   >
                     Download
                   </button>
@@ -834,17 +834,17 @@ export default function TelegramConnect() {
                       padding: "12px 32px",
                       fontSize: "15px",
                       fontWeight: "600",
-                      color: loadingMore ? "#9CA3AF" : "#7DD3C0",
-                      background: "white",
-                      border: `2px solid ${loadingMore ? "#9CA3AF" : "#7DD3C0"}`,
+                      color: loadingMore ? "#9CA3AF" : "#0088CC",
+                      background: "#FFFFFF",
+                      border: `2px solid ${loadingMore ? "#9CA3AF" : "#0088CC"}`,
                       borderRadius: "8px",
                       cursor: loadingMore ? "not-allowed" : "pointer",
-                      fontFamily: "'Nunito', sans-serif",
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                       transition: "all 0.2s"
                     }}
                     onMouseEnter={(e) => {
                       if (!loadingMore) {
-                        e.target.style.background = "#E8F9F5";
+                        e.target.style.background = "#E3F2FD";
                       }
                     }}
                     onMouseLeave={(e) => {
