@@ -567,7 +567,7 @@ export default function TelegramConnect() {
             }}>
               {contacts.map((chat) => (
                 <div
-                  key={chat.chat_id}
+                  key={chat.id}
                   style={{
                     padding: "16px",
                     border: "2px solid #e5e7eb",
@@ -587,7 +587,7 @@ export default function TelegramConnect() {
                       color: "#1a202c",
                       margin: "0 0 4px 0"
                     }}>
-                      {chat.chat_name}
+                      {chat.name}
                     </h3>
                     <div style={{
                       display: "flex",
@@ -597,10 +597,21 @@ export default function TelegramConnect() {
                       flexWrap: "wrap"
                     }}>
                       <span>
-                        {chat.chat_type === 'user' ? '👤' : chat.chat_type === 'group' ? '👥' : '📢'}
+                        {chat.type === 'user' ? '👤' : chat.type === 'group' ? '👥' : '📢'}
                         {' '}
-                        {chat.chat_type}
+                        {chat.type}
                       </span>
+                      {chat.unread_count > 0 && (
+                        <span style={{
+                          background: "#DBEAFE",
+                          color: "#1E40AF",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontWeight: "600"
+                        }}>
+                          💬 {chat.unread_count} unread
+                        </span>
+                      )}
                       {chat.pinned && (
                         <span style={{
                           background: "#FEF9C3",
