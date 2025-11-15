@@ -21,6 +21,8 @@ export default function TelegramConnect() {
   const [downloadId, setDownloadId] = useState(null);
   const [currentLimit, setCurrentLimit] = useState(10); // For pagination
   const [hasMoreContacts, setHasMoreContacts] = useState(true); // Track if more exist
+  const [selectedFolder, setSelectedFolder] = useState("all"); // Filter by folder
+  const [availableFolders, setAvailableFolders] = useState([]); // List of unique folders
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -141,10 +143,13 @@ export default function TelegramConnect() {
 
       if (append) {
         // Append to existing contacts
-        setContacts(prev => [...prev, ...newContacts]);
+        const updatedContacts = [...contacts, ...newContacts];
+        setContacts(updatedContacts);
+        extractFolders(updatedContacts);
       } else {
         // Replace contacts
         setContacts(newContacts);
+        extractFolders(newContacts);
       }
 
       // If we got fewer contacts than requested, there are no more
@@ -156,6 +161,26 @@ export default function TelegramConnect() {
       setLoadingMore(false);
     }
   };
+
+  // Extract unique folders from contacts
+  const extractFolders = (contactsList) => {
+    const folderSet = new Set();
+    contactsList.forEach(contact => {
+      if (contact.folder_name) {
+        folderSet.add(contact.folder_name);
+      }
+    });
+    setAvailableFolders(Array.from(folderSet).sort());
+  };
+
+  // Filter contacts by selected folder
+  const filteredContacts = selectedFolder === "all"
+    ? contacts
+    : contacts.filter(contact =>
+        selectedFolder === "none"
+          ? !contact.folder_name
+          : contact.folder_name === selectedFolder
+      );
 
   // Load more contacts (pagination)
   const loadMoreContacts = () => {
@@ -586,12 +611,84 @@ export default function TelegramConnect() {
               <p style={{ margin: 0 }}>No chats found</p>
             </div>
           ) : (
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px"
-            }}>
-              {contacts.map((chat) => (
+            <>
+              {/* Folder Tabs */}
+              <div style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "16px",
+                overflowX: "auto",
+                paddingBottom: "8px",
+                borderBottom: "1px solid #e5e7eb"
+              }}>
+                <button
+                  onClick={() => setSelectedFolder("all")}
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    fontFamily: "'Nunito', sans-serif",
+                    color: selectedFolder === "all" ? "#7DD3C0" : "#6b7280",
+                    background: selectedFolder === "all" ? "#E8F9F5" : "transparent",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  All ({contacts.length})
+                </button>
+                {availableFolders.map((folder) => (
+                  <button
+                    key={folder}
+                    onClick={() => setSelectedFolder(folder)}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      fontFamily: "'Nunito', sans-serif",
+                      color: selectedFolder === folder ? "#7DD3C0" : "#6b7280",
+                      background: selectedFolder === folder ? "#E8F9F5" : "transparent",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    📁 {folder} ({contacts.filter(c => c.folder_name === folder).length})
+                  </button>
+                ))}
+                {contacts.some(c => !c.folder_name) && (
+                  <button
+                    onClick={() => setSelectedFolder("none")}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      fontFamily: "'Nunito', sans-serif",
+                      color: selectedFolder === "none" ? "#7DD3C0" : "#6b7280",
+                      background: selectedFolder === "none" ? "#E8F9F5" : "transparent",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    No Folder ({contacts.filter(c => !c.folder_name).length})
+                  </button>
+                )}
+              </div>
+
+              {/* Contacts List */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+              }}>
+              {filteredContacts.map((chat) => (
                 <div
                   key={chat.id}
                   style={{
@@ -707,7 +804,7 @@ export default function TelegramConnect() {
               ))}
 
               {/* Load More Button */}
-              {hasMoreContacts && contacts.length > 0 && (
+              {hasMoreContacts && filteredContacts.length > 0 && (
                 <div style={{
                   display: "flex",
                   justifyContent: "center",
@@ -743,7 +840,8 @@ export default function TelegramConnect() {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}
