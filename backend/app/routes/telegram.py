@@ -232,17 +232,20 @@ async def verify_telegram(
 @router.get("/contacts", response_model=ContactsResponse)
 async def get_contacts(
     limit: int = 10,
+    folder_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    List user's Telegram chats/contacts with pagination.
+    List user's Telegram chats/contacts with pagination and folder filtering.
 
     Requires active TelegramSession in database. Returns recent chats
     with their names, types, and unread message counts.
 
     Query Parameters:
         limit: Number of contacts to fetch (default 10, use for "Load More")
+        folder_id: Filter by folder ID (optional). If not provided, returns all contacts.
+                   Use special value -1 for contacts with no folder.
     """
     try:
         # Check for active session
@@ -260,7 +263,8 @@ async def get_contacts(
         # Get dialogs from Telegram (fast - names only, no photos)
         dialogs = await TelegramService.get_dialogs(
             encrypted_session=telegram_session.encrypted_session,
-            limit=limit
+            limit=limit,
+            folder_id=folder_id
         )
 
         # Update last_used_at timestamp

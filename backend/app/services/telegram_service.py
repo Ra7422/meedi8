@@ -191,13 +191,14 @@ class TelegramService:
         return client
 
     @staticmethod
-    async def get_dialogs(encrypted_session: str, limit: int = 10) -> List[Dict]:
+    async def get_dialogs(encrypted_session: str, limit: int = 10, folder_id: Optional[int] = None) -> List[Dict]:
         """
         Get user's recent chats/dialogs including pinned, folders, and archived.
 
         Args:
             encrypted_session: Encrypted session string
             limit: Maximum number of dialogs to fetch (default 10 for fast initial load)
+            folder_id: Filter by folder ID (optional). None = all contacts, -1 = no folder
 
         Returns:
             List of dialog dictionaries with id, name, type, unread_count, folder, archived, pinned
@@ -248,11 +249,19 @@ class TelegramService:
                     continue
 
                 # Get folder information using custom folder names
-                folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
+                dialog_folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
                 folder_name = None
-                if folder_id:
+                if dialog_folder_id:
                     # Use custom folder name if available
-                    folder_name = folder_names.get(folder_id, f"Folder {folder_id}")
+                    folder_name = folder_names.get(dialog_folder_id, f"Folder {dialog_folder_id}")
+
+                # Skip this dialog if filtering by folder and it doesn't match
+                if folder_id is not None:  # None means no filter, show all
+                    if folder_id == -1:  # -1 means "no folder"
+                        if dialog_folder_id is not None:
+                            continue  # Skip this dialog, it has a folder
+                    elif dialog_folder_id != folder_id:
+                        continue  # Skip this dialog, wrong folder
 
                 # Check if archived
                 is_archived = dialog.archived if hasattr(dialog, 'archived') else False
