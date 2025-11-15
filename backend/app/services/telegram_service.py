@@ -214,14 +214,21 @@ class TelegramService:
             from telethon import functions
             folder_names = {}
             try:
-                dialog_filters = await client(functions.messages.GetDialogFiltersRequest())
-                # dialog_filters is a list of filter objects, each with an 'id' and 'title'
-                for folder_filter in dialog_filters:
+                dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
+                # The result is a DialogFilters object with a 'filters' attribute containing the list
+                filters_list = getattr(dialog_filters_result, 'filters', [])
+                logger.info(f"Raw dialog_filters_result type: {type(dialog_filters_result)}")
+                logger.info(f"Filters list type: {type(filters_list)}, length: {len(filters_list)}")
+
+                # Iterate through the filters list
+                for folder_filter in filters_list:
                     if hasattr(folder_filter, 'id') and hasattr(folder_filter, 'title'):
                         folder_names[folder_filter.id] = folder_filter.title
+                        logger.info(f"Found folder: id={folder_filter.id}, title={folder_filter.title}")
                 logger.info(f"Fetched {len(folder_names)} custom folder names: {folder_names}")
             except Exception as e:
                 logger.warning(f"Could not fetch folder names: {e}")
+                logger.exception("Full traceback:")
                 # Continue without custom folder names
 
             # Fetch dialogs and filter to users only
