@@ -275,7 +275,7 @@ class TelegramService:
                     "type": chat_type,
                     "unread_count": dialog.unread_count,
                     "last_message_date": dialog.date.isoformat() if dialog.date else None,
-                    "folder_id": folder_id,
+                    "folder_id": dialog_folder_id,
                     "folder_name": folder_name,
                     "archived": is_archived,
                     "pinned": is_pinned,
