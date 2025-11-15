@@ -207,16 +207,16 @@ class TelegramService:
         try:
             dialogs = []
 
-            logger.info(f"Starting dialog fetch targeting {limit} users (will fetch more to account for filtering)")
+            logger.info(f"Starting dialog fetch targeting {limit} users (will iterate until we find enough)")
 
             # Fetch dialogs and filter to users only
-            # Since we filter out channels/groups, we need to fetch more than the limit
-            # to ensure we get enough users
-            # Note: iter_dialogs can take time for accounts with many chats
+            # We iterate through ALL dialogs (no limit) until we find enough users
+            # This ensures we always get the requested number of users, even if
+            # the account has many channels/groups at the top of the dialog list
             dialog_count = 0
             user_count = 0
-            # Fetch up to limit * 3 dialogs to account for channels/groups being filtered out
-            async for dialog in client.iter_dialogs(limit=limit * 3):
+            # No limit on iter_dialogs - we'll stop manually when we have enough users
+            async for dialog in client.iter_dialogs():
                 dialog_count += 1
                 entity = dialog.entity
 
