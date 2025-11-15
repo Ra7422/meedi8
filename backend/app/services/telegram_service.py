@@ -209,6 +209,20 @@ class TelegramService:
 
             logger.info(f"Starting dialog fetch targeting {limit} users (will iterate until we find enough)")
 
+            # Fetch custom folder names from Telegram
+            from telethon import functions
+            folder_names = {}
+            try:
+                dialog_filters = await client(functions.messages.GetDialogFiltersRequest())
+                # dialog_filters is a list of filter objects, each with an 'id' and 'title'
+                for folder_filter in dialog_filters:
+                    if hasattr(folder_filter, 'id') and hasattr(folder_filter, 'title'):
+                        folder_names[folder_filter.id] = folder_filter.title
+                logger.info(f"Fetched {len(folder_names)} custom folder names: {folder_names}")
+            except Exception as e:
+                logger.warning(f"Could not fetch folder names: {e}")
+                # Continue without custom folder names
+
             # Fetch dialogs and filter to users only
             # We iterate through ALL dialogs (no limit) until we find enough users
             # This ensures we always get the requested number of users, even if
@@ -233,15 +247,12 @@ class TelegramService:
                     # Skip non-user chats (channels, groups, supergroups)
                     continue
 
-                # Get folder information
+                # Get folder information using custom folder names
                 folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
                 folder_name = None
-                if folder_id == 1:
-                    folder_name = "Personal"
-                elif folder_id == 2:
-                    folder_name = "Work"
-                elif folder_id and folder_id > 2:
-                    folder_name = f"Folder {folder_id}"
+                if folder_id:
+                    # Use custom folder name if available
+                    folder_name = folder_names.get(folder_id, f"Folder {folder_id}")
 
                 # Check if archived
                 is_archived = dialog.archived if hasattr(dialog, 'archived') else False
