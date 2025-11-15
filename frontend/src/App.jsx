@@ -43,9 +43,8 @@ import TelegramConnect from "./pages/TelegramConnect";
 import PlаsmicHost from "./plasmic-host";
 
 function PrivateRoute({ children }) {
-  // TEMPORARY: Authentication bypassed for testing
-  // const { token } = useAuth();
-  // if (!token) return <Navigate to="/login" replace />;
+  const { token } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
   return children;
 }
 
