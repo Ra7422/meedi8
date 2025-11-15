@@ -52,6 +52,11 @@ class ContactItem(BaseModel):
     name: str
     type: str
     unread_count: int
+    last_message_date: Optional[str] = None
+    folder_id: Optional[int] = None
+    folder_name: Optional[str] = None
+    archived: bool = False
+    pinned: bool = False
 
 
 class ContactsResponse(BaseModel):
@@ -263,7 +268,12 @@ async def get_contacts(
                 id=dialog["id"],
                 name=dialog["name"],
                 type=dialog["type"],
-                unread_count=dialog["unread_count"]
+                unread_count=dialog["unread_count"],
+                last_message_date=dialog.get("last_message_date"),
+                folder_id=dialog.get("folder_id"),
+                folder_name=dialog.get("folder_name"),
+                archived=dialog.get("archived", False),
+                pinned=dialog.get("pinned", False)
             )
             for dialog in dialogs
         ]
