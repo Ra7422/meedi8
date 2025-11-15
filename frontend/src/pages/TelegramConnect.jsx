@@ -19,9 +19,12 @@ export default function TelegramConnect() {
   const [contacts, setContacts] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [downloadId, setDownloadId] = useState(null);
+  const [currentLimit, setCurrentLimit] = useState(10); // For pagination
+  const [hasMoreContacts, setHasMoreContacts] = useState(true); // Track if more exist
 
   // UI state
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false); // Separate loading for "Load More"
   const [error, setError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
@@ -122,20 +125,43 @@ export default function TelegramConnect() {
   };
 
   // Load contacts/chats - Step 3
-  const loadContacts = async () => {
-    setLoading(true);
+  const loadContacts = async (limit = 10, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError("");
 
-    console.log("[TelegramConnect] Loading contacts...");
+    console.log(`[TelegramConnect] Loading contacts with limit=${limit}...`);
 
     try {
-      const response = await apiRequest("/telegram/contacts", "GET", null, token);
-      setContacts(response.contacts || []); // Fixed: backend returns .contacts not .chats
+      const response = await apiRequest(`/telegram/contacts?limit=${limit}`, "GET", null, token);
+      const newContacts = response.contacts || [];
+
+      if (append) {
+        // Append to existing contacts
+        setContacts(prev => [...prev, ...newContacts]);
+      } else {
+        // Replace contacts
+        setContacts(newContacts);
+      }
+
+      // If we got fewer contacts than requested, there are no more
+      setHasMoreContacts(newContacts.length === limit);
     } catch (err) {
       setError(err.message || "Failed to load chats");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  // Load more contacts (pagination)
+  const loadMoreContacts = () => {
+    const newLimit = currentLimit + 10;
+    setCurrentLimit(newLimit);
+    loadContacts(newLimit, false); // Load all contacts up to newLimit, don't append
   };
 
   // Handle chat selection
@@ -679,6 +705,44 @@ export default function TelegramConnect() {
                   </button>
                 </div>
               ))}
+
+              {/* Load More Button */}
+              {hasMoreContacts && contacts.length > 0 && (
+                <div style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "20px"
+                }}>
+                  <button
+                    onClick={loadMoreContacts}
+                    disabled={loadingMore}
+                    style={{
+                      padding: "12px 32px",
+                      fontSize: "15px",
+                      fontWeight: "600",
+                      color: loadingMore ? "#9CA3AF" : "#7DD3C0",
+                      background: "white",
+                      border: `2px solid ${loadingMore ? "#9CA3AF" : "#7DD3C0"}`,
+                      borderRadius: "8px",
+                      cursor: loadingMore ? "not-allowed" : "pointer",
+                      fontFamily: "'Nunito', sans-serif",
+                      transition: "all 0.2s"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!loadingMore) {
+                        e.target.style.background = "#E8F9F5";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!loadingMore) {
+                        e.target.style.background = "white";
+                      }
+                    }}
+                  >
+                    {loadingMore ? "Loading..." : "Load More Contacts"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
