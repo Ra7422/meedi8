@@ -191,13 +191,13 @@ class TelegramService:
         return client
 
     @staticmethod
-    async def get_dialogs(encrypted_session: str, limit: int = 100) -> List[Dict]:
+    async def get_dialogs(encrypted_session: str, limit: int = 10) -> List[Dict]:
         """
         Get user's recent chats/dialogs including pinned, folders, and archived.
 
         Args:
             encrypted_session: Encrypted session string
-            limit: Maximum number of dialogs to fetch (default 100 most recent)
+            limit: Maximum number of dialogs to fetch (default 10 for fast initial load)
 
         Returns:
             List of dialog dictionaries with id, name, type, unread_count, folder, archived, pinned
@@ -252,28 +252,6 @@ class TelegramService:
                 # Check if pinned (favorite)
                 is_pinned = dialog.pinned if hasattr(dialog, 'pinned') else False
 
-                # Download and upload profile picture to S3
-                profile_picture_url = None
-                if hasattr(entity, 'photo') and entity.photo is not None:
-                    try:
-                        # Download photo to memory (not to disk)
-                        photo_bytes = await client.download_profile_photo(entity, file=bytes)
-
-                        if photo_bytes:
-                            # Upload to S3 using existing service
-                            from ..services.s3_service import upload_file_to_s3
-                            profile_picture_url = upload_file_to_s3(
-                                file_bytes=photo_bytes,
-                                room_id=0,  # Not room-specific
-                                user_id=0,  # Session-level, not user-specific
-                                filename=f"telegram_{entity.id}_profile.jpg",
-                                content_type="image/jpeg"
-                            )
-                            logger.info(f"Uploaded profile photo for {chat_name}: {profile_picture_url}")
-                    except Exception as e:
-                        # Non-critical: Continue without profile picture if download fails
-                        logger.warning(f"Failed to download profile photo for {chat_name} (ID: {entity.id}): {e}")
-
                 dialogs.append({
                     "id": entity.id,
                     "name": chat_name,
@@ -284,7 +262,7 @@ class TelegramService:
                     "folder_name": folder_name,
                     "archived": is_archived,
                     "pinned": is_pinned,
-                    "profile_picture_url": profile_picture_url
+                    "profile_picture_url": None  # Lazy-loaded when chat is downloaded
                 })
 
                 # Log progress every 10 dialogs for debugging
