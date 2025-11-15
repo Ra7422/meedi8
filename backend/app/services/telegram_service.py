@@ -207,17 +207,20 @@ class TelegramService:
         try:
             dialogs = []
 
-            logger.info(f"Starting dialog fetch with limit={limit}")
+            logger.info(f"Starting dialog fetch targeting {limit} users (will fetch more to account for filtering)")
 
-            # Fetch all dialogs - don't filter by archived status
-            # This ensures we get ALL chats regardless of folder/archive state
+            # Fetch dialogs and filter to users only
+            # Since we filter out channels/groups, we need to fetch more than the limit
+            # to ensure we get enough users
             # Note: iter_dialogs can take time for accounts with many chats
             dialog_count = 0
-            async for dialog in client.iter_dialogs(limit=limit):
+            user_count = 0
+            # Fetch up to limit * 3 dialogs to account for channels/groups being filtered out
+            async for dialog in client.iter_dialogs(limit=limit * 3):
                 dialog_count += 1
                 entity = dialog.entity
 
-                # Determine chat type
+                # Determine chat type and ONLY include users (skip channels/supergroups)
                 if isinstance(entity, TelegramUser):
                     chat_type = "user"
                     chat_name = entity.first_name or ""
@@ -226,15 +229,9 @@ class TelegramService:
                     # Add username if available
                     if hasattr(entity, 'username') and entity.username:
                         chat_name += f" (@{entity.username})"
-                elif isinstance(entity, Chat):
-                    chat_type = "group"
-                    chat_name = entity.title
-                elif isinstance(entity, Channel):
-                    chat_type = "channel" if entity.broadcast else "supergroup"
-                    chat_name = entity.title
                 else:
-                    chat_type = "unknown"
-                    chat_name = str(entity.id)
+                    # Skip non-user chats (channels, groups, supergroups)
+                    continue
 
                 # Get folder information
                 folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
@@ -265,9 +262,16 @@ class TelegramService:
                     "profile_picture_url": None  # Lazy-loaded when chat is downloaded
                 })
 
+                user_count += 1
+
+                # Stop once we have enough users
+                if user_count >= limit:
+                    logger.info(f"Reached target of {limit} users, stopping iteration")
+                    break
+
                 # Log progress every 10 dialogs for debugging
                 if dialog_count % 10 == 0:
-                    logger.info(f"Processed {dialog_count} dialogs so far...")
+                    logger.info(f"Processed {dialog_count} dialogs, found {user_count} users so far...")
 
             logger.info(f"Successfully fetched {len(dialogs)} dialogs from Telegram (iterated through {dialog_count} total)")
 
