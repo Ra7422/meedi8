@@ -57,6 +57,7 @@ class ContactItem(BaseModel):
     folder_name: Optional[str] = None
     archived: bool = False
     pinned: bool = False
+    profile_picture_url: Optional[str] = None
 
 
 class ContactsResponse(BaseModel):
@@ -273,7 +274,8 @@ async def get_contacts(
                 folder_id=dialog.get("folder_id"),
                 folder_name=dialog.get("folder_name"),
                 archived=dialog.get("archived", False),
-                pinned=dialog.get("pinned", False)
+                pinned=dialog.get("pinned", False),
+                profile_picture_url=dialog.get("profile_picture_url")
             )
             for dialog in dialogs
         ]
