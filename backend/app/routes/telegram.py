@@ -293,9 +293,12 @@ async def get_contacts(
     except HTTPException:
         raise
     except ValueError as e:
+        # ValueError from get_client_from_session means session is expired/invalid
+        # This should be 404 (session not found), not 401 (user unauthorized)
+        # User is authorized (they have valid JWT), they just need to reconnect Telegram
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Telegram session expired or invalid. Please reconnect."
         )
     except Exception as e:
         import logging

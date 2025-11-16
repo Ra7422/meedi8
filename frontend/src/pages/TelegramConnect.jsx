@@ -149,7 +149,14 @@ export default function TelegramConnect() {
       // If we got fewer contacts than requested, there are no more
       setHasMoreContacts(newContacts.length === limit);
     } catch (err) {
-      setError(err.message || "Failed to load chats");
+      // If Telegram session expired or not found (404), reset to step 1 to reconnect
+      if (err.message && (err.message.includes("session") || err.message.includes("expired") || err.message.includes("404"))) {
+        console.log("[TelegramConnect] Telegram session expired, resetting to step 1");
+        setStep(1);
+        setError("Your Telegram session has expired. Please reconnect.");
+      } else {
+        setError(err.message || "Failed to load chats");
+      }
     } finally {
       setLoading(false);
     }
