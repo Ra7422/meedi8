@@ -246,9 +246,11 @@ class TelegramService:
                     # Only include custom folders (DialogFilter) created by user
                     # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
                     if isinstance(folder_filter, DialogFilter):
-                        folder_names[folder_filter.id] = folder_filter.title
-                        print(f"✅ ADDED custom folder: id={folder_filter.id}, title='{folder_filter.title}'")
-                        logger.info(f"✅ ADDED custom folder: id={folder_filter.id}, title='{folder_filter.title}'")
+                        # Extract text from TextWithEntities object
+                        title_text = folder_filter.title.text if hasattr(folder_filter.title, 'text') else str(folder_filter.title)
+                        folder_names[folder_filter.id] = title_text
+                        print(f"✅ ADDED custom folder: id={folder_filter.id}, title='{title_text}'")
+                        logger.info(f"✅ ADDED custom folder: id={folder_filter.id}, title='{title_text}'")
                     else:
                         print(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
                         logger.info(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
