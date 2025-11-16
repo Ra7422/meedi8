@@ -215,22 +215,25 @@ class TelegramService:
             from telethon import functions
             folder_names = {}
             try:
-                # GetDialogFiltersRequest returns a LIST directly, not an object with 'filters' attribute
-                dialog_filters = await client(functions.messages.GetDialogFiltersRequest())
-                logger.info(f"Raw dialog_filters type: {type(dialog_filters)}")
-                logger.info(f"Number of filters: {len(dialog_filters)}")
+                # GetDialogFiltersRequest returns a DialogFilters object with a 'filters' attribute
+                dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
+                logger.info(f"Raw dialog_filters_result type: {type(dialog_filters_result)}")
 
-                # Iterate directly through the list (NOT .filters attribute)
-                for folder_filter in dialog_filters:
+                # Access the 'filters' attribute from the DialogFilters object
+                filters_list = dialog_filters_result.filters if hasattr(dialog_filters_result, 'filters') else []
+                logger.info(f"Filters list length: {len(filters_list)}")
+
+                # Iterate through the filters list
+                for folder_filter in filters_list:
                     # Only include custom folders (DialogFilter) created by user
                     # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
                     if isinstance(folder_filter, DialogFilter):
                         folder_names[folder_filter.id] = folder_filter.title
-                        logger.info(f"Found custom folder: id={folder_filter.id}, title={folder_filter.title}")
+                        logger.info(f"✅ Found custom folder: id={folder_filter.id}, title={folder_filter.title}")
                     else:
-                        logger.info(f"Skipping non-custom filter: {type(folder_filter).__name__}")
+                        logger.info(f"⏭️  Skipping non-custom filter: {type(folder_filter).__name__}")
 
-                logger.info(f"Fetched {len(folder_names)} custom folder names: {folder_names}")
+                logger.info(f"📁 Fetched {len(folder_names)} custom folder names: {folder_names}")
             except Exception as e:
                 logger.warning(f"Could not fetch folder names: {e}")
                 logger.exception("Full traceback:")
