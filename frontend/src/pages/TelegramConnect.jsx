@@ -142,9 +142,14 @@ export default function TelegramConnect() {
 
       const response = await apiRequest(url, "GET", null, token);
       const newContacts = response.contacts || [];
+      const newFolders = response.folders || [];
 
       setContacts(newContacts);
-      extractFolders(newContacts);
+
+      // Use folders from API response instead of extracting from contacts
+      if (newFolders.length > 0) {
+        setAvailableFolders(newFolders.sort((a, b) => a.name.localeCompare(b.name)));
+      }
 
       // If we got fewer contacts than requested, there are no more
       setHasMoreContacts(newContacts.length === limit);
@@ -162,17 +167,8 @@ export default function TelegramConnect() {
     }
   };
 
-  // Extract unique folders from contacts
-  const extractFolders = (contactsList) => {
-    const folderSet = new Set();
-    contactsList.forEach(contact => {
-      if (contact.folder_name) {
-        folderSet.add(JSON.stringify({ id: contact.folder_id, name: contact.folder_name }));
-      }
-    });
-    const folders = Array.from(folderSet).map(f => JSON.parse(f));
-    setAvailableFolders(folders.sort((a, b) => a.name.localeCompare(b.name)));
-  };
+  // Folders are now fetched directly from the API response
+  // (removed old extractFolders function that tried to extract from contacts)
 
   // Handle folder selection - triggers new API call with folder_id
   const handleFolderSelect = (folderSelection) => {
