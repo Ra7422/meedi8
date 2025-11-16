@@ -247,6 +247,10 @@ async def get_contacts(
         folder_id: Filter by folder ID (optional). If not provided, returns all contacts.
                    Use special value -1 for contacts with no folder.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"🚀 /contacts endpoint called - user_id={current_user.id}, limit={limit}, folder_id={folder_id}")
+
     try:
         # Check for active session
         telegram_session = db.query(TelegramSession).filter(
@@ -261,17 +265,20 @@ async def get_contacts(
             )
 
         # Get dialogs from Telegram (fast - names only, no photos)
+        logger.info(f"📞 Calling TelegramService.get_dialogs() with limit={limit}, folder_id={folder_id}")
         dialogs = await TelegramService.get_dialogs(
             encrypted_session=telegram_session.encrypted_session,
             limit=limit,
             folder_id=folder_id
         )
+        logger.info(f"✅ Received {len(dialogs)} dialogs from TelegramService.get_dialogs()")
 
         # Update last_used_at timestamp
         telegram_session.last_used_at = datetime.utcnow()
         db.commit()
 
         # Convert to response format
+        logger.info(f"🔄 Converting {len(dialogs)} dialogs to ContactItem format")
         contacts = [
             ContactItem(
                 id=dialog["id"],
@@ -287,6 +294,11 @@ async def get_contacts(
             )
             for dialog in dialogs
         ]
+
+        logger.info(f"📦 Returning {len(contacts)} contacts to frontend")
+        # Log first few contacts with folder info
+        for idx, contact in enumerate(contacts[:3]):
+            logger.info(f"📦 Contact #{idx}: name='{contact.name}', folder_id={contact.folder_id}, folder_name='{contact.folder_name}'")
 
         return ContactsResponse(contacts=contacts)
 
