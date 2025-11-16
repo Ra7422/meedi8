@@ -292,6 +292,11 @@ class TelegramService:
 
                 # Get folder information using custom folder names
                 dialog_folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
+
+                # DEBUG: Log dialog folder information
+                print(f"🔍 Dialog '{chat_name}': folder_id={dialog_folder_id}, hasattr={hasattr(dialog, 'folder_id')}")
+                logger.info(f"🔍 Dialog '{chat_name}': folder_id={dialog_folder_id}")
+
                 folder_name = None
                 if dialog_folder_id:
                     # Use custom folder name if available
@@ -299,11 +304,18 @@ class TelegramService:
 
                 # Skip this dialog if filtering by folder and it doesn't match
                 if folder_id is not None:  # None means no filter, show all
+                    print(f"🔍 Filtering: requested folder_id={folder_id}, dialog has folder_id={dialog_folder_id}")
                     if folder_id == -1:  # -1 means "no folder"
                         if dialog_folder_id is not None:
+                            print(f"⏭️  SKIPPING '{chat_name}' - has folder_id={dialog_folder_id}, but we want no folder")
                             continue  # Skip this dialog, it has a folder
                     elif dialog_folder_id != folder_id:
+                        print(f"⏭️  SKIPPING '{chat_name}' - has folder_id={dialog_folder_id}, but we want folder_id={folder_id}")
                         continue  # Skip this dialog, wrong folder
+                    else:
+                        print(f"✅ KEEPING '{chat_name}' - matches folder_id={folder_id}")
+                else:
+                    print(f"✅ KEEPING '{chat_name}' - no filter (showing all)")
 
                 # Check if archived
                 is_archived = dialog.archived if hasattr(dialog, 'archived') else False
