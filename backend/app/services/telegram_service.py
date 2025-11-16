@@ -217,25 +217,37 @@ class TelegramService:
             try:
                 # GetDialogFiltersRequest returns a DialogFilters object with a 'filters' attribute
                 dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
-                logger.info(f"Raw dialog_filters_result type: {type(dialog_filters_result)}")
+                logger.info(f"🔍 Raw dialog_filters_result type: {type(dialog_filters_result)}")
+                logger.info(f"🔍 dialog_filters_result attributes: {dir(dialog_filters_result)}")
 
                 # Access the 'filters' attribute from the DialogFilters object
                 filters_list = dialog_filters_result.filters if hasattr(dialog_filters_result, 'filters') else []
-                logger.info(f"Filters list length: {len(filters_list)}")
+                logger.info(f"📊 Filters list length: {len(filters_list)}")
+                logger.info(f"📊 Filters list type: {type(filters_list)}")
 
-                # Iterate through the filters list
-                for folder_filter in filters_list:
+                # Log each filter in detail
+                for idx, folder_filter in enumerate(filters_list):
+                    logger.info(f"🔍 Filter #{idx}: type={type(folder_filter).__name__}")
+                    logger.info(f"🔍 Filter #{idx} attributes: {dir(folder_filter)}")
+
+                    # Log key attributes if they exist
+                    if hasattr(folder_filter, 'id'):
+                        logger.info(f"🔍 Filter #{idx} id: {folder_filter.id}")
+                    if hasattr(folder_filter, 'title'):
+                        logger.info(f"🔍 Filter #{idx} title: {folder_filter.title}")
+
                     # Only include custom folders (DialogFilter) created by user
                     # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
                     if isinstance(folder_filter, DialogFilter):
                         folder_names[folder_filter.id] = folder_filter.title
-                        logger.info(f"✅ Found custom folder: id={folder_filter.id}, title={folder_filter.title}")
+                        logger.info(f"✅ ADDED custom folder: id={folder_filter.id}, title='{folder_filter.title}'")
                     else:
-                        logger.info(f"⏭️  Skipping non-custom filter: {type(folder_filter).__name__}")
+                        logger.info(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
 
-                logger.info(f"📁 Fetched {len(folder_names)} custom folder names: {folder_names}")
+                logger.info(f"📁 FINAL RESULT: Fetched {len(folder_names)} custom folder names")
+                logger.info(f"📁 FINAL folder_names dictionary: {folder_names}")
             except Exception as e:
-                logger.warning(f"Could not fetch folder names: {e}")
+                logger.warning(f"❌ Could not fetch folder names: {e}")
                 logger.exception("Full traceback:")
                 # Continue without custom folder names
 
@@ -309,6 +321,11 @@ class TelegramService:
                     logger.info(f"Processed {dialog_count} dialogs, found {user_count} users so far...")
 
             logger.info(f"Successfully fetched {len(dialogs)} dialogs from Telegram (iterated through {dialog_count} total)")
+
+            # Log detailed dialog info to debug folder display
+            logger.info(f"📤 RETURNING {len(dialogs)} dialogs to API")
+            for idx, dialog in enumerate(dialogs):
+                logger.info(f"📤 Dialog #{idx}: name='{dialog['name']}', folder_id={dialog.get('folder_id')}, folder_name='{dialog.get('folder_name')}'")
 
             if len(dialogs) == 0:
                 logger.warning("No dialogs found! This could indicate:")
