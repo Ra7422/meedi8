@@ -237,18 +237,24 @@ class TelegramService:
 
                     # Log key attributes if they exist
                     if hasattr(folder_filter, 'id'):
+                        print(f"🔍 Filter #{idx} id: {folder_filter.id}")
                         logger.info(f"🔍 Filter #{idx} id: {folder_filter.id}")
                     if hasattr(folder_filter, 'title'):
+                        print(f"🔍 Filter #{idx} title: {folder_filter.title}")
                         logger.info(f"🔍 Filter #{idx} title: {folder_filter.title}")
 
                     # Only include custom folders (DialogFilter) created by user
                     # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
                     if isinstance(folder_filter, DialogFilter):
                         folder_names[folder_filter.id] = folder_filter.title
+                        print(f"✅ ADDED custom folder: id={folder_filter.id}, title='{folder_filter.title}'")
                         logger.info(f"✅ ADDED custom folder: id={folder_filter.id}, title='{folder_filter.title}'")
                     else:
+                        print(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
                         logger.info(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
 
+                print(f"📁 FINAL RESULT: Fetched {len(folder_names)} custom folder names")
+                print(f"📁 FINAL folder_names dictionary: {folder_names}")
                 logger.info(f"📁 FINAL RESULT: Fetched {len(folder_names)} custom folder names")
                 logger.info(f"📁 FINAL folder_names dictionary: {folder_names}")
             except Exception as e:
