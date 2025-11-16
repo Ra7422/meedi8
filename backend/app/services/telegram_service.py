@@ -215,52 +215,56 @@ class TelegramService:
 
             # Fetch custom folder names from Telegram
             from telethon import functions
+            from telethon.tl.types import InputPeerUser, InputPeerChat, InputPeerChannel
+
             folder_names = {}
+            peer_to_folder = {}  # Map peer_id → folder_id
+
             try:
                 # GetDialogFiltersRequest returns a DialogFilters object with a 'filters' attribute
                 dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
-                print(f"🔍 Raw dialog_filters_result type: {type(dialog_filters_result)}")
-                print(f"🔍 dialog_filters_result attributes: {dir(dialog_filters_result)}")
-                logger.info(f"🔍 Raw dialog_filters_result type: {type(dialog_filters_result)}")
-                logger.info(f"🔍 dialog_filters_result attributes: {dir(dialog_filters_result)}")
 
                 # Access the 'filters' attribute from the DialogFilters object
                 filters_list = dialog_filters_result.filters if hasattr(dialog_filters_result, 'filters') else []
-                print(f"📊 Filters list length: {len(filters_list)}")
-                print(f"📊 Filters list type: {type(filters_list)}")
-                logger.info(f"📊 Filters list length: {len(filters_list)}")
-                logger.info(f"📊 Filters list type: {type(filters_list)}")
+                print(f"📊 Processing {len(filters_list)} filters")
+                logger.info(f"📊 Processing {len(filters_list)} filters")
 
-                # Log each filter in detail
-                for idx, folder_filter in enumerate(filters_list):
-                    print(f"🔍 Filter #{idx}: type={type(folder_filter).__name__}")
-                    logger.info(f"🔍 Filter #{idx}: type={type(folder_filter).__name__}")
-                    logger.info(f"🔍 Filter #{idx} attributes: {dir(folder_filter)}")
-
-                    # Log key attributes if they exist
-                    if hasattr(folder_filter, 'id'):
-                        print(f"🔍 Filter #{idx} id: {folder_filter.id}")
-                        logger.info(f"🔍 Filter #{idx} id: {folder_filter.id}")
-                    if hasattr(folder_filter, 'title'):
-                        print(f"🔍 Filter #{idx} title: {folder_filter.title}")
-                        logger.info(f"🔍 Filter #{idx} title: {folder_filter.title}")
-
+                # Build folder_names and peer_to_folder mapping
+                for folder_filter in filters_list:
                     # Only include custom folders (DialogFilter) created by user
-                    # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
                     if isinstance(folder_filter, DialogFilter):
                         # Extract text from TextWithEntities object
                         title_text = folder_filter.title.text if hasattr(folder_filter.title, 'text') else str(folder_filter.title)
                         folder_names[folder_filter.id] = title_text
-                        print(f"✅ ADDED custom folder: id={folder_filter.id}, title='{title_text}'")
-                        logger.info(f"✅ ADDED custom folder: id={folder_filter.id}, title='{title_text}'")
-                    else:
-                        print(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
-                        logger.info(f"⏭️  SKIPPED non-custom filter: {type(folder_filter).__name__}")
 
-                print(f"📁 FINAL RESULT: Fetched {len(folder_names)} custom folder names")
-                print(f"📁 FINAL folder_names dictionary: {folder_names}")
-                logger.info(f"📁 FINAL RESULT: Fetched {len(folder_names)} custom folder names")
-                logger.info(f"📁 FINAL folder_names dictionary: {folder_names}")
+                        # Build peer → folder mapping from include_peers
+                        if hasattr(folder_filter, 'include_peers') and folder_filter.include_peers:
+                            print(f"📁 Folder '{title_text}' (id={folder_filter.id}) has {len(folder_filter.include_peers)} include_peers")
+                            logger.info(f"📁 Folder '{title_text}' (id={folder_filter.id}) has {len(folder_filter.include_peers)} include_peers")
+
+                            for peer in folder_filter.include_peers:
+                                # Extract the actual peer ID from InputPeer objects
+                                peer_id = None
+                                if isinstance(peer, InputPeerUser):
+                                    peer_id = peer.user_id
+                                elif isinstance(peer, InputPeerChat):
+                                    peer_id = peer.chat_id
+                                elif isinstance(peer, InputPeerChannel):
+                                    peer_id = peer.channel_id
+
+                                if peer_id:
+                                    # A peer can be in multiple folders, store as list
+                                    if peer_id not in peer_to_folder:
+                                        peer_to_folder[peer_id] = []
+                                    peer_to_folder[peer_id].append(folder_filter.id)
+                                    print(f"  📌 Peer {peer_id} → folder {folder_filter.id}")
+                                    logger.info(f"  📌 Peer {peer_id} → folder {folder_filter.id}")
+                        else:
+                            print(f"📁 Folder '{title_text}' (id={folder_filter.id}) uses generic filters (no specific peers)")
+                            logger.info(f"📁 Folder '{title_text}' (id={folder_filter.id}) uses generic filters")
+
+                print(f"📁 FINAL: {len(folder_names)} folders, {len(peer_to_folder)} peers mapped")
+                logger.info(f"📁 FINAL: {len(folder_names)} folders, {len(peer_to_folder)} peers mapped")
             except Exception as e:
                 logger.warning(f"❌ Could not fetch folder names: {e}")
                 logger.exception("Full traceback:")
@@ -290,30 +294,32 @@ class TelegramService:
                     # Skip non-user chats (channels, groups, supergroups)
                     continue
 
-                # Get folder information using custom folder names
-                dialog_folder_id = dialog.folder_id if hasattr(dialog, 'folder_id') else None
+                # Get folder information from peer_to_folder mapping
+                peer_id = entity.id
+                dialog_folder_ids = peer_to_folder.get(peer_id, [])  # List of folder IDs this peer belongs to
 
-                # DEBUG: Log dialog folder information
-                print(f"🔍 Dialog '{chat_name}': folder_id={dialog_folder_id}, hasattr={hasattr(dialog, 'folder_id')}")
-                logger.info(f"🔍 Dialog '{chat_name}': folder_id={dialog_folder_id}")
-
+                # Use the first folder for display purposes (peers can be in multiple folders)
+                dialog_folder_id = dialog_folder_ids[0] if dialog_folder_ids else None
                 folder_name = None
                 if dialog_folder_id:
-                    # Use custom folder name if available
                     folder_name = folder_names.get(dialog_folder_id, f"Folder {dialog_folder_id}")
+
+                print(f"🔍 Dialog '{chat_name}' (peer_id={peer_id}): folders={dialog_folder_ids}, using folder_id={dialog_folder_id}")
+                logger.info(f"🔍 Dialog '{chat_name}' (peer_id={peer_id}): folders={dialog_folder_ids}")
 
                 # Skip this dialog if filtering by folder and it doesn't match
                 if folder_id is not None:  # None means no filter, show all
-                    print(f"🔍 Filtering: requested folder_id={folder_id}, dialog has folder_id={dialog_folder_id}")
                     if folder_id == -1:  # -1 means "no folder"
                         if dialog_folder_id is not None:
-                            print(f"⏭️  SKIPPING '{chat_name}' - has folder_id={dialog_folder_id}, but we want no folder")
+                            print(f"⏭️  SKIPPING '{chat_name}' - has folder, but we want no folder")
                             continue  # Skip this dialog, it has a folder
-                    elif dialog_folder_id != folder_id:
-                        print(f"⏭️  SKIPPING '{chat_name}' - has folder_id={dialog_folder_id}, but we want folder_id={folder_id}")
-                        continue  # Skip this dialog, wrong folder
+                        else:
+                            print(f"✅ KEEPING '{chat_name}' - has no folder (matches filter)")
+                    elif folder_id not in dialog_folder_ids:
+                        print(f"⏭️  SKIPPING '{chat_name}' - not in folder {folder_id}")
+                        continue  # Skip this dialog, not in requested folder
                     else:
-                        print(f"✅ KEEPING '{chat_name}' - matches folder_id={folder_id}")
+                        print(f"✅ KEEPING '{chat_name}' - in folder {folder_id}")
                 else:
                     print(f"✅ KEEPING '{chat_name}' - no filter (showing all)")
 
