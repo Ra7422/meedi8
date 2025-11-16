@@ -249,6 +249,7 @@ async def get_contacts(
     """
     import logging
     logger = logging.getLogger(__name__)
+    print(f"🚀 /contacts endpoint called - user_id={current_user.id}, limit={limit}, folder_id={folder_id}")
     logger.info(f"🚀 /contacts endpoint called - user_id={current_user.id}, limit={limit}, folder_id={folder_id}")
 
     try:
@@ -265,12 +266,14 @@ async def get_contacts(
             )
 
         # Get dialogs from Telegram (fast - names only, no photos)
+        print(f"📞 Calling TelegramService.get_dialogs() with limit={limit}, folder_id={folder_id}")
         logger.info(f"📞 Calling TelegramService.get_dialogs() with limit={limit}, folder_id={folder_id}")
         dialogs = await TelegramService.get_dialogs(
             encrypted_session=telegram_session.encrypted_session,
             limit=limit,
             folder_id=folder_id
         )
+        print(f"✅ Received {len(dialogs)} dialogs from TelegramService.get_dialogs()")
         logger.info(f"✅ Received {len(dialogs)} dialogs from TelegramService.get_dialogs()")
 
         # Update last_used_at timestamp

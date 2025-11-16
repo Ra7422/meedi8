@@ -217,16 +217,21 @@ class TelegramService:
             try:
                 # GetDialogFiltersRequest returns a DialogFilters object with a 'filters' attribute
                 dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
+                print(f"🔍 Raw dialog_filters_result type: {type(dialog_filters_result)}")
+                print(f"🔍 dialog_filters_result attributes: {dir(dialog_filters_result)}")
                 logger.info(f"🔍 Raw dialog_filters_result type: {type(dialog_filters_result)}")
                 logger.info(f"🔍 dialog_filters_result attributes: {dir(dialog_filters_result)}")
 
                 # Access the 'filters' attribute from the DialogFilters object
                 filters_list = dialog_filters_result.filters if hasattr(dialog_filters_result, 'filters') else []
+                print(f"📊 Filters list length: {len(filters_list)}")
+                print(f"📊 Filters list type: {type(filters_list)}")
                 logger.info(f"📊 Filters list length: {len(filters_list)}")
                 logger.info(f"📊 Filters list type: {type(filters_list)}")
 
                 # Log each filter in detail
                 for idx, folder_filter in enumerate(filters_list):
+                    print(f"🔍 Filter #{idx}: type={type(folder_filter).__name__}")
                     logger.info(f"🔍 Filter #{idx}: type={type(folder_filter).__name__}")
                     logger.info(f"🔍 Filter #{idx} attributes: {dir(folder_filter)}")
 
