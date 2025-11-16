@@ -298,9 +298,11 @@ async def get_contacts(
             for dialog in dialogs
         ]
 
+        print(f"📦 Returning {len(contacts)} contacts to frontend")
         logger.info(f"📦 Returning {len(contacts)} contacts to frontend")
         # Log first few contacts with folder info
         for idx, contact in enumerate(contacts[:3]):
+            print(f"📦 Contact #{idx}: name='{contact.name}', folder_id={contact.folder_id}, folder_name='{contact.folder_name}'")
             logger.info(f"📦 Contact #{idx}: name='{contact.name}', folder_id={contact.folder_id}, folder_name='{contact.folder_name}'")
 
         return ContactsResponse(contacts=contacts)
