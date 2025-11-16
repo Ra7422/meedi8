@@ -192,7 +192,7 @@ class TelegramService:
         return client
 
     @staticmethod
-    async def get_dialogs(encrypted_session: str, limit: int = 10, folder_id: Optional[int] = None) -> List[Dict]:
+    async def get_dialogs(encrypted_session: str, limit: int = 10, folder_id: Optional[int] = None) -> Tuple[List[Dict], Dict[int, str]]:
         """
         Get user's recent chats/dialogs including pinned, folders, and archived.
 
@@ -202,7 +202,9 @@ class TelegramService:
             folder_id: Filter by folder ID (optional). None = all contacts, -1 = no folder
 
         Returns:
-            List of dialog dictionaries with id, name, type, unread_count, folder, archived, pinned
+            Tuple of (dialogs list, folder_names dictionary)
+            - dialogs: List of dialog dictionaries with id, name, type, unread_count, folder, archived, pinned
+            - folder_names: Dict mapping folder IDs to folder names {3: 'Top G', 42: 'Safeguard', ...}
         """
         client = await TelegramService.get_client_from_session(encrypted_session)
 
@@ -347,7 +349,8 @@ class TelegramService:
                 logger.warning("  3. Telegram API rate limiting")
                 logger.warning("  4. iter_dialogs filtering issue")
 
-            return dialogs
+            print(f"📤 RETURNING: {len(dialogs)} dialogs + {len(folder_names)} folders")
+            return dialogs, folder_names
 
         except Exception as e:
             logger.error(f"Error fetching dialogs: {e}", exc_info=True)

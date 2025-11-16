@@ -60,8 +60,14 @@ class ContactItem(BaseModel):
     profile_picture_url: Optional[str] = None
 
 
+class FolderItem(BaseModel):
+    id: int
+    name: str
+
+
 class ContactsResponse(BaseModel):
     contacts: list[ContactItem]
+    folders: list[FolderItem] = []  # Add folders list
 
 
 class DownloadRequest(BaseModel):
@@ -268,13 +274,14 @@ async def get_contacts(
         # Get dialogs from Telegram (fast - names only, no photos)
         print(f"📞 Calling TelegramService.get_dialogs() with limit={limit}, folder_id={folder_id}")
         logger.info(f"📞 Calling TelegramService.get_dialogs() with limit={limit}, folder_id={folder_id}")
-        dialogs = await TelegramService.get_dialogs(
+        dialogs, folder_names = await TelegramService.get_dialogs(
             encrypted_session=telegram_session.encrypted_session,
             limit=limit,
             folder_id=folder_id
         )
-        print(f"✅ Received {len(dialogs)} dialogs from TelegramService.get_dialogs()")
-        logger.info(f"✅ Received {len(dialogs)} dialogs from TelegramService.get_dialogs()")
+        print(f"✅ Received {len(dialogs)} dialogs + {len(folder_names)} folders from TelegramService.get_dialogs()")
+        print(f"✅ Folders: {folder_names}")
+        logger.info(f"✅ Received {len(dialogs)} dialogs + {len(folder_names)} folders from TelegramService.get_dialogs()")
 
         # Update last_used_at timestamp
         telegram_session.last_used_at = datetime.utcnow()
@@ -298,14 +305,18 @@ async def get_contacts(
             for dialog in dialogs
         ]
 
-        print(f"📦 Returning {len(contacts)} contacts to frontend")
-        logger.info(f"📦 Returning {len(contacts)} contacts to frontend")
+        # Convert folder_names dict to FolderItem list
+        folders = [FolderItem(id=fid, name=fname) for fid, fname in folder_names.items()]
+
+        print(f"📦 Returning {len(contacts)} contacts + {len(folders)} folders to frontend")
+        print(f"📦 Folders being returned: {folders}")
+        logger.info(f"📦 Returning {len(contacts)} contacts + {len(folders)} folders to frontend")
         # Log first few contacts with folder info
         for idx, contact in enumerate(contacts[:3]):
             print(f"📦 Contact #{idx}: name='{contact.name}', folder_id={contact.folder_id}, folder_name='{contact.folder_name}'")
             logger.info(f"📦 Contact #{idx}: name='{contact.name}', folder_id={contact.folder_id}, folder_name='{contact.folder_name}'")
 
-        return ContactsResponse(contacts=contacts)
+        return ContactsResponse(contacts=contacts, folders=folders)
 
     except HTTPException:
         raise
