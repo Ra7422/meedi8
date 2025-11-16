@@ -13,6 +13,7 @@ from cryptography.fernet import Fernet
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.types import User as TelegramUser, Chat, Channel, Message
+from telethon.tl.types import DialogFilter, DialogFilterDefault, DialogFilterChatlist
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneNumberInvalidError
 from sqlalchemy.orm import Session
 
@@ -214,17 +215,21 @@ class TelegramService:
             from telethon import functions
             folder_names = {}
             try:
-                dialog_filters_result = await client(functions.messages.GetDialogFiltersRequest())
-                # The result is a DialogFilters object with a 'filters' attribute containing the list
-                filters_list = getattr(dialog_filters_result, 'filters', [])
-                logger.info(f"Raw dialog_filters_result type: {type(dialog_filters_result)}")
-                logger.info(f"Filters list type: {type(filters_list)}, length: {len(filters_list)}")
+                # GetDialogFiltersRequest returns a LIST directly, not an object with 'filters' attribute
+                dialog_filters = await client(functions.messages.GetDialogFiltersRequest())
+                logger.info(f"Raw dialog_filters type: {type(dialog_filters)}")
+                logger.info(f"Number of filters: {len(dialog_filters)}")
 
-                # Iterate through the filters list
-                for folder_filter in filters_list:
-                    if hasattr(folder_filter, 'id') and hasattr(folder_filter, 'title'):
+                # Iterate directly through the list (NOT .filters attribute)
+                for folder_filter in dialog_filters:
+                    # Only include custom folders (DialogFilter) created by user
+                    # Exclude DialogFilterDefault (the "All Chats" view) and DialogFilterChatlist
+                    if isinstance(folder_filter, DialogFilter):
                         folder_names[folder_filter.id] = folder_filter.title
-                        logger.info(f"Found folder: id={folder_filter.id}, title={folder_filter.title}")
+                        logger.info(f"Found custom folder: id={folder_filter.id}, title={folder_filter.title}")
+                    else:
+                        logger.info(f"Skipping non-custom filter: {type(folder_filter).__name__}")
+
                 logger.info(f"Fetched {len(folder_names)} custom folder names: {folder_names}")
             except Exception as e:
                 logger.warning(f"Could not fetch folder names: {e}")
