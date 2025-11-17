@@ -112,6 +112,23 @@ class MessagesPreviewResponse(BaseModel):
     has_more: bool  # True if there are older messages available
 
 
+class DownloadHistoryItem(BaseModel):
+    id: int
+    chat_name: Optional[str] = None
+    chat_type: Optional[str] = None
+    start_date: str  # ISO datetime string
+    end_date: str  # ISO datetime string
+    message_count: int
+    media_count: int
+    status: str
+    created_at: str  # ISO datetime string
+    error_message: Optional[str] = None
+
+
+class DownloadHistoryResponse(BaseModel):
+    downloads: list[DownloadHistoryItem]
+
+
 # ===== Helper Functions =====
 
 async def background_download_task(
@@ -492,6 +509,52 @@ async def get_download_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch download status"
+        )
+
+
+@router.get("/downloads", response_model=DownloadHistoryResponse)
+async def get_download_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all download history for the current user.
+
+    Returns list of all downloads with their status, message counts, and date ranges.
+    Authorization: Only returns downloads for the authenticated user.
+    """
+    try:
+        # Query all downloads for this user, ordered by most recent first
+        downloads = db.query(TelegramDownload).filter(
+            TelegramDownload.user_id == current_user.id
+        ).order_by(TelegramDownload.created_at.desc()).all()
+
+        # Convert to response format
+        download_items = [
+            DownloadHistoryItem(
+                id=d.id,
+                chat_name=d.chat_name,
+                chat_type=d.chat_type,
+                start_date=d.start_date.isoformat(),
+                end_date=d.end_date.isoformat(),
+                message_count=d.message_count,
+                media_count=d.media_count,
+                status=d.status,
+                created_at=d.created_at.isoformat(),
+                error_message=d.error_message
+            )
+            for d in downloads
+        ]
+
+        return DownloadHistoryResponse(downloads=download_items)
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /downloads: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch download history"
         )
 
 

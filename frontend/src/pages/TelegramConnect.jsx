@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
 import TelegramDateRangePicker from "../components/TelegramDateRangePicker";
 import TelegramDownloadStatus from "../components/TelegramDownloadStatus";
+import TelegramDownloadHistory from "../components/TelegramDownloadHistory";
 
 export default function TelegramConnect() {
   const { token } = useAuth();
@@ -29,6 +30,7 @@ export default function TelegramConnect() {
   const [loadingMore, setLoadingMore] = useState(false); // Separate loading for "Load More"
   const [error, setError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDownloadHistory, setShowDownloadHistory] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -692,23 +694,50 @@ export default function TelegramConnect() {
                 {contacts.length} chat{contacts.length !== 1 ? 's' : ''} found
               </p>
             </div>
-            <button
-              onClick={handleDisconnect}
-              disabled={loading}
-              style={{
-                padding: "10px 16px",
-                fontSize: "14px",
-                fontWeight: "600",
-                color: "#ef4444",
-                background: "transparent",
-                border: "2px solid #ef4444",
-                borderRadius: "8px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-              }}
-            >
-              Disconnect
-            </button>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => setShowDownloadHistory(true)}
+                style={{
+                  padding: "10px 16px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#0088CC",
+                  background: "transparent",
+                  border: "2px solid #0088CC",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = "#0088CC";
+                  e.target.style.color = "white";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = "transparent";
+                  e.target.style.color = "#0088CC";
+                }}
+              >
+                Download History
+              </button>
+              <button
+                onClick={handleDisconnect}
+                disabled={loading}
+                style={{
+                  padding: "10px 16px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#ef4444",
+                  background: "transparent",
+                  border: "2px solid #ef4444",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+                }}
+              >
+                Disconnect
+              </button>
+            </div>
           </div>
 
           {loading && contacts.length === 0 ? (
@@ -1149,6 +1178,13 @@ export default function TelegramConnect() {
           }}
           onDownload={handleStartDownload}
           loading={loading}
+        />
+      )}
+
+      {/* Download History Modal */}
+      {showDownloadHistory && (
+        <TelegramDownloadHistory
+          onClose={() => setShowDownloadHistory(false)}
         />
       )}
     </div>
