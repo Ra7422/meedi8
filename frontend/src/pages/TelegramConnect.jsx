@@ -797,115 +797,294 @@ export default function TelegramConnect() {
                 flexDirection: "column",
                 gap: "12px"
               }}>
-              {contacts.map((chat) => (
+              {contacts.map((chat) => {
+                const isExpanded = expandedChatId === chat.id;
+                const chatData = chatMessages[chat.id];
+
+                return (
                 <div
                   key={chat.id}
                   style={{
                     border: "2px solid #e5e7eb",
                     borderRadius: "12px",
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "stretch",
+                    flexDirection: "column",
                     transition: "border-color 0.2s",
                     overflow: "hidden"
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.borderColor = "#0088CC"}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = "#e5e7eb"}
                 >
-                  {/* Vertical folder tab on the left */}
-                  {chat.folder_name && (
-                    <div style={{
-                      background: "#0088CC",
-                      color: "white",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      padding: "8px 6px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      writingMode: "vertical-rl",
-                      textOrientation: "mixed",
-                      letterSpacing: "0.5px",
-                      minWidth: "28px"
-                    }}>
-                      {chat.folder_name}
-                    </div>
-                  )}
-
-                  <div style={{
-                    flex: 1,
-                    padding: "16px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        color: "#1a202c",
-                        margin: "0 0 2px 0"
-                      }}>
-                        {chat.name.split(' (@')[0]}
-                      </h3>
+                  {/* Contact Card Header */}
+                  <div style={{ display: "flex", alignItems: "stretch" }}>
+                    {/* Vertical folder tab */}
+                    {chat.folder_name && (
                       <div style={{
-                        fontSize: "12px",
-                        color: "#a0a0a0",
-                        fontWeight: "400",
-                        marginBottom: "4px",
+                        background: "#0088CC",
+                        color: "white",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        padding: "8px 6px",
                         display: "flex",
                         alignItems: "center",
-                        gap: "6px"
+                        justifyContent: "center",
+                        writingMode: "vertical-rl",
+                        textOrientation: "mixed",
+                        letterSpacing: "0.5px",
+                        minWidth: "28px"
                       }}>
-                        <span>
-                          {chat.type === 'user' ? '👤' :
-                           chat.type === 'group' ? '👥' :
-                           chat.type === 'supergroup' ? '👥' :
-                           '📢'}
-                        </span>
-                        {chat.name.includes('@') && (
-                          <span>@{chat.name.split('@')[1].replace(')', '')}</span>
-                        )}
-                        {chat.pinned && (
-                          <span style={{ fontSize: "14px" }}>📌</span>
-                        )}
-                        {chat.unread_count > 0 && (
-                          <span style={{
-                            background: "#0088CC",
-                            color: "white",
-                            padding: "2px 8px",
-                            borderRadius: "12px",
-                            fontWeight: "600",
-                            fontSize: "11px",
-                            marginLeft: "4px"
-                          }}>
-                            {chat.unread_count}
-                          </span>
-                        )}
+                        {chat.folder_name}
                       </div>
+                    )}
+
+                    <div style={{
+                      flex: 1,
+                      padding: "16px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }}>
+                      {/* Clickable contact info - expands card */}
+                      <div
+                        onClick={() => handleToggleChatExpansion(chat)}
+                        style={{
+                          flex: 1,
+                          cursor: "pointer"
+                        }}
+                      >
+                        <h3 style={{
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          color: "#1a202c",
+                          margin: "0 0 2px 0"
+                        }}>
+                          {chat.name.split(' (@')[0]} {isExpanded ? "▼" : "▶"}
+                        </h3>
+                        <div style={{
+                          fontSize: "12px",
+                          color: "#a0a0a0",
+                          fontWeight: "400",
+                          marginBottom: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px"
+                        }}>
+                          <span>
+                            {chat.type === 'user' ? '👤' :
+                             chat.type === 'group' ? '👥' :
+                             chat.type === 'supergroup' ? '👥' :
+                             '📢'}
+                          </span>
+                          {chat.name.includes('@') && (
+                            <span>@{chat.name.split('@')[1].replace(')', '')}</span>
+                          )}
+                          {chat.pinned && (
+                            <span style={{ fontSize: "14px" }}>📌</span>
+                          )}
+                          {chat.unread_count > 0 && (
+                            <span style={{
+                              background: "#0088CC",
+                              color: "white",
+                              padding: "2px 8px",
+                              borderRadius: "12px",
+                              fontWeight: "600",
+                              fontSize: "11px",
+                              marginLeft: "4px"
+                            }}>
+                              {chat.unread_count}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quick download button (original date picker) */}
+                      <button
+                        onClick={() => handleSelectChat(chat)}
+                        style={{
+                          padding: "10px 20px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "white",
+                          background: "#0088CC",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                          transition: "background 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = "#0077B3"}
+                        onMouseLeave={(e) => e.target.style.background = "#0088CC"}
+                      >
+                        📅 Dates
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleSelectChat(chat)}
-                      style={{
-                        padding: "10px 20px",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "white",
-                        background: "#0088CC",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-                        transition: "background 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = "#0077B3"}
-                      onMouseLeave={(e) => e.target.style.background = "#0088CC"}
-                    >
-                      Download
-                    </button>
                   </div>
+
+                  {/* Expanded Message Browser */}
+                  {isExpanded && (
+                    <div style={{
+                      borderTop: "1px solid #e5e7eb",
+                      padding: "16px",
+                      background: "#f9fafb"
+                    }}>
+                      {loadingMessages && !chatData ? (
+                        <div style={{ textAlign: "center", padding: "20px", color: "#8A8A8F" }}>
+                          ⏳ Loading messages...
+                        </div>
+                      ) : chatData && chatData.messages.length > 0 ? (
+                        <>
+                          <div style={{
+                            fontSize: "13px",
+                            color: "#6B7280",
+                            marginBottom: "12px",
+                            fontWeight: "600"
+                          }}>
+                            Click messages to select date range:
+                          </div>
+
+                          {/* Selected range display */}
+                          {(selectedStartMsg || selectedEndMsg) && (
+                            <div style={{
+                              background: "#E3F2FD",
+                              border: "1px solid #0088CC",
+                              borderRadius: "8px",
+                              padding: "8px 12px",
+                              marginBottom: "12px",
+                              fontSize: "12px",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center"
+                            }}>
+                              <span>
+                                {selectedStartMsg && selectedEndMsg ? (
+                                  `From: ${new Date(selectedStartMsg.date).toLocaleDateString()} → To: ${new Date(selectedEndMsg.date).toLocaleDateString()}`
+                                ) : (
+                                  `Start: ${new Date((selectedStartMsg || selectedEndMsg).date).toLocaleDateString()} (select end message)`
+                                )}
+                              </span>
+                              {selectedStartMsg && selectedEndMsg && (
+                                <button
+                                  onClick={handleDownloadFromMessages}
+                                  style={{
+                                    background: "#0088CC",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    padding: "6px 12px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  Download Range
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Message list */}
+                          <div style={{
+                            maxHeight: "400px",
+                            overflowY: "auto",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px"
+                          }}>
+                            {chatData.messages.map((msg) => {
+                              const isStartMsg = selectedStartMsg?.id === msg.id;
+                              const isEndMsg = selectedEndMsg?.id === msg.id;
+                              const isInRange = selectedStartMsg && selectedEndMsg &&
+                                new Date(msg.date) >= new Date(selectedStartMsg.date) &&
+                                new Date(msg.date) <= new Date(selectedEndMsg.date);
+
+                              return (
+                                <div
+                                  key={msg.id}
+                                  onClick={() => handleMessageClick(msg)}
+                                  style={{
+                                    background: isStartMsg || isEndMsg ? "#0088CC" : isInRange ? "#E3F2FD" : "white",
+                                    color: isStartMsg || isEndMsg ? "white" : "#1a202c",
+                                    border: `1px solid ${isStartMsg || isEndMsg ? "#0088CC" : "#e5e7eb"}`,
+                                    borderRadius: "8px",
+                                    padding: "10px 12px",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!isStartMsg && !isEndMsg) {
+                                      e.target.style.background = "#f3f4f6";
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isStartMsg && !isEndMsg) {
+                                      e.target.style.background = isInRange ? "#E3F2FD" : "white";
+                                    }
+                                  }}
+                                >
+                                  <div style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: "4px"
+                                  }}>
+                                    <span style={{
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      color: isStartMsg || isEndMsg ? "white" : msg.is_outgoing ? "#0088CC" : "#1a202c"
+                                    }}>
+                                      {msg.sender_name}
+                                    </span>
+                                    <span style={{
+                                      fontSize: "11px",
+                                      color: isStartMsg || isEndMsg ? "rgba(255,255,255,0.8)" : "#6B7280"
+                                    }}>
+                                      {new Date(msg.date).toLocaleDateString()} {new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                  </div>
+                                  <div style={{
+                                    fontSize: "13px",
+                                    color: isStartMsg || isEndMsg ? "rgba(255,255,255,0.9)" : "#4B5563",
+                                    lineHeight: "1.4"
+                                  }}>
+                                    {msg.text_preview}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Load More button */}
+                          {chatData.hasMore && (
+                            <button
+                              onClick={loadMoreMessages}
+                              disabled={loadingMessages}
+                              style={{
+                                width: "100%",
+                                marginTop: "12px",
+                                padding: "10px",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                color: loadingMessages ? "#9CA3AF" : "#0088CC",
+                                background: "white",
+                                border: `2px solid ${loadingMessages ? "#9CA3AF" : "#0088CC"}`,
+                                borderRadius: "8px",
+                                cursor: loadingMessages ? "not-allowed" : "pointer",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              {loadingMessages ? "Loading..." : "Load More Messages"}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <div style={{ textAlign: "center", padding: "20px", color: "#8A8A8F" }}>
+                          No messages found
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+              );
+              })}
 
               {/* Load More Button */}
               {hasMoreContacts && contacts.length > 0 && (
