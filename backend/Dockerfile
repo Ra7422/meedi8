@@ -1,6 +1,9 @@
 # Use official Python runtime as base image
 FROM python:3.9-slim
 
+# Ensure Python output is sent straight to terminal without buffering
+ENV PYTHONUNBUFFERED=1
+
 # Set working directory
 WORKDIR /app
 
