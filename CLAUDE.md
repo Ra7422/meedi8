@@ -27,7 +27,7 @@ An AI-powered mediation platform that guides users through conflict resolution u
 - Frontend: React + Vite (Vercel)
 - Backend: FastAPI (Railway)
 - Database: PostgreSQL (prod) / SQLite (dev)
-- AI: Claude Sonnet 4.5 (Anthropic)
+- AI: Claude Sonnet 4.5 (Anthropic) + Gemini File Search (Google)
 
 **Production URLs:**
 - Frontend: https://meedi8.vercel.app
@@ -168,6 +168,7 @@ See [cli/TROUBLESHOOTING.md](cli/TROUBLESHOOTING.md) for complete guide.
 **Backend (.env):**
 ```
 ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
 OPENAI_API_KEY=
 STRIPE_SECRET_KEY=
 DATABASE_URL=
@@ -249,13 +250,19 @@ See [cli/ARCHITECTURE.md](cli/ARCHITECTURE.md) for details.
 
 See [cli/STATUS.md](cli/STATUS.md) for detailed changelog.
 
-**Latest (2025-11-15):**
-- Telegram lazy loading for folder tabs
-- Fixed folder_id backend bug
-- Applied Telegram design system styling
-- **PAUSED:** Telegram folders not displaying (under investigation)
+**Latest (2025-11-17):**
+- ✅ Fixed 402 paywall error (active room counting)
+- ✅ Telegram import modal with compact UI
+- ✅ Message preview with eye icon
+- 🚧 **IN PROGRESS:** Gemini File Search integration for RAG
+  - Hybrid AI: Gemini for document analysis, Claude for mediation
+  - Free persistent storage, automatic chunking/indexing
+  - Cost: ~$0.004 per Telegram analysis
+
+**Stable Deployment:** d00acb6d-9db0-4e57-a6f9-f78a0d5d9173
 
 **Previous:**
+- Telegram lazy loading for folder tabs (2025-11-15)
 - Stripe payment-first checkout (2025-11-13)
 - Email notifications with SendGrid (2025-11-13)
 - Professional PDF reports (2025-11-12)
@@ -269,11 +276,48 @@ See [cli/STATUS.md](cli/STATUS.md) for detailed changelog.
 4. Push: `git push origin feature/description`
 5. Merge to `main` → auto-deploys to production
 
+## Hybrid AI Architecture (Gemini + Claude)
+
+### Overview
+Meedi8 uses a **hybrid AI approach** to optimize cost and quality:
+- **Gemini File Search**: Document analysis, chunking, indexing (cheap, fast)
+- **Claude Sonnet 4.5**: Emotional mediation, coaching (expensive, high-quality)
+
+### Data Flow
+```
+User uploads Telegram/files
+  ↓
+Gemini File Search (upload, chunk, index, store)
+  ↓
+Gemini analyzes (themes, patterns, triggers)
+  ↓
+Store insights in PostgreSQL Turn.metadata
+  ↓
+Claude receives context from PostgreSQL
+  ↓
+Claude generates mediation with enriched context
+```
+
+### Why Hybrid?
+- **Cost**: Gemini analysis = $0.004, Claude mediation = $0.10
+- **Storage**: Gemini File Search = FREE (up to 1 TB)
+- **Quality**: Claude superior for emotional intelligence
+- **Efficiency**: Gemini handles large files, Claude handles conversation
+
+### Implementation Details
+See [GEMINI_RAG_API.md](GEMINI_RAG_API.md) for complete architecture guide.
+
+**Key Services:**
+- `backend/app/services/gemini_rag_service.py` - File Search integration
+- `backend/app/services/pre_mediation_coach.py` - Claude with Gemini context
+- `backend/app/services/main_room_mediator.py` - Claude with Gemini context
+
 ## Notes for AI Assistants
 
 - **Start with [cli/STATUS.md](cli/STATUS.md)** to understand current state
 - **Check [cli/TODO.md](cli/TODO.md)** for pending work
 - **Reference [cli/PATTERNS.md](cli/PATTERNS.md)** for critical conventions
 - **Use [cli/TROUBLESHOOTING.md](cli/TROUBLESHOOTING.md)** for debugging
+- **Review [GEMINI_RAG_API.md](GEMINI_RAG_API.md)** for hybrid AI architecture
 - All files under 400 lines for optimal context management
 - Each file is self-contained with cross-references
