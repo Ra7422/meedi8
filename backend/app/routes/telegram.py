@@ -662,17 +662,18 @@ async def preview_messages(
     except HTTPException:
         raise
     except ValueError as e:
+        # ValueError now contains user-friendly messages from the service layer
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Telegram session expired or invalid. Please reconnect."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         )
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
-        logger.error(f"Error in /messages/preview/{chat_id}: {e}")
+        logger.error(f"Error in /messages/preview/{chat_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch message preview"
+            detail=f"Failed to fetch message preview: {str(e)}"
         )
 
 

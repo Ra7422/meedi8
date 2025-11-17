@@ -14,7 +14,12 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.tl.types import User as TelegramUser, Chat, Channel, Message
 from telethon.tl.types import DialogFilter, DialogFilterDefault, DialogFilterChatlist
-from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneNumberInvalidError
+from telethon.errors import (
+    SessionPasswordNeededError, PhoneCodeInvalidError, PhoneNumberInvalidError,
+    ChatAdminRequiredError, ChatWriteForbiddenError, ChannelPrivateError,
+    FloodWaitError, PeerIdInvalidError, UserNotParticipantError,
+    ChannelInvalidError, RPCError
+)
 from sqlalchemy.orm import Session
 
 from ..models.telegram import TelegramSession, TelegramDownload, TelegramMessage
@@ -598,23 +603,36 @@ class TelegramService:
         try:
             logger.info(f"Fetching {limit} message previews from chat {chat_id}, offset_id={offset_id}")
 
-            # Populate entity cache by calling get_dialogs() once
-            # This caches all recent contacts' access_hashes
+            # Try to get entity directly first (may be cached from recent get_dialogs call)
+            entity = None
             try:
-                logger.info("Populating entity cache with get_dialogs()")
-                await client.get_dialogs(limit=1)  # Just need to call it once to populate cache
-                logger.info("Entity cache populated successfully")
-            except Exception as e:
-                logger.warning(f"Could not populate entity cache: {e}")
-                # Continue anyway - get_entity will try to fetch
-
-            # Get the entity - should use cached data from get_dialogs()
-            try:
-                entity = await client.get_entity(chat_id)
-                logger.info(f"Resolved entity for chat {chat_id}: {entity}")
-            except Exception as e:
-                logger.error(f"Failed to get entity for chat {chat_id}: {e}")
-                raise ValueError(f"Could not find chat with ID {chat_id}")
+                entity = await client.get_input_entity(chat_id)
+                logger.info(f"✓ Entity {chat_id} found in cache")
+            except ValueError as e:
+                # Not in cache, populate with more dialogs and retry
+                logger.info(f"✗ Entity {chat_id} not in cache, populating with get_dialogs()")
+                try:
+                    # Fetch more dialogs to increase chance of caching the specific chat
+                    await client.get_dialogs(limit=100)
+                    entity = await client.get_input_entity(chat_id)
+                    logger.info(f"✓ Entity {chat_id} resolved after cache population")
+                except PeerIdInvalidError:
+                    logger.error(f"Invalid peer ID: {chat_id}")
+                    raise ValueError(f"Invalid chat ID: {chat_id}")
+                except ChannelPrivateError:
+                    logger.error(f"Chat {chat_id} is private or inaccessible")
+                    raise ValueError("This chat is private or you don't have access to it")
+                except ChannelInvalidError:
+                    logger.error(f"Chat {chat_id} no longer exists")
+                    raise ValueError("This chat no longer exists or was deleted")
+                except FloodWaitError as e:
+                    logger.warning(f"FloodWaitError when populating cache: {e.seconds}s")
+                    raise ValueError(f"Telegram rate limit. Please wait {e.seconds} seconds and try again.")
+                except ValueError as e:
+                    if "Could not find" in str(e):
+                        logger.error(f"Entity not found even after cache population for chat {chat_id}")
+                        raise ValueError("Chat not found. Please refresh your contact list and try again.")
+                    raise ValueError(f"Could not access chat: {str(e)}")
 
             # FIX v3: Ensure all variables are initialized before use
             messages = []
@@ -626,23 +644,24 @@ class TelegramService:
                 logger.warning(f"Invalid limit value: {limit}, defaulting to 50")
                 limit = 50
 
-            logger.info(f"🔧 FIX v3 ACTIVE: Starting message fetch with limit={limit}, has_more={has_more}")
+            logger.info(f"🔧 FIX v4 ACTIVE: Starting message fetch with limit={limit}, has_more={has_more}")
 
             # Fetch messages in reverse chronological order (newest first)
             # Use limit+1 to check if there are more messages
             # Use the resolved entity instead of raw chat_id
-            async for message in client.iter_messages(
-                entity,
-                limit=limit + 1,
-                offset_id=offset_id
-            ):
-                message_count += 1
+            try:
+                async for message in client.iter_messages(
+                    entity,
+                    limit=limit + 1,
+                    offset_id=offset_id
+                ):
+                    message_count += 1
 
-                # If we got one more than limit, there are more messages
-                if message_count > limit:
-                    has_more = True
-                    logger.info(f"📊 Got {message_count} messages (limit was {limit}), has_more={has_more}")
-                    break
+                    # If we got one more than limit, there are more messages
+                    if message_count > limit:
+                        has_more = True
+                        logger.info(f"📊 Got {message_count} messages (limit was {limit}), has_more={has_more}")
+                        break
 
                 # Get sender name
                 if message.out:
@@ -683,15 +702,35 @@ class TelegramService:
                     "is_outgoing": message.out
                 })
 
-            else:
-                # Loop completed without break - no more messages
-                has_more = False
+                else:
+                    # Loop completed without break - no more messages
+                    has_more = False
 
-            logger.info(f"Fetched {len(messages)} message previews, has_more={has_more}")
+            except ChatAdminRequiredError:
+                logger.error(f"Admin permissions required for chat {chat_id}")
+                raise ValueError("You don't have permission to read messages from this chat")
+            except ChatWriteForbiddenError:
+                logger.error(f"Write permissions forbidden for chat {chat_id}")
+                raise ValueError("You don't have permission to access this chat")
+            except UserNotParticipantError:
+                logger.error(f"User is not a participant in chat {chat_id}")
+                raise ValueError("You are not a member of this chat")
+            except FloodWaitError as e:
+                logger.warning(f"FloodWaitError when fetching messages: {e.seconds}s")
+                raise ValueError(f"Telegram rate limit. Please wait {e.seconds} seconds and try again.")
+
+            logger.info(f"✓ Fetched {len(messages)} message previews, has_more={has_more}")
             return messages, has_more
 
+        except ValueError:
+            # Re-raise ValueError with user-friendly messages
+            raise
+        except RPCError as e:
+            # Catch any other Telegram RPC errors
+            logger.error(f"Telegram RPC error for chat {chat_id}: {e}", exc_info=True)
+            raise ValueError(f"Telegram API error: {str(e)}")
         except Exception as e:
-            logger.error(f"Error fetching message preview from chat {chat_id}: {e}")
+            logger.error(f"Unexpected error fetching message preview from chat {chat_id}: {e}", exc_info=True)
             raise
         finally:
             await client.disconnect()
