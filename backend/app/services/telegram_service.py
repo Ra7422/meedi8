@@ -582,13 +582,22 @@ class TelegramService:
         try:
             logger.info(f"Fetching {limit} message previews from chat {chat_id}, offset_id={offset_id}")
 
+            # Get the entity first - Telethon requires this to resolve the peer
+            try:
+                entity = await client.get_entity(chat_id)
+                logger.info(f"Resolved entity for chat {chat_id}: {entity}")
+            except Exception as e:
+                logger.error(f"Failed to get entity for chat {chat_id}: {e}")
+                raise ValueError(f"Could not find chat with ID {chat_id}")
+
             messages = []
             message_count = 0
 
             # Fetch messages in reverse chronological order (newest first)
             # Use limit+1 to check if there are more messages
+            # Use the resolved entity instead of raw chat_id
             async for message in client.iter_messages(
-                chat_id,
+                entity,
                 limit=limit + 1,
                 offset_id=offset_id
             ):
