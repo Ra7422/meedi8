@@ -1254,10 +1254,72 @@ export default function CoachingChat() {
       <TelegramImportModal
         isOpen={showTelegramImport}
         onClose={() => setShowTelegramImport(false)}
-        onImportComplete={async () => {
-          // Refresh messages after import
-          const history = await apiRequest(`/rooms/${roomId}/coach/turns`, "GET", null, token);
-          setMessages(history.messages || []);
+        onImportComplete={async (telegramData) => {
+          // Send Telegram import to backend for Gemini analysis
+          console.log("[CoachingChat] handleTelegramImportComplete called with:", telegramData);
+          try {
+            setSending(true);
+
+            // Close modal immediately and show thinking messages
+            setShowTelegramImport(false);
+            console.log("[CoachingChat] Modal closed, starting thinking messages");
+
+            // Add thinking messages
+            const thinkingMessages = [
+              "Let me take a look at what you've shared...",
+              "Hmm...",
+              "Ok...",
+              "Yep...",
+              "Ok...",
+              "Hmm...",
+              "Yes...",
+              "Ok...",
+              "One sec...",
+              "Right..."
+            ];
+
+            // Show thinking messages progressively (every 1.5 seconds)
+            const thinkingInterval = setInterval(() => {
+              if (thinkingMessages.length > 0) {
+                const msg = thinkingMessages.shift();
+                setMessages(prev => [...prev, {
+                  role: "ai",
+                  content: msg,
+                  isThinking: true,
+                  timestamp: new Date().toISOString()
+                }]);
+              } else {
+                clearInterval(thinkingInterval);
+              }
+            }, 1500);
+
+            const response = await apiRequest(
+              `/rooms/${roomId}/coach/telegram-import`,
+              "POST",
+              {
+                download_id: telegramData.download_id,
+                chat_name: telegramData.chat_name,
+                message_count: telegramData.message_count
+              },
+              token
+            );
+
+            // Clear thinking interval
+            clearInterval(thinkingInterval);
+
+            // Remove thinking messages
+            setMessages(prev => prev.filter(m => !m.isThinking));
+
+            // Refresh messages to include the new import
+            const history = await apiRequest(`/rooms/${roomId}/coach/turns`, "GET", null, token);
+            setMessages(history.messages || []);
+          } catch (error) {
+            setMessages(prev => prev.filter(m => !m.isThinking));
+            console.error("Failed to import Telegram conversation:", error);
+            setError(error.message || "Failed to import conversation");
+          } finally {
+            setSending(false);
+          }
         }}
         roomId={roomId}
       />
