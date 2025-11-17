@@ -553,3 +553,100 @@ class TelegramService:
             telegram_session.is_active = False
             db.commit()
             logger.info(f"Disconnected Telegram session for user {user_id}")
+
+    @staticmethod
+    async def preview_chat_messages(
+        encrypted_session: str,
+        chat_id: int,
+        limit: int = 44,
+        offset_id: Optional[int] = None
+    ) -> Tuple[List[Dict], bool]:
+        """
+        Preview messages from a chat without storing them.
+
+        Used for visual date range selection interface.
+
+        Args:
+            encrypted_session: Encrypted session string
+            chat_id: Telegram chat/user ID to fetch messages from
+            limit: Number of messages to fetch (default 44)
+            offset_id: Message ID to start from (for pagination)
+
+        Returns:
+            Tuple of (messages list, has_more bool)
+            - messages: List of dicts with id, date, sender_name, text_preview, is_outgoing
+            - has_more: True if there are older messages available
+        """
+        client = await TelegramService.get_client_from_session(encrypted_session)
+
+        try:
+            logger.info(f"Fetching {limit} message previews from chat {chat_id}, offset_id={offset_id}")
+
+            messages = []
+            message_count = 0
+
+            # Fetch messages in reverse chronological order (newest first)
+            # Use limit+1 to check if there are more messages
+            async for message in client.iter_messages(
+                chat_id,
+                limit=limit + 1,
+                offset_id=offset_id
+            ):
+                message_count += 1
+
+                # If we got one more than limit, there are more messages
+                if message_count > limit:
+                    has_more = True
+                    break
+
+                # Get sender name
+                if message.out:
+                    # Message sent by the user
+                    sender_name = "You"
+                elif message.sender:
+                    # Try to get sender's name
+                    if hasattr(message.sender, 'first_name'):
+                        sender_name = message.sender.first_name or "Unknown"
+                        if hasattr(message.sender, 'last_name') and message.sender.last_name:
+                            sender_name += f" {message.sender.last_name}"
+                    elif hasattr(message.sender, 'title'):
+                        sender_name = message.sender.title or "Unknown"
+                    else:
+                        sender_name = "Unknown"
+                else:
+                    sender_name = "Unknown"
+
+                # Get text preview (first 100 chars)
+                text_preview = ""
+                if message.text:
+                    text_preview = message.text[:100]
+                elif message.media:
+                    # For media messages, show media type
+                    if hasattr(message.media, '__class__'):
+                        media_type = message.media.__class__.__name__.replace('MessageMedia', '')
+                        text_preview = f"[{media_type}]"
+                    else:
+                        text_preview = "[Media]"
+                else:
+                    text_preview = "[No content]"
+
+                messages.append({
+                    "id": message.id,
+                    "date": message.date.isoformat(),
+                    "sender_name": sender_name,
+                    "text_preview": text_preview,
+                    "is_outgoing": message.out
+                })
+
+            else:
+                # Loop completed without break - no more messages
+                has_more = False
+
+            logger.info(f"Fetched {len(messages)} message previews, has_more={has_more}")
+            return messages, has_more
+
+        except Exception as e:
+            logger.error(f"Error fetching message preview from chat {chat_id}: {e}")
+            raise
+        finally:
+            await client.disconnect()

@@ -99,6 +99,19 @@ class SessionStatusResponse(BaseModel):
     phone_number: Optional[str] = None
 
 
+class MessagePreviewItem(BaseModel):
+    id: int
+    date: str  # ISO datetime string
+    sender_name: str
+    text_preview: str  # First 100 chars of message
+    is_outgoing: bool  # True if sent by user
+
+
+class MessagesPreviewResponse(BaseModel):
+    messages: list[MessagePreviewItem]
+    has_more: bool  # True if there are older messages available
+
+
 # ===== Helper Functions =====
 
 async def background_download_task(
@@ -518,6 +531,85 @@ async def get_session_status(
         return SessionStatusResponse(
             is_connected=False,
             phone_number=None
+        )
+
+
+@router.get("/messages/preview/{chat_id}", response_model=MessagesPreviewResponse)
+async def preview_messages(
+    chat_id: int,
+    limit: int = 44,
+    offset_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Preview messages from a chat without downloading them.
+
+    Used for visual date range selection - user can browse messages
+    and click to select start/end dates based on actual message content.
+
+    Query Parameters:
+        limit: Number of messages to fetch (default 44)
+        offset_id: Message ID to start from (for pagination, loads older messages)
+
+    Returns messages in reverse chronological order (newest first).
+    """
+    try:
+        # Check for active session
+        telegram_session = db.query(TelegramSession).filter(
+            TelegramSession.user_id == current_user.id,
+            TelegramSession.is_active == True
+        ).first()
+
+        if not telegram_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No active Telegram session. Please connect first."
+            )
+
+        # Get message previews from Telegram
+        messages, has_more = await TelegramService.preview_chat_messages(
+            encrypted_session=telegram_session.encrypted_session,
+            chat_id=chat_id,
+            limit=limit,
+            offset_id=offset_id
+        )
+
+        # Update last_used_at timestamp
+        telegram_session.last_used_at = datetime.utcnow()
+        db.commit()
+
+        # Convert to response format
+        message_items = [
+            MessagePreviewItem(
+                id=msg["id"],
+                date=msg["date"],
+                sender_name=msg["sender_name"],
+                text_preview=msg["text_preview"],
+                is_outgoing=msg["is_outgoing"]
+            )
+            for msg in messages
+        ]
+
+        return MessagesPreviewResponse(
+            messages=message_items,
+            has_more=has_more
+        )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Telegram session expired or invalid. Please reconnect."
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /messages/preview/{chat_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch message preview"
         )
 
 

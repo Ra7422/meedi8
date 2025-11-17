@@ -32,6 +32,13 @@ export default function TelegramConnect() {
   const [needsPassword, setNeedsPassword] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
+  // Message preview state
+  const [expandedChatId, setExpandedChatId] = useState(null); // Which chat card is expanded
+  const [chatMessages, setChatMessages] = useState({}); // chatId → {messages: [], hasMore: bool}
+  const [loadingMessages, setLoadingMessages] = useState(false); // Loading state for message fetch
+  const [selectedStartMsg, setSelectedStartMsg] = useState(null); // First selected message for range
+  const [selectedEndMsg, setSelectedEndMsg] = useState(null); // Second selected message for range
+
   // Check for existing session on mount
   useEffect(() => {
     checkExistingSession();
@@ -203,7 +210,111 @@ export default function TelegramConnect() {
     loadContacts(newLimit, folderId);
   };
 
-  // Handle chat selection
+  // Toggle chat card expansion and load messages if needed
+  const handleToggleChatExpansion = async (chat) => {
+    const chatId = chat.id;
+
+    // If clicking the same chat, collapse it
+    if (expandedChatId === chatId) {
+      setExpandedChatId(null);
+      setSelectedStartMsg(null);
+      setSelectedEndMsg(null);
+      return;
+    }
+
+    // Expand this chat
+    setExpandedChatId(chatId);
+    setSelectedStartMsg(null);
+    setSelectedEndMsg(null);
+
+    // Load messages if not already loaded
+    if (!chatMessages[chatId]) {
+      await loadChatMessages(chatId);
+    }
+  };
+
+  // Load message previews for a chat
+  const loadChatMessages = async (chatId, offsetId = null) => {
+    setLoadingMessages(true);
+    setError("");
+
+    try {
+      let url = `/telegram/messages/preview/${chatId}?limit=44`;
+      if (offsetId) {
+        url += `&offset_id=${offsetId}`;
+      }
+
+      const response = await apiRequest(url, "GET", null, token);
+
+      setChatMessages(prev => ({
+        ...prev,
+        [chatId]: {
+          messages: offsetId
+            ? [...(prev[chatId]?.messages || []), ...response.messages]
+            : response.messages,
+          hasMore: response.has_more
+        }
+      }));
+    } catch (err) {
+      setError(err.message || "Failed to load messages");
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  // Load more messages for the current expanded chat
+  const loadMoreMessages = () => {
+    if (!expandedChatId || loadingMessages) return;
+
+    const chatData = chatMessages[expandedChatId];
+    if (!chatData || !chatData.hasMore) return;
+
+    // Get the last message ID as offset
+    const lastMessage = chatData.messages[chatData.messages.length - 1];
+    loadChatMessages(expandedChatId, lastMessage.id);
+  };
+
+  // Handle message selection for date range
+  const handleMessageClick = (message) => {
+    // First click sets start date
+    if (!selectedStartMsg) {
+      setSelectedStartMsg(message);
+      setSelectedEndMsg(null);
+      return;
+    }
+
+    // Second click sets end date (ensure it's after start)
+    const startDate = new Date(selectedStartMsg.date);
+    const clickedDate = new Date(message.date);
+
+    if (clickedDate < startDate) {
+      // Clicked earlier message - swap them
+      setSelectedEndMsg(selectedStartMsg);
+      setSelectedStartMsg(message);
+    } else {
+      setSelectedEndMsg(message);
+    }
+  };
+
+  // Use selected message dates for download
+  const handleDownloadFromMessages = () => {
+    if (!selectedStartMsg || !selectedEndMsg) {
+      setError("Please select both start and end messages");
+      return;
+    }
+
+    const startDate = new Date(selectedStartMsg.date);
+    const endDate = new Date(selectedEndMsg.date);
+
+    // Find the contact for the expanded chat
+    const chat = contacts.find(c => c.id === expandedChatId);
+    if (!chat) return;
+
+    // Use the existing download flow with the selected dates
+    handleStartDownload(chat.id, startDate.toISOString(), endDate.toISOString());
+  };
+
+  // Handle chat selection (original date picker method)
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     setShowDatePicker(true);
