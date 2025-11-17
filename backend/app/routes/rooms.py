@@ -1879,140 +1879,6 @@ async def voice_respond_coaching(
         )
 
 
-@router.post("/{room_id}/coach/telegram-import")
-async def import_telegram_coaching(
-    room_id: int,
-    payload: TelegramImportRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Import a downloaded Telegram conversation into the coaching session.
-    Analyzes the conversation with Gemini and creates a turn with AI insights.
-    """
-    room = db.query(Room).filter(Room.id == room_id).first()
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-
-    if current_user not in room.participants:
-        raise HTTPException(status_code=403, detail="Not a participant")
-
-    try:
-        # Get the Telegram download with messages
-        from app.models.telegram import TelegramDownload, TelegramMessage
-        from app.services.gemini_rag_service import GeminiRAGService
-
-        download = db.query(TelegramDownload).filter(
-            TelegramDownload.id == payload.download_id,
-            TelegramDownload.user_id == current_user.id,
-            TelegramDownload.status == "completed"
-        ).first()
-
-        if not download:
-            raise HTTPException(status_code=404, detail="Download not found or not completed")
-
-        # For coaching, the user is sharing their conversation with the other person
-        # We'll use the user's name and "Other Person" as a placeholder
-        user1_name = current_user.name or "You"
-        user2_name = "Other Person"  # We don't know who the other person is in coaching phase
-
-        # Get messages for analysis
-        messages = db.query(TelegramMessage).filter(
-            TelegramMessage.download_id == payload.download_id
-        ).order_by(TelegramMessage.date.asc()).all()
-
-        # Convert to dict format for Gemini
-        message_dicts = [
-            {
-                "id": msg.id,
-                "from_me": msg.from_me,
-                "text": msg.text or "[Media]",
-                "timestamp": msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else "Unknown",
-                "sender_name": msg.sender_name or (user1_name if msg.from_me else user2_name)
-            }
-            for msg in messages
-        ]
-
-        # Analyze with Gemini (async) - Creates persistent corpus for future retrieval
-        gemini_service = GeminiRAGService()
-        print(f"[Coaching Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
-
-        analysis = await gemini_service.analyze_telegram_history(
-            messages=message_dicts,
-            user1_name=user1_name,
-            user2_name=user2_name,
-            room_id=room_id,
-            download_id=payload.download_id
-        )
-
-        print(f"[Coaching Telegram Import] Gemini analysis complete")
-
-        # Save corpus_id to TelegramDownload for persistent storage
-        corpus_id = analysis.get("corpus_id")
-        if corpus_id:
-            download.gemini_corpus_id = corpus_id
-            db.commit()
-            print(f"[Coaching Telegram Import] Saved corpus ID to download: {corpus_id}")
-
-        # Create rich summary from analysis
-        summary_parts = [
-            f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)",
-            "",
-            f"**Summary:** {analysis.get('summary', 'Conversation analyzed.')}"
-        ]
-
-        # Add key themes
-        themes = analysis.get('recurring_themes', [])
-        if themes:
-            summary_parts.append("")
-            summary_parts.append("**Key Themes:**")
-            for theme in themes[:3]:  # Top 3 themes
-                theme_name = theme.get('theme', 'Unknown')
-                freq = theme.get('frequency', 'unknown')
-                summary_parts.append(f"• {theme_name} ({freq} frequency)")
-
-        summary_text = "\n".join(summary_parts)
-
-        # Create a turn with Telegram metadata and Gemini analysis
-        telegram_turn = Turn(
-            room_id=room_id,
-            user_id=current_user.id,
-            kind="telegram_import",
-            summary=summary_text,
-            context="pre_mediation",  # Coaching context
-            tags=["coaching", "telegram_import"],
-            text=str(payload.download_id),
-            metadata={
-                "gemini_analysis": analysis,
-                "chat_name": payload.chat_name,
-                "message_count": payload.message_count,
-                "download_id": payload.download_id
-            }
-        )
-        db.add(telegram_turn)
-        db.commit()
-        db.refresh(telegram_turn)
-
-        return {
-            "success": True,
-            "turn_id": telegram_turn.id,
-            "download_id": payload.download_id,
-            "analysis": analysis,
-            "message": "Telegram conversation analyzed and imported successfully"
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Coaching Telegram import error: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to import Telegram conversation: {str(e)}"
-        )
-
-
 @router.post("/{room_id}/main-room/voice-respond", response_model=MainRoomRespondResponse)
 async def voice_respond_main_room(
     room_id: int,
@@ -2302,6 +2168,139 @@ class TelegramImportRequest(BaseModel):
     download_id: int
     chat_name: str
     message_count: int
+
+@router.post("/{room_id}/coach/telegram-import")
+async def import_telegram_coaching(
+    room_id: int,
+    payload: TelegramImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Import a downloaded Telegram conversation into the coaching session.
+    Analyzes the conversation with Gemini and creates a turn with AI insights.
+    """
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    try:
+        # Get the Telegram download with messages
+        from app.models.telegram import TelegramDownload, TelegramMessage
+        from app.services.gemini_rag_service import GeminiRAGService
+
+        download = db.query(TelegramDownload).filter(
+            TelegramDownload.id == payload.download_id,
+            TelegramDownload.user_id == current_user.id,
+            TelegramDownload.status == "completed"
+        ).first()
+
+        if not download:
+            raise HTTPException(status_code=404, detail="Download not found or not completed")
+
+        # For coaching, the user is sharing their conversation with the other person
+        # We'll use the user's name and "Other Person" as a placeholder
+        user1_name = current_user.name or "You"
+        user2_name = "Other Person"  # We don't know who the other person is in coaching phase
+
+        # Get messages for analysis
+        messages = db.query(TelegramMessage).filter(
+            TelegramMessage.download_id == payload.download_id
+        ).order_by(TelegramMessage.date.asc()).all()
+
+        # Convert to dict format for Gemini
+        message_dicts = [
+            {
+                "id": msg.id,
+                "from_me": msg.from_me,
+                "text": msg.text or "[Media]",
+                "timestamp": msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else "Unknown",
+                "sender_name": msg.sender_name or (user1_name if msg.from_me else user2_name)
+            }
+            for msg in messages
+        ]
+
+        # Analyze with Gemini (async) - Creates persistent corpus for future retrieval
+        gemini_service = GeminiRAGService()
+        print(f"[Coaching Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
+
+        analysis = await gemini_service.analyze_telegram_history(
+            messages=message_dicts,
+            user1_name=user1_name,
+            user2_name=user2_name,
+            room_id=room_id,
+            download_id=payload.download_id
+        )
+
+        print(f"[Coaching Telegram Import] Gemini analysis complete")
+
+        # Save corpus_id to TelegramDownload for persistent storage
+        corpus_id = analysis.get("corpus_id")
+        if corpus_id:
+            download.gemini_corpus_id = corpus_id
+            db.commit()
+            print(f"[Coaching Telegram Import] Saved corpus ID to download: {corpus_id}")
+
+        # Create rich summary from analysis
+        summary_parts = [
+            f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)",
+            "",
+            f"**Summary:** {analysis.get('summary', 'Conversation analyzed.')}"
+        ]
+
+        # Add key themes
+        themes = analysis.get('recurring_themes', [])
+        if themes:
+            summary_parts.append("")
+            summary_parts.append("**Key Themes:**")
+            for theme in themes[:3]:  # Top 3 themes
+                theme_name = theme.get('theme', 'Unknown')
+                freq = theme.get('frequency', 'unknown')
+                summary_parts.append(f"• {theme_name} ({freq} frequency)")
+
+        summary_text = "\n".join(summary_parts)
+
+        # Create a turn with Telegram metadata and Gemini analysis
+        telegram_turn = Turn(
+            room_id=room_id,
+            user_id=current_user.id,
+            kind="telegram_import",
+            summary=summary_text,
+            context="pre_mediation",  # Coaching context
+            tags=["coaching", "telegram_import"],
+            text=str(payload.download_id),
+            metadata={
+                "gemini_analysis": analysis,
+                "chat_name": payload.chat_name,
+                "message_count": payload.message_count,
+                "download_id": payload.download_id
+            }
+        )
+        db.add(telegram_turn)
+        db.commit()
+        db.refresh(telegram_turn)
+
+        return {
+            "success": True,
+            "turn_id": telegram_turn.id,
+            "download_id": payload.download_id,
+            "analysis": analysis,
+            "message": "Telegram conversation analyzed and imported successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Coaching Telegram import error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to import Telegram conversation: {str(e)}"
+        )
 
 @router.post("/{room_id}/main-room/telegram-import")
 async def import_telegram_conversation(
