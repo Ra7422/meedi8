@@ -230,12 +230,21 @@ class TelegramService:
                 logger.info(f"📊 Processing {len(filters_list)} filters")
 
                 # Build folder_names and peer_to_folder mapping
-                for folder_filter in filters_list:
+                # Also track folder order for proper sorting
+                folder_order = {}  # folder_id → order/position
+
+                for idx, folder_filter in enumerate(filters_list):
                     # Only include custom folders (DialogFilter) created by user
                     if isinstance(folder_filter, DialogFilter):
                         # Extract text from TextWithEntities object
                         title_text = folder_filter.title.text if hasattr(folder_filter.title, 'text') else str(folder_filter.title)
                         folder_names[folder_filter.id] = title_text
+
+                        # Store the order (use index from filters_list as fallback)
+                        order = getattr(folder_filter, 'order', idx)
+                        folder_order[folder_filter.id] = order
+                        print(f"📁 Folder '{title_text}' (id={folder_filter.id}) order={order}")
+                        logger.info(f"📁 Folder '{title_text}' (id={folder_filter.id}) order={order}")
 
                         # Build peer → folder mapping from include_peers
                         if hasattr(folder_filter, 'include_peers') and folder_filter.include_peers:

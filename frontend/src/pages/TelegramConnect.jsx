@@ -146,9 +146,9 @@ export default function TelegramConnect() {
 
       setContacts(newContacts);
 
-      // Use folders from API response instead of extracting from contacts
+      // Use folders from API response - keep the order from Telegram API
       if (newFolders.length > 0) {
-        setAvailableFolders(newFolders.sort((a, b) => a.name.localeCompare(b.name)));
+        setAvailableFolders(newFolders);  // Don't sort - preserve Telegram's original order
       }
 
       // If we got fewer contacts than requested, there are no more
