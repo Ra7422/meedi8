@@ -5,6 +5,8 @@ import { apiRequest, API_URL } from "../api/client";
 import VoiceRecorder from "../components/VoiceRecorder";
 import FloatingMenu from "../components/FloatingMenu";
 import SimpleBreathing from "../components/SimpleBreathing";
+import AttachmentMenu from "../components/AttachmentMenu";
+import TelegramImportModal from "../components/TelegramImportModal";
 
 export default function MainRoom() {
   const { roomId } = useParams();
@@ -23,8 +25,8 @@ export default function MainRoom() {
   const [breakInfo, setBreakInfo] = useState(null);  // Track who requested the break
   const [otherUserPresent, setOtherUserPresent] = useState(false);  // Is other user in the room?
   const [uploadingFile, setUploadingFile] = useState(false);  // Track file upload state
+  const [showTelegramImport, setShowTelegramImport] = useState(false);  // Telegram import modal
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);  // Reference for hidden file input
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -341,8 +343,7 @@ export default function MainRoom() {
     }
   };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = async (file) => {
     if (!file) return;
 
     // Validate file size (10MB max)
@@ -403,16 +404,40 @@ export default function MainRoom() {
       setMessages(messagesWithSummary);
       setCurrentSpeakerId(history.current_speaker_id);
       setSessionComplete(history.session_complete);
-
-      // Clear file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } catch (error) {
       console.error("File upload error:", error);
       alert("File upload failed: " + error.message);
     } finally {
       setUploadingFile(false);
+    }
+  };
+
+  const handleTelegramImport = () => {
+    setShowTelegramImport(true);
+  };
+
+  const handleTelegramImportComplete = async () => {
+    // Refresh messages after import
+    try {
+      const history = await apiRequest(`/rooms/${roomId}/main-room/messages`, "GET", null, token);
+      const isUser1 = user.id === summaries.user1_id;
+      const otherUserSummary = isUser1 ? summaries.user2_summary : summaries.user1_summary;
+      const otherUserName = isUser1 ? summaries.user2_name : summaries.user1_name;
+
+      const messagesWithSummary = [
+        {
+          role: "summary",
+          content: otherUserSummary,
+          fromUser: otherUserName
+        },
+        ...history.messages
+      ];
+
+      setMessages(messagesWithSummary);
+      setCurrentSpeakerId(history.current_speaker_id);
+      setSessionComplete(history.session_complete);
+    } catch (error) {
+      console.error("Failed to refresh messages:", error);
     }
   };
 
@@ -960,30 +985,13 @@ export default function MainRoom() {
             </button>
 
             <div className="main-input-container">
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
+              {/* Attachment menu (file upload + Telegram import) */}
+              <AttachmentMenu
+                onFileSelect={handleFileUpload}
+                onTelegramImport={handleTelegramImport}
+                disabled={!isMyTurn || sending}
+                uploading={uploadingFile}
               />
-
-              {/* Plus icon for file upload */}
-              <button
-                className="icon-button"
-                title="Upload evidence (images, documents)"
-                disabled={!isMyTurn || sending || uploadingFile}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {uploadingFile ? (
-                  <span style={{ fontSize: "16px" }}>⏳</span>
-                ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                  </svg>
-                )}
-              </button>
 
               {/* Input field with microphone inside */}
               <div className="input-wrapper">
@@ -1160,6 +1168,14 @@ export default function MainRoom() {
           </div>
         </div>
       )}
+
+      {/* Telegram Import Modal */}
+      <TelegramImportModal
+        isOpen={showTelegramImport}
+        onClose={() => setShowTelegramImport(false)}
+        onImportComplete={handleTelegramImportComplete}
+        roomId={roomId}
+      />
     </div>
   );
 }

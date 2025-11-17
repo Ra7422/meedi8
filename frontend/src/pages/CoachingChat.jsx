@@ -7,6 +7,8 @@ import FileUpload from "../components/FileUpload";
 import SimpleBreathing from "../components/SimpleBreathing";
 import ShareButtons from "../components/ShareButtons";
 import FloatingMenu from "../components/FloatingMenu";
+import AttachmentMenu from "../components/AttachmentMenu";
+import TelegramImportModal from "../components/TelegramImportModal";
 
 export default function CoachingChat() {
   const { roomId } = useParams();
@@ -27,6 +29,7 @@ export default function CoachingChat() {
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [hasShared, setHasShared] = useState(false);  // Track if user has shared the link
   const [showSummaryPopup, setShowSummaryPopup] = useState(false);  // For User 2 summary popup
+  const [showTelegramImport, setShowTelegramImport] = useState(false);  // Telegram import modal
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -588,31 +591,16 @@ export default function CoachingChat() {
 
       {!finalized && (
         <div className="input-container">
-          {/* Plus icon for file upload */}
-          <button
-            onClick={() => document.getElementById('file-input-coaching').click()}
-            disabled={sending || uploadingFiles}
-            className="icon-button"
-            title="Upload evidence"
-            style={{ color: "#7DD3C0" }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-          </button>
-          <input
-            id="file-input-coaching"
-            type="file"
-            accept="image/*,.pdf,.doc,.docx,.txt"
-            multiple
-            onChange={(e) => {
-              const files = Array.from(e.target.files || []);
-              if (files.length > 0) {
-                handleFileSelect(files);
-              }
-              e.target.value = "";
+          {/* Attachment menu (file upload + Telegram import) */}
+          <AttachmentMenu
+            onFileSelect={(file) => {
+              // Convert single file to array for consistency with existing handler
+              const files = [file];
+              handleFileSelect(files);
             }}
-            style={{ display: "none" }}
+            onTelegramImport={() => setShowTelegramImport(true)}
+            disabled={sending}
+            uploading={uploadingFiles}
           />
 
           {/* Input field with microphone inside */}
@@ -1261,6 +1249,18 @@ export default function CoachingChat() {
           </div>
         </div>
       )}
+
+      {/* Telegram Import Modal */}
+      <TelegramImportModal
+        isOpen={showTelegramImport}
+        onClose={() => setShowTelegramImport(false)}
+        onImportComplete={async () => {
+          // Refresh messages after import
+          const history = await apiRequest(`/rooms/${roomId}/coach/turns`, "GET", null, token);
+          setMessages(history.messages || []);
+        }}
+        roomId={roomId}
+      />
     </div>
   );
 }

@@ -1,0 +1,184 @@
+import React, { useState, useRef, useEffect } from "react";
+
+/**
+ * AttachmentMenu - Dropdown menu for file uploads and imports
+ *
+ * Props:
+ * - onFileSelect: function(file) - Callback when file is selected
+ * - onTelegramImport: function() - Callback when Telegram import is clicked
+ * - disabled: boolean - Whether the menu is disabled
+ * - uploading: boolean - Whether a file is currently uploading
+ */
+export default function AttachmentMenu({
+  onFileSelect,
+  onTelegramImport,
+  disabled = false,
+  uploading = false
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+  const fileInputRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showMenu]);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file && onFileSelect) {
+      onFileSelect(file);
+      setShowMenu(false);
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleTelegramClick = () => {
+    if (onTelegramImport) {
+      onTelegramImport();
+    }
+    setShowMenu(false);
+  };
+
+  return (
+    <div ref={menuRef} style={{ position: "relative" }}>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf,.doc,.docx,.txt"
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
+
+      {/* Plus button */}
+      <button
+        className="icon-button"
+        title="Add attachment"
+        disabled={disabled || uploading}
+        onClick={() => setShowMenu(!showMenu)}
+        style={{
+          background: "none",
+          border: "none",
+          color: "#7DD3C0",
+          cursor: disabled || uploading ? "not-allowed" : "pointer",
+          padding: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minWidth: "40px",
+          minHeight: "40px",
+          borderRadius: "50%",
+          transition: "background 0.2s",
+          opacity: disabled || uploading ? 0.3 : 1
+        }}
+      >
+        {uploading ? (
+          <span style={{ fontSize: "16px" }}>⏳</span>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Dropdown menu */}
+      {showMenu && (
+        <div style={{
+          position: "absolute",
+          bottom: "100%",
+          left: "0",
+          marginBottom: "8px",
+          background: "white",
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          minWidth: "220px",
+          zIndex: 1000,
+          overflow: "hidden",
+          border: "1px solid #e5e7eb"
+        }}>
+          {/* Upload from device */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              width: "100%",
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "15px",
+              color: "#000",
+              transition: "background 0.2s",
+              textAlign: "left"
+            }}
+            onMouseEnter={(e) => e.target.style.background = "#f3f4f6"}
+            onMouseLeave={(e) => e.target.style.background = "none"}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Upload from Device</span>
+          </button>
+
+          {/* Divider */}
+          <div style={{
+            height: "1px",
+            background: "#e5e7eb",
+            margin: "0 8px"
+          }} />
+
+          {/* Import from Telegram */}
+          <button
+            onClick={handleTelegramClick}
+            style={{
+              width: "100%",
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "15px",
+              color: "#0088CC",
+              transition: "background 0.2s",
+              textAlign: "left"
+            }}
+            onMouseEnter={(e) => e.target.style.background = "#f0f9ff"}
+            onMouseLeave={(e) => e.target.style.background = "none"}
+          >
+            {/* Telegram icon */}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161l-1.563 7.359c-.117.541-.428.676-.864.421l-2.39-1.76-1.151 1.107c-.128.128-.236.236-.485.236l.173-2.447 4.476-4.047c.195-.173-.043-.27-.301-.098l-5.533 3.484-2.386-.747c-.521-.162-.531-.521.109-.771l9.338-3.605c.436-.162.817.098.677.768z"/>
+            </svg>
+            <div>
+              <div style={{ fontWeight: "600" }}>Import from Telegram</div>
+              <div style={{ fontSize: "12px", color: "#8A8A8F", marginTop: "2px" }}>
+                Browse your chats
+              </div>
+            </div>
+          </button>
+
+          {/* Future: More import options can be added here */}
+        </div>
+      )}
+    </div>
+  );
+}
