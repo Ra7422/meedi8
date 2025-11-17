@@ -221,10 +221,8 @@ def check_room_creation_limit(user_id: int, db: Session) -> dict:
     Raises:
         HTTPException: 402 Payment Required if limit exceeded
     """
-    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-
-    if not subscription:
-        raise HTTPException(status_code=500, detail="Subscription not found")
+    # Auto-create FREE subscription if user doesn't have one (defensive programming)
+    subscription = get_or_create_subscription(db, user_id)
 
     # Reset counters if needed
     check_and_reset_monthly_counters(subscription, db)
@@ -265,10 +263,9 @@ def check_room_creation_limit(user_id: int, db: Session) -> dict:
 
 def increment_room_counter(user_id: int, db: Session) -> None:
     """Increment the room creation counter after successful room creation"""
-    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-    if subscription:
-        subscription.rooms_created_this_month += 1
-        db.commit()
+    subscription = get_or_create_subscription(db, user_id)
+    subscription.rooms_created_this_month += 1
+    db.commit()
 
 
 def check_file_upload_allowed(user_id: int, file_size_bytes: int, db: Session) -> dict:
@@ -278,10 +275,8 @@ def check_file_upload_allowed(user_id: int, file_size_bytes: int, db: Session) -
     Raises:
         HTTPException: 402 if file uploads not allowed or 413 if file too large
     """
-    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-
-    if not subscription:
-        raise HTTPException(status_code=500, detail="Subscription not found")
+    # Auto-create FREE subscription if user doesn't have one (defensive programming)
+    subscription = get_or_create_subscription(db, user_id)
 
     limits = get_tier_limits(subscription.tier)
     file_upload_enabled = limits["file_upload_enabled"]
@@ -333,10 +328,8 @@ def check_report_generation_limit(user_id: int, db: Session) -> dict:
     Raises:
         HTTPException: 402 Payment Required if limit exceeded or feature not available
     """
-    subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
-
-    if not subscription:
-        raise HTTPException(status_code=500, detail="Subscription not found")
+    # Auto-create FREE subscription if user doesn't have one (defensive programming)
+    subscription = get_or_create_subscription(db, user_id)
 
     # Reset counters if needed
     check_and_reset_monthly_counters(subscription, db)
