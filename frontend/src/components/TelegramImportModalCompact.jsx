@@ -40,6 +40,9 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [previewChatId, setPreviewChatId] = useState(null);
+  const [previewMessages, setPreviewMessages] = useState([]);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -187,6 +190,36 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
       onImportComplete(downloadedMessages);
     }
     onClose();
+  };
+
+  const handlePreviewMessages = async (chatId, chatName, e) => {
+    e.stopPropagation(); // Prevent selecting the chat
+
+    if (previewChatId === chatId) {
+      // Close preview if already open
+      setPreviewChatId(null);
+      setPreviewMessages([]);
+      return;
+    }
+
+    setLoadingPreview(true);
+    setPreviewChatId(chatId);
+    setPreviewMessages([]);
+
+    try {
+      const response = await apiRequest(
+        `/telegram/messages/preview?chat_id=${chatId}&limit=20`,
+        "GET",
+        null,
+        token
+      );
+      setPreviewMessages(response.messages || []);
+    } catch (err) {
+      setError(`Failed to load preview: ${err.message}`);
+      setPreviewChatId(null);
+    } finally {
+      setLoadingPreview(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -460,25 +493,98 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
               </div>
             ) : (
               contacts.map(contact => (
-                <div
-                  key={contact.id}
-                  onClick={() => setSelectedChat(contact)}
-                  style={{
-                    padding: "10px",
-                    background: selectedChat?.id === contact.id ? "#e0f2fe" : "white",
-                    border: `1px solid ${selectedChat?.id === contact.id ? "#0088CC" : "#e5e7eb"}`,
-                    borderRadius: "6px",
-                    marginBottom: "8px",
-                    cursor: "pointer",
-                    fontSize: "12px"
-                  }}
-                >
-                  <div style={{ fontWeight: "600", color: "#1a202c", marginBottom: "2px" }}>
-                    {contact.name}
+                <div key={contact.id}>
+                  <div
+                    onClick={() => setSelectedChat(contact)}
+                    style={{
+                      padding: "10px",
+                      background: selectedChat?.id === contact.id ? "#e0f2fe" : "white",
+                      border: `1px solid ${selectedChat?.id === contact.id ? "#0088CC" : "#e5e7eb"}`,
+                      borderRadius: "6px",
+                      marginBottom: previewChatId === contact.id ? "0" : "8px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderBottomLeftRadius: previewChatId === contact.id ? "0" : "6px",
+                      borderBottomRightRadius: previewChatId === contact.id ? "0" : "6px"
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: "600", color: "#1a202c", marginBottom: "2px" }}>
+                        {contact.name}
+                      </div>
+                      {contact.folder_name && (
+                        <div style={{ fontSize: "10px", color: "#6b7280" }}>
+                          📁 {contact.folder_name}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => handlePreviewMessages(contact.id, contact.name, e)}
+                      style={{
+                        background: previewChatId === contact.id ? "#0088CC" : "#f3f4f6",
+                        border: "none",
+                        borderRadius: "4px",
+                        width: "28px",
+                        height: "28px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        transition: "all 0.2s"
+                      }}
+                      title="Preview messages"
+                    >
+                      {loadingPreview && previewChatId === contact.id ? "⏳" : "👁"}
+                    </button>
                   </div>
-                  {contact.folder_name && (
-                    <div style={{ fontSize: "10px", color: "#6b7280" }}>
-                      📁 {contact.folder_name}
+
+                  {/* Message Preview Dropdown */}
+                  {previewChatId === contact.id && (
+                    <div style={{
+                      background: "#fafafa",
+                      border: "1px solid #e5e7eb",
+                      borderTop: "none",
+                      borderBottomLeftRadius: "6px",
+                      borderBottomRightRadius: "6px",
+                      padding: "8px",
+                      marginBottom: "8px",
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      fontSize: "10px"
+                    }}>
+                      {loadingPreview ? (
+                        <div style={{ textAlign: "center", padding: "10px", color: "#8A8A8F" }}>
+                          Loading messages...
+                        </div>
+                      ) : previewMessages.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "10px", color: "#8A8A8F" }}>
+                          No messages found
+                        </div>
+                      ) : (
+                        previewMessages.map((msg, idx) => (
+                          <div key={idx} style={{
+                            padding: "6px",
+                            background: "white",
+                            borderRadius: "4px",
+                            marginBottom: "4px",
+                            borderLeft: `2px solid ${msg.is_outgoing ? "#0088CC" : "#6b7280"}`
+                          }}>
+                            <div style={{ fontWeight: "600", color: "#1a202c", marginBottom: "2px", fontSize: "10px" }}>
+                              {msg.sender_name}
+                            </div>
+                            <div style={{ color: "#6b7280", fontSize: "9px", marginBottom: "2px" }}>
+                              {new Date(msg.date).toLocaleDateString()}
+                            </div>
+                            <div style={{ color: "#374151", fontSize: "10px" }}>
+                              {msg.text_preview}
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>

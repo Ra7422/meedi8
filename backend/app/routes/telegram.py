@@ -701,6 +701,21 @@ async def preview_messages(
         )
 
 
+@router.get("/downloads/{download_id}", response_model=DownloadStatusResponse)
+async def get_download_status_plural(
+    download_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Check status of a chat download (plural alias for /download/{id}).
+
+    Returns download progress including status, message count, and chat name.
+    Authorization: Only the user who initiated the download can check its status.
+    """
+    return await get_download_status(download_id, current_user, db)
+
+
 @router.get("/downloads/{download_id}/messages", response_model=DownloadedMessagesResponse)
 async def get_download_messages(
     download_id: int,
