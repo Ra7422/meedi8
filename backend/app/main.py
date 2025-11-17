@@ -1,8 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+import logging
+
+# Configure logger to show startup
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Clean Air API", version="0.4.0")
+
+# DEPLOYMENT MARKER - FIX v3 BUILD
+logger.info("=" * 80)
+logger.info("🚀 DEPLOYMENT FIX v3 - Nov 17 2025 10:22 UTC")
+logger.info("=" * 80)
 
 app.add_middleware(
     CORSMiddleware,
