@@ -710,85 +710,26 @@ export default function TelegramConnect() {
                     }}>
                       {chat.name.split(' (@')[0]}
                     </h3>
-                    {chat.name.includes('@') && (
-                      <div style={{
-                        fontSize: "12px",
-                        color: "#a0a0a0",
-                        fontWeight: "400",
-                        marginBottom: "4px"
-                      }}>
-                        @{chat.name.split('@')[1].replace(')', '')}
-                      </div>
-                    )}
                     <div style={{
+                      fontSize: "12px",
+                      color: "#a0a0a0",
+                      fontWeight: "400",
+                      marginBottom: "4px",
                       display: "flex",
-                      gap: "8px",
-                      fontSize: "13px",
-                      color: "#8A8A8F",
-                      flexWrap: "wrap"
+                      alignItems: "center",
+                      gap: "6px"
                     }}>
                       <span>
                         {chat.type === 'user' ? '👤' :
                          chat.type === 'group' ? '👥' :
                          chat.type === 'supergroup' ? '👥' :
                          '📢'}
-                        {' '}
-                        {chat.type === 'supergroup' ? 'group' : chat.type}
                       </span>
-                      {chat.unread_count > 0 && (
-                        <span style={{
-                          background: "#DBEAFE",
-                          color: "#1E40AF",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontWeight: "600"
-                        }}>
-                          💬 {chat.unread_count} unread
-                        </span>
+                      {chat.name.includes('@') && (
+                        <span>@{chat.name.split('@')[1].replace(')', '')}</span>
                       )}
                       {chat.pinned && (
-                        <span style={{
-                          background: "#FEF9C3",
-                          color: "#854D0E",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontWeight: "600"
-                        }}>
-                          ⭐ Pinned
-                        </span>
-                      )}
-                      {chat.folder_name && (
-                        <span style={{
-                          background: "#F3F4F6",
-                          color: "#4B5563",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontWeight: "500"
-                        }}>
-                          📁 {chat.folder_name}
-                        </span>
-                      )}
-                      {chat.archived && (
-                        <span style={{
-                          background: "#FEF3C7",
-                          color: "#92400E",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontWeight: "500"
-                        }}>
-                          📦 Archived
-                        </span>
-                      )}
-                      {chat.unread_count > 0 && (
-                        <span style={{
-                          background: "#0088CC",
-                          color: "white",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontWeight: "600"
-                        }}>
-                          {chat.unread_count} unread
-                        </span>
+                        <span style={{ fontSize: "14px" }}>📌</span>
                       )}
                     </div>
                   </div>
