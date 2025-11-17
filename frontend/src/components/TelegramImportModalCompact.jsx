@@ -186,7 +186,12 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   };
 
   const handleViewInChat = () => {
+    console.log("[TelegramModal] Discuss clicked");
+    console.log("[TelegramModal] onImportComplete:", !!onImportComplete);
+    console.log("[TelegramModal] downloadedMessages:", downloadedMessages);
+
     if (onImportComplete && downloadedMessages) {
+      console.log("[TelegramModal] Calling onImportComplete with data");
       // Pass the full download data to parent
       onImportComplete({
         download_id: downloadedMessages.download_id,
@@ -195,6 +200,8 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         message_count: downloadedMessages.message_count,
         messages: downloadedMessages.messages
       });
+    } else {
+      console.error("[TelegramModal] Cannot proceed - missing data or callback");
     }
     // Modal will be closed by parent after backend processing
   };

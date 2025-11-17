@@ -418,11 +418,13 @@ export default function MainRoom() {
 
   const handleTelegramImportComplete = async (telegramData) => {
     // Send Telegram import to backend for analysis
+    console.log("[MainRoom] handleTelegramImportComplete called with:", telegramData);
     try {
       setSending(true);
 
       // Close modal immediately and show thinking messages
       setShowTelegramImport(false);
+      console.log("[MainRoom] Modal closed, starting thinking messages");
 
       // Add thinking messages
       const thinkingMessages = [
