@@ -432,6 +432,15 @@ class TelegramService:
         db.refresh(download)
 
         try:
+            # Populate entity cache by calling get_dialogs() once
+            try:
+                logger.info("Populating entity cache with get_dialogs() for download")
+                await client.get_dialogs(limit=1)
+                logger.info("Entity cache populated successfully")
+            except Exception as e:
+                logger.warning(f"Could not populate entity cache: {e}")
+                # Continue anyway - get_entity will try to fetch
+
             # Get chat entity
             entity = await client.get_entity(chat_id)
 
@@ -602,6 +611,7 @@ class TelegramService:
 
             messages = []
             message_count = 0
+            has_more = False  # Initialize has_more before the loop
 
             # Fetch messages in reverse chronological order (newest first)
             # Use limit+1 to check if there are more messages
