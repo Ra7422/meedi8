@@ -663,48 +663,48 @@ class TelegramService:
                         logger.info(f"📊 Got {message_count} messages (limit was {limit}), has_more={has_more}")
                         break
 
-                # Get sender name
-                if message.out:
-                    # Message sent by the user
-                    sender_name = "You"
-                elif message.sender:
-                    # Try to get sender's name
-                    if hasattr(message.sender, 'first_name'):
-                        sender_name = message.sender.first_name or "Unknown"
-                        if hasattr(message.sender, 'last_name') and message.sender.last_name:
-                            sender_name += f" {message.sender.last_name}"
-                    elif hasattr(message.sender, 'title'):
-                        sender_name = message.sender.title or "Unknown"
+                    # Get sender name
+                    if message.out:
+                        # Message sent by the user
+                        sender_name = "You"
+                    elif message.sender:
+                        # Try to get sender's name
+                        if hasattr(message.sender, 'first_name'):
+                            sender_name = message.sender.first_name or "Unknown"
+                            if hasattr(message.sender, 'last_name') and message.sender.last_name:
+                                sender_name += f" {message.sender.last_name}"
+                        elif hasattr(message.sender, 'title'):
+                            sender_name = message.sender.title or "Unknown"
+                        else:
+                            sender_name = "Unknown"
                     else:
                         sender_name = "Unknown"
-                else:
-                    sender_name = "Unknown"
 
-                # Get text preview (first 100 chars)
-                text_preview = ""
-                if message.text:
-                    text_preview = message.text[:100]
-                elif message.media:
-                    # For media messages, show media type
-                    if hasattr(message.media, '__class__'):
-                        media_type = message.media.__class__.__name__.replace('MessageMedia', '')
-                        text_preview = f"[{media_type}]"
+                    # Get text preview (first 100 chars)
+                    text_preview = ""
+                    if message.text:
+                        text_preview = message.text[:100]
+                    elif message.media:
+                        # For media messages, show media type
+                        if hasattr(message.media, '__class__'):
+                            media_type = message.media.__class__.__name__.replace('MessageMedia', '')
+                            text_preview = f"[{media_type}]"
+                        else:
+                            text_preview = "[Media]"
                     else:
-                        text_preview = "[Media]"
+                        text_preview = "[No content]"
+
+                    messages.append({
+                        "id": message.id,
+                        "date": message.date.isoformat(),
+                        "sender_name": sender_name,
+                        "text_preview": text_preview,
+                        "is_outgoing": message.out
+                    })
+
                 else:
-                    text_preview = "[No content]"
-
-                messages.append({
-                    "id": message.id,
-                    "date": message.date.isoformat(),
-                    "sender_name": sender_name,
-                    "text_preview": text_preview,
-                    "is_outgoing": message.out
-                })
-
-            else:
-                # Loop completed without break - no more messages
-                has_more = False
+                    # Loop completed without break - no more messages
+                    has_more = False
 
             except ChatAdminRequiredError:
                 logger.error(f"Admin permissions required for chat {chat_id}")
