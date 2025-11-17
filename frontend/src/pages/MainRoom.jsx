@@ -421,6 +421,38 @@ export default function MainRoom() {
     try {
       setSending(true);
 
+      // Close modal immediately and show thinking messages
+      setShowTelegramImport(false);
+
+      // Add thinking messages
+      const thinkingMessages = [
+        "Let me take a look at what you've shared...",
+        "Hmm...",
+        "Ok...",
+        "Yep...",
+        "Ok...",
+        "Hmm...",
+        "Yes...",
+        "Ok...",
+        "One sec...",
+        "Right..."
+      ];
+
+      // Show thinking messages progressively (every 1.5 seconds)
+      const thinkingInterval = setInterval(() => {
+        if (thinkingMessages.length > 0) {
+          const msg = thinkingMessages.shift();
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: msg,
+            isThinking: true,
+            timestamp: new Date().toISOString()
+          }]);
+        } else {
+          clearInterval(thinkingInterval);
+        }
+      }, 1500);
+
       const response = await apiRequest(
         `/rooms/${roomId}/main-room/telegram-import`,
         "POST",
@@ -431,6 +463,12 @@ export default function MainRoom() {
         },
         token
       );
+
+      // Clear thinking interval
+      clearInterval(thinkingInterval);
+
+      // Remove thinking messages
+      setMessages(prev => prev.filter(m => !m.isThinking));
 
       // Refresh messages to include the new import
       const history = await apiRequest(`/rooms/${roomId}/main-room/messages`, "GET", null, token);
@@ -451,6 +489,8 @@ export default function MainRoom() {
       setCurrentSpeakerId(history.current_speaker_id);
       setSessionComplete(history.session_complete);
     } catch (error) {
+      // Remove thinking messages on error
+      setMessages(prev => prev.filter(m => !m.isThinking));
       console.error("Failed to import Telegram conversation:", error);
       setError(error.message || "Failed to import conversation");
     } finally {

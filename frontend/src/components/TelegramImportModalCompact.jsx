@@ -196,7 +196,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         messages: downloadedMessages.messages
       });
     }
-    onClose();
+    // Modal will be closed by parent after backend processing
   };
 
   const handlePreviewMessages = async (chatId, chatName, e) => {
