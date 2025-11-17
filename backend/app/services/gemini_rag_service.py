@@ -61,16 +61,21 @@ class GeminiRAGService:
         messages: List[Dict],
         user1_name: str,
         user2_name: str,
-        room_id: int
+        room_id: int,
+        download_id: int
     ) -> Dict:
         """
         Analyze Telegram conversation history using File Search.
+
+        IMPORTANT: This method now stores files PERSISTENTLY in Gemini for future retrieval.
+        The corpus_id is returned and should be saved to TelegramDownload.gemini_corpus_id
 
         Args:
             messages: List of {id, from_me, text, timestamp, sender_name}
             user1_name: Name of user who uploaded messages
             user2_name: Name of other participant
             room_id: Meedi8 room identifier
+            download_id: TelegramDownload ID for tracking
 
         Returns:
             {
@@ -79,34 +84,44 @@ class GeminiRAGService:
                 "communication_patterns": {...},
                 "emotional_triggers": {...},
                 "positive_moments": [...],
-                "key_conflicts": [...]
+                "key_conflicts": [...],
+                "corpus_id": "Gemini corpus ID for persistent storage"
             }
         """
         print(f"[Gemini RAG] Analyzing {len(messages)} Telegram messages for room {room_id}")
 
+        corpus_id = None
+        temp_path = None
+
         try:
-            # 1. Format messages into uploadable document
+            # 1. Create corpus for persistent storage
+            corpus_name = f"meedi8_room_{room_id}_download_{download_id}"
+            print(f"[Gemini RAG] Creating corpus: {corpus_name}")
+
+            corpus = genai.create_corpus(display_name=corpus_name)
+            corpus_id = corpus.name
+            print(f"[Gemini RAG] Corpus created: {corpus_id}")
+
+            # 2. Format messages into uploadable document
             formatted_text = self._format_telegram_messages(
                 messages=messages,
                 user1_name=user1_name,
                 user2_name=user2_name
             )
 
-            # 2. Save temporarily
+            # 3. Save temporarily
             temp_path = f"/tmp/telegram_{room_id}_{datetime.now().timestamp()}.txt"
             with open(temp_path, 'w', encoding='utf-8') as f:
                 f.write(formatted_text)
 
-            # 3. Upload to Gemini Files API
-            print(f"[Gemini RAG] Uploading file to Gemini...")
+            # 4. Upload to corpus (persistent storage)
+            print(f"[Gemini RAG] Uploading file to corpus...")
             telegram_file = genai.upload_file(
                 path=temp_path,
                 display_name=f"Telegram History - Room {room_id}"
             )
 
-            print(f"[Gemini RAG] File uploaded: {telegram_file.name}")
-
-            # 4. Wait for processing
+            # 5. Wait for processing
             while telegram_file.state.name == "PROCESSING":
                 await asyncio.sleep(2)
                 telegram_file = genai.get_file(telegram_file.name)
@@ -114,9 +129,18 @@ class GeminiRAGService:
             if telegram_file.state.name == "FAILED":
                 raise Exception("File processing failed")
 
-            print(f"[Gemini RAG] File processed successfully")
+            # 6. Add file to corpus for persistent indexing
+            print(f"[Gemini RAG] Creating document in corpus...")
+            document = genai.create_document(
+                corpus_name=corpus_id,
+                display_name=f"Telegram Conversation",
+                source_file=telegram_file.name
+            )
 
-            # 5. Create analysis prompt
+            print(f"[Gemini RAG] Document created in corpus: {document.name}")
+            print(f"[Gemini RAG] File will remain in Gemini for future retrieval")
+
+            # 7. Create analysis prompt with corpus query
             prompt = f"""Analyze this Telegram conversation between {user1_name} and {user2_name} who are about to enter mediation.
 
 They are having conflicts and need professional help. Provide deep insights to help their mediator (AI coach) guide them effectively.
@@ -178,11 +202,11 @@ Focus on:
 
 Be empathetic but objective. This analysis helps them resolve conflicts."""
 
-            # 6. Query with file context
-            print(f"[Gemini RAG] Generating analysis...")
+            # 8. Query corpus with file context
+            print(f"[Gemini RAG] Generating analysis from corpus...")
             response = self.model.generate_content([telegram_file, prompt])
 
-            # 7. Parse JSON response
+            # 9. Parse JSON response
             response_text = response.text.strip()
 
             # Remove markdown code blocks if present
@@ -212,13 +236,17 @@ Be empathetic but objective. This analysis helps them resolve conflicts."""
 
             print(f"[Gemini RAG] Analysis complete")
 
-            # 8. Clean up
+            # 10. Clean up temp file ONLY (keep file in Gemini corpus for future retrieval)
             try:
-                genai.delete_file(telegram_file.name)
-                os.remove(temp_path)
-                print(f"[Gemini RAG] Cleanup complete")
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
+                print(f"[Gemini RAG] Temp file cleanup complete")
+                print(f"[Gemini RAG] Corpus {corpus_id} and file persist in Gemini for future queries")
             except Exception as e:
                 print(f"[Gemini RAG] Cleanup warning: {e}")
+
+            # 11. Add corpus_id to analysis for storage in database
+            analysis["corpus_id"] = corpus_id
 
             return analysis
 
@@ -227,14 +255,15 @@ Be empathetic but objective. This analysis helps them resolve conflicts."""
             import traceback
             traceback.print_exc()
 
-            # Clean up on error
+            # Clean up on error (delete corpus and temp files)
             try:
-                if 'telegram_file' in locals():
-                    genai.delete_file(telegram_file.name)
-                if 'temp_path' in locals() and os.path.exists(temp_path):
+                if corpus_id:
+                    print(f"[Gemini RAG] Cleaning up corpus {corpus_id} due to error")
+                    genai.delete_corpus(corpus_id)
+                if temp_path and os.path.exists(temp_path):
                     os.remove(temp_path)
-            except:
-                pass
+            except Exception as cleanup_error:
+                print(f"[Gemini RAG] Cleanup error: {cleanup_error}")
 
             # Return minimal analysis on error
             return {
@@ -243,7 +272,8 @@ Be empathetic but objective. This analysis helps them resolve conflicts."""
                 "communication_patterns": {},
                 "emotional_triggers": {},
                 "positive_moments": [],
-                "key_conflicts": []
+                "key_conflicts": [],
+                "corpus_id": None
             }
 
     def _format_telegram_messages(

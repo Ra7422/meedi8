@@ -38,6 +38,7 @@ class TelegramDownload(Base):
     status = Column(String(50), server_default="pending")  # pending, processing, completed, failed
     error_message = Column(Text, nullable=True)  # Error details if failed
     transcript_url = Column(Text, nullable=True)  # S3 URL to formatted transcript
+    gemini_corpus_id = Column(String(500), nullable=True)  # Gemini File Search corpus ID for persistent storage
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)
     api_cost_usd = Column(Numeric(10, 6), server_default="0.00")  # Track API costs if AI analysis applied

@@ -2225,7 +2225,7 @@ async def import_telegram_conversation(
             for msg in messages
         ]
 
-        # Analyze with Gemini (async)
+        # Analyze with Gemini (async) - Creates persistent corpus for future retrieval
         gemini_service = GeminiRAGService()
         print(f"[Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
 
@@ -2233,10 +2233,18 @@ async def import_telegram_conversation(
             messages=message_dicts,
             user1_name=user1_name,
             user2_name=user2_name,
-            room_id=room_id
+            room_id=room_id,
+            download_id=payload.download_id
         )
 
         print(f"[Telegram Import] Gemini analysis complete")
+
+        # Save corpus_id to TelegramDownload for persistent storage
+        corpus_id = analysis.get("corpus_id")
+        if corpus_id:
+            download.gemini_corpus_id = corpus_id
+            db.commit()
+            print(f"[Telegram Import] Saved corpus ID to download: {corpus_id}")
 
         # Create rich summary from analysis
         summary_parts = [
