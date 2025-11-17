@@ -138,7 +138,8 @@ async def background_download_task(
     end_date: datetime,
     db: Session,
     user_id: int,
-    session_id: int
+    session_id: int,
+    download_id: int = None
 ):
     """Background task to download chat history."""
     try:
@@ -149,7 +150,8 @@ async def background_download_task(
             end_date=end_date,
             db=db,
             user_id=user_id,
-            session_id=session_id
+            session_id=session_id,
+            download_id=download_id  # Pass download ID to service
         )
     except Exception as e:
         # Log error - download status already updated in service
@@ -439,7 +441,8 @@ async def start_download(
                     end_date=end_date,
                     db=bg_db,
                     user_id=current_user.id,
-                    session_id=telegram_session.id
+                    session_id=telegram_session.id,
+                    download_id=download.id  # Pass existing download ID
                 )
             finally:
                 bg_db.close()

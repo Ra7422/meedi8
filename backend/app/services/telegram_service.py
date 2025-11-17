@@ -404,7 +404,8 @@ class TelegramService:
         end_date: datetime,
         db: Session,
         user_id: int,
-        session_id: int
+        session_id: int,
+        download_id: int = None
     ) -> int:
         """
         Download chat history for specified date range.
@@ -417,24 +418,33 @@ class TelegramService:
             db: Database session
             user_id: User ID for tracking
             session_id: TelegramSession ID
+            download_id: Existing TelegramDownload ID (optional, for updating existing record)
 
         Returns:
             TelegramDownload ID
         """
         client = await TelegramService.get_client_from_session(encrypted_session)
 
-        # Create download record
-        download = TelegramDownload(
-            user_id=user_id,
-            session_id=session_id,
-            chat_id=chat_id,
-            start_date=start_date,
-            end_date=end_date,
-            status="processing"
-        )
-        db.add(download)
-        db.commit()
-        db.refresh(download)
+        # Get existing download record or create new one
+        if download_id:
+            download = db.query(TelegramDownload).filter(TelegramDownload.id == download_id).first()
+            if not download:
+                raise ValueError(f"Download record {download_id} not found")
+            download.status = "processing"
+            db.commit()
+        else:
+            # Create download record (only if not provided)
+            download = TelegramDownload(
+                user_id=user_id,
+                session_id=session_id,
+                chat_id=chat_id,
+                start_date=start_date,
+                end_date=end_date,
+                status="processing"
+            )
+            db.add(download)
+            db.commit()
+            db.refresh(download)
 
         try:
             # Populate entity cache by calling get_dialogs() once
