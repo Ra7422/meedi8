@@ -186,6 +186,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   };
 
   const handleViewInChat = () => {
+    alert("DISCUSS BUTTON CLICKED!");  // Debug alert
     console.log("[TelegramModal] Discuss clicked");
     console.log("[TelegramModal] onImportComplete:", !!onImportComplete);
     console.log("[TelegramModal] downloadedMessages:", downloadedMessages);
