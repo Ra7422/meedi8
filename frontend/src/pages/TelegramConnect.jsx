@@ -5,7 +5,7 @@ import TelegramDateRangePicker from "../components/TelegramDateRangePicker";
 import TelegramDownloadStatus from "../components/TelegramDownloadStatus";
 import TelegramDownloadHistory from "../components/TelegramDownloadHistory";
 
-export default function TelegramConnect() {
+export default function TelegramConnect({ isModal = false, onComplete = null }) {
   const { token } = useAuth();
 
   // Step state
@@ -1163,6 +1163,13 @@ export default function TelegramConnect() {
         <div style={{ marginTop: "24px" }}>
           <TelegramDownloadStatus
             downloadId={downloadId}
+            onComplete={() => {
+              setDownloadId(null);
+              // If in modal mode and onComplete callback provided, call it
+              if (isModal && onComplete) {
+                onComplete();
+              }
+            }}
             onClose={() => setDownloadId(null)}
           />
         </div>
