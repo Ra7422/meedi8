@@ -15,7 +15,7 @@ from telethon import TelegramClient
 from ..db import get_db
 from ..deps import get_current_user
 from ..models.user import User
-from ..models.telegram import TelegramSession, TelegramDownload
+from ..models.telegram import TelegramSession, TelegramDownload, TelegramMessage
 from ..services.telegram_service import TelegramService
 
 router = APIRouter()
@@ -127,6 +127,27 @@ class DownloadHistoryItem(BaseModel):
 
 class DownloadHistoryResponse(BaseModel):
     downloads: list[DownloadHistoryItem]
+
+
+class DownloadedMessageItem(BaseModel):
+    id: int
+    message_id: int
+    sender_id: int
+    sender_name: str
+    date: str  # ISO datetime string
+    text: str
+    reply_to_message_id: Optional[int] = None
+    has_media: bool
+    media_type: Optional[str] = None
+    media_url: Optional[str] = None
+
+
+class DownloadedMessagesResponse(BaseModel):
+    download_id: int
+    chat_name: Optional[str] = None
+    chat_type: Optional[str] = None
+    message_count: int
+    messages: list[DownloadedMessageItem]
 
 
 # ===== Helper Functions =====
@@ -677,6 +698,82 @@ async def preview_messages(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch message preview: {str(e)}"
+        )
+
+
+@router.get("/downloads/{download_id}/messages", response_model=DownloadedMessagesResponse)
+async def get_download_messages(
+    download_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve all messages from a completed download.
+
+    Returns the messages in chronological order (oldest first) along with
+    download metadata (chat name, message count, etc.).
+
+    The user must own the download record to access the messages.
+    """
+    try:
+        # Get download record and verify ownership
+        download = db.query(TelegramDownload).filter(
+            TelegramDownload.id == download_id,
+            TelegramDownload.user_id == current_user.id
+        ).first()
+
+        if not download:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Download not found"
+            )
+
+        # Check if download is completed
+        if download.status != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Download is not completed (status: {download.status})"
+            )
+
+        # Get all messages for this download
+        messages = db.query(TelegramMessage).filter(
+            TelegramMessage.download_id == download_id
+        ).order_by(TelegramMessage.date.asc()).all()
+
+        # Convert to response format
+        message_items = [
+            DownloadedMessageItem(
+                id=msg.id,
+                message_id=msg.message_id,
+                sender_id=msg.sender_id,
+                sender_name=msg.sender_name or "Unknown",
+                date=msg.date.isoformat(),
+                text=msg.text or "",
+                reply_to_message_id=msg.reply_to_message_id,
+                has_media=msg.has_media,
+                media_type=msg.media_type,
+                media_url=msg.media_url
+            )
+            for msg in messages
+        ]
+
+        return DownloadedMessagesResponse(
+            download_id=download.id,
+            chat_name=download.chat_name,
+            chat_type=download.chat_type,
+            message_count=len(message_items),
+            messages=message_items
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error retrieving download messages: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve messages"
         )
 
 

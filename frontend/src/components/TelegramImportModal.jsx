@@ -34,9 +34,9 @@ export default function TelegramImportModal({ isOpen, onClose, onImportComplete,
       <div style={{
         background: "#F5F7FA",
         borderRadius: "16px",
-        maxWidth: "1200px",
+        maxWidth: "400px",
         width: "100%",
-        maxHeight: "90vh",
+        maxHeight: "80vh",
         overflow: "auto",
         position: "relative",
         boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
@@ -79,8 +79,8 @@ export default function TelegramImportModal({ isOpen, onClose, onImportComplete,
         </button>
 
         {/* Embed the complete TelegramConnect page */}
-        <div style={{ padding: "20px" }}>
-          <TelegramConnect 
+        <div style={{ padding: "12px" }}>
+          <TelegramConnect
             isModal={true}
             onComplete={() => {
               if (onImportComplete) {

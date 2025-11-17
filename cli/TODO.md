@@ -1,26 +1,56 @@
 # Meedi8 TODO List
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ## 🔴 URGENT - Active Blockers
 
-### Telegram Folders Not Displaying (PAUSED)
-**Status:** Investigation required
-**Blocker:** Yes - impacts Telegram integration UX
+### Railway Deployment Not Updating (CRITICAL)
+**Status:** **BLOCKING ALL TELEGRAM FIXES**
+**Blocker:** YES - 6 commits stuck, cannot deploy bug fixes
 
-**Context:**
-- Backend fix deployed (commit `bc4dab1`)
-- Frontend still shows only "All" and "No folder" tabs
-- User has 5-6 custom folders visible in Telegram app
+**Problem:**
+Railway is deploying successfully but NOT pulling latest code from GitHub. The GitHub webhook page in Railway dashboard is **EMPTY**.
 
-**Action Items:**
-- [ ] Check Railway logs for new folder extraction logging
-- [ ] Test `/telegram/contacts` endpoint with curl + auth token
-- [ ] Verify `folder_name` field present in API responses
-- [ ] Test locally with uvicorn to isolate deployment vs code issue
-- [ ] Consider Telegram session expiration - re-authenticate
+**Impact:**
+- Message preview feature broken (NoneType error)
+- Download feature broken (entity resolution error)
+- Timezone comparison error
+- New download history modal not accessible
+- Cannot test ANY Telegram fixes
 
-**Files:** `backend/app/services/telegram_service.py:194-319`, `frontend/src/pages/TelegramConnect.jsx:159-168`
+**Required Actions:**
+1. [ ] Go to Railway dashboard → meedi8 service
+2. [ ] Click "New Deployment" or "Redeploy" button
+3. [ ] Verify logs show: `🚀 DEPLOYMENT FIX v3 - Nov 17 2025 10:22 UTC`
+4. [ ] If marker doesn't appear: Settings → GitHub → Reconnect repository
+5. [ ] After successful deploy, test message preview by clicking contact name
+
+**Commits Waiting Deployment:**
+- `17a028c` - Deployment marker
+- `42eb6cf` - has_more defensive programming
+- `c1773b0` - has_more fix + entity cache
+- `a77ab4b` - Download history modal
+- `ca40d9c` - Timezone fix
+- `e057791` - Empty commit trigger (failed)
+
+**Files Modified (Not Deployed):**
+- `backend/app/main.py:1-14`
+- `backend/app/services/telegram_service.py:436-439,470-475,619-645`
+- `backend/app/routes/telegram.py:115-129,515-558`
+- `frontend/src/components/TelegramDownloadHistory.jsx` (new file)
+- `frontend/src/pages/TelegramConnect.jsx`
+
+### Telegram Message Preview Error (PAUSED - Waiting Railway Fix)
+**Status:** Fix ready but not deployed
+**Blocker:** Railway deployment issue (above)
+
+**Error:** `'>' not supported between instances of 'int' and 'NoneType'`
+**Fix:** Initialize `has_more = False` before loop (commits `c1773b0`, `42eb6cf`, `17a028c`)
+
+**Next Steps After Railway Fix:**
+- [ ] Verify `🔧 FIX v3 ACTIVE` appears in Railway logs
+- [ ] Test clicking contact names to preview messages
+- [ ] Verify no NoneType errors in logs
 
 ## 🟡 HIGH PRIORITY - Near-term Work
 
