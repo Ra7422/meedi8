@@ -702,9 +702,9 @@ class TelegramService:
                     "is_outgoing": message.out
                 })
 
-                else:
-                    # Loop completed without break - no more messages
-                    has_more = False
+            else:
+                # Loop completed without break - no more messages
+                has_more = False
 
             except ChatAdminRequiredError:
                 logger.error(f"Admin permissions required for chat {chat_id}")
