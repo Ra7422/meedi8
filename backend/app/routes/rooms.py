@@ -2264,20 +2264,14 @@ async def import_telegram_coaching(
         summary_text = "\n".join(summary_parts)
 
         # Create a turn with Telegram metadata and Gemini analysis
+        # NOTE: metadata field doesn't exist - storing in summary for now
         telegram_turn = Turn(
             room_id=room_id,
             user_id=current_user.id,
             kind="telegram_import",
             summary=summary_text,
             context="pre_mediation",  # Coaching context
-            tags=["coaching", "telegram_import"],
-            text=str(payload.download_id),
-            metadata={
-                "gemini_analysis": analysis,
-                "chat_name": payload.chat_name,
-                "message_count": payload.message_count,
-                "download_id": payload.download_id
-            }
+            tags=["coaching", "telegram_import", f"download_{payload.download_id}"]
         )
         db.add(telegram_turn)
         db.commit()
@@ -2399,22 +2393,14 @@ async def import_telegram_conversation(
         summary_text = "\n".join(summary_parts)
 
         # Create a turn with Telegram metadata and Gemini analysis
+        # NOTE: metadata and text fields don't exist - storing in summary and tags for now
         telegram_turn = Turn(
             room_id=room_id,
             user_id=current_user.id,
             kind="telegram_import",
             summary=summary_text,
             context="main",
-            tags=["main_room", "telegram_import"],
-            # Store download_id in text field for reference
-            text=str(payload.download_id),
-            # Store full Gemini analysis in metadata (JSON field)
-            metadata={
-                "gemini_analysis": analysis,
-                "chat_name": payload.chat_name,
-                "message_count": payload.message_count,
-                "download_id": payload.download_id
-            }
+            tags=["main_room", "telegram_import", f"download_{payload.download_id}"]
         )
         db.add(telegram_turn)
         db.commit()
