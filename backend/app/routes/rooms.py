@@ -2215,10 +2215,10 @@ async def import_telegram_coaching(
         message_dicts = [
             {
                 "id": msg.id,
-                "from_me": msg.from_me,
+                "from_me": False,  # For coaching, we don't determine this - just use sender_name
                 "text": msg.text or "[Media]",
                 "timestamp": msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else "Unknown",
-                "sender_name": msg.sender_name or (user1_name if msg.from_me else user2_name)
+                "sender_name": msg.sender_name or "Unknown"
             }
             for msg in messages
         ]
@@ -2344,16 +2344,16 @@ async def import_telegram_conversation(
         # Get messages for analysis
         messages = db.query(TelegramMessage).filter(
             TelegramMessage.download_id == payload.download_id
-        ).order_by(TelegramMessage.timestamp.asc()).all()
+        ).order_by(TelegramMessage.date.asc()).all()
 
         # Convert to dict format for Gemini
         message_dicts = [
             {
                 "id": msg.id,
-                "from_me": msg.from_me,
+                "from_me": False,  # We don't determine this - Gemini will use sender_name
                 "text": msg.text or "[Media]",
-                "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S") if msg.timestamp else "Unknown",
-                "sender_name": msg.sender_name or (user1_name if msg.from_me else user2_name)
+                "timestamp": msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else "Unknown",
+                "sender_name": msg.sender_name or "Unknown"
             }
             for msg in messages
         ]
