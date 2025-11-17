@@ -467,6 +467,13 @@ class TelegramService:
             message_count = 0
             media_count = 0
 
+            # Ensure dates are timezone-aware for comparison with Telegram's timezone-aware message dates
+            from datetime import timezone
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=timezone.utc)
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=timezone.utc)
+
             async for message in client.iter_messages(
                 entity,
                 offset_date=end_date,
