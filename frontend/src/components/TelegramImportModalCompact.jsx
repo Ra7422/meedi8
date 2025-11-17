@@ -208,7 +208,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
 
     try {
       const response = await apiRequest(
-        `/telegram/messages/preview?chat_id=${chatId}&limit=20`,
+        `/telegram/messages/preview/${chatId}?limit=20`,
         "GET",
         null,
         token
