@@ -2178,7 +2178,7 @@ async def import_telegram_conversation(
 ):
     """
     Import a downloaded Telegram conversation into the main room.
-    Creates a turn with the Telegram data that both users can view.
+    Analyzes the conversation with Gemini and creates a turn with AI insights.
     """
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
@@ -2189,7 +2189,9 @@ async def import_telegram_conversation(
 
     try:
         # Get the Telegram download with messages
-        from app.models.telegram import TelegramDownload
+        from app.models.telegram import TelegramDownload, TelegramMessage
+        from app.services.gemini_rag_service import GeminiRAGService
+
         download = db.query(TelegramDownload).filter(
             TelegramDownload.id == payload.download_id,
             TelegramDownload.user_id == current_user.id,
@@ -2199,10 +2201,63 @@ async def import_telegram_conversation(
         if not download:
             raise HTTPException(status_code=404, detail="Download not found or not completed")
 
-        # Create summary for the turn
-        summary_text = f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)"
+        # Get participant names
+        participants = room.participants
+        other_user = next((p for p in participants if p.id != current_user.id), None)
 
-        # Create a turn with Telegram metadata
+        user1_name = current_user.name or "User 1"
+        user2_name = other_user.name if other_user else "User 2"
+
+        # Get messages for analysis
+        messages = db.query(TelegramMessage).filter(
+            TelegramMessage.download_id == payload.download_id
+        ).order_by(TelegramMessage.timestamp.asc()).all()
+
+        # Convert to dict format for Gemini
+        message_dicts = [
+            {
+                "id": msg.id,
+                "from_me": msg.from_me,
+                "text": msg.text or "[Media]",
+                "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S") if msg.timestamp else "Unknown",
+                "sender_name": msg.sender_name or (user1_name if msg.from_me else user2_name)
+            }
+            for msg in messages
+        ]
+
+        # Analyze with Gemini (async)
+        gemini_service = GeminiRAGService()
+        print(f"[Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
+
+        analysis = await gemini_service.analyze_telegram_history(
+            messages=message_dicts,
+            user1_name=user1_name,
+            user2_name=user2_name,
+            room_id=room_id
+        )
+
+        print(f"[Telegram Import] Gemini analysis complete")
+
+        # Create rich summary from analysis
+        summary_parts = [
+            f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)",
+            "",
+            f"**Summary:** {analysis.get('summary', 'Conversation analyzed.')}"
+        ]
+
+        # Add key themes
+        themes = analysis.get('recurring_themes', [])
+        if themes:
+            summary_parts.append("")
+            summary_parts.append("**Key Themes:**")
+            for theme in themes[:3]:  # Top 3 themes
+                theme_name = theme.get('theme', 'Unknown')
+                freq = theme.get('frequency', 'unknown')
+                summary_parts.append(f"• {theme_name} ({freq} frequency)")
+
+        summary_text = "\n".join(summary_parts)
+
+        # Create a turn with Telegram metadata and Gemini analysis
         telegram_turn = Turn(
             room_id=room_id,
             user_id=current_user.id,
@@ -2211,22 +2266,33 @@ async def import_telegram_conversation(
             context="main",
             tags=["main_room", "telegram_import"],
             # Store download_id in text field for reference
-            text=str(payload.download_id)
+            text=str(payload.download_id),
+            # Store full Gemini analysis in metadata (JSON field)
+            metadata={
+                "gemini_analysis": analysis,
+                "chat_name": payload.chat_name,
+                "message_count": payload.message_count,
+                "download_id": payload.download_id
+            }
         )
         db.add(telegram_turn)
         db.commit()
+        db.refresh(telegram_turn)
 
         return {
             "success": True,
             "turn_id": telegram_turn.id,
             "download_id": payload.download_id,
-            "message": "Telegram conversation imported successfully"
+            "analysis": analysis,
+            "message": "Telegram conversation analyzed and imported successfully"
         }
 
     except HTTPException:
         raise
     except Exception as e:
         print(f"Telegram import error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to import Telegram conversation: {str(e)}"

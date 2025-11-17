@@ -9,7 +9,7 @@ import { apiRequest } from "../api/client";
  * - Icon-based UI to save space
  * - Compact button ratios
  * - Fixed download progress indicator (always visible)
- * - "View in Chat" link after download completes
+ * - "Discuss" link after download completes
  * - Minimal padding and optimized spacing
  */
 export default function TelegramImportModalCompact({ isOpen, onClose, onImportComplete, roomId }) {
@@ -288,7 +288,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
                   cursor: "pointer"
                 }}
               >
-                View in Chat
+                Discuss
               </button>
             )}
           </div>
