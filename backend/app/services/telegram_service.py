@@ -582,7 +582,17 @@ class TelegramService:
         try:
             logger.info(f"Fetching {limit} message previews from chat {chat_id}, offset_id={offset_id}")
 
-            # Get the entity first - Telethon requires this to resolve the peer
+            # Populate entity cache by calling get_dialogs() once
+            # This caches all recent contacts' access_hashes
+            try:
+                logger.info("Populating entity cache with get_dialogs()")
+                await client.get_dialogs(limit=1)  # Just need to call it once to populate cache
+                logger.info("Entity cache populated successfully")
+            except Exception as e:
+                logger.warning(f"Could not populate entity cache: {e}")
+                # Continue anyway - get_entity will try to fetch
+
+            # Get the entity - should use cached data from get_dialogs()
             try:
                 entity = await client.get_entity(chat_id)
                 logger.info(f"Resolved entity for chat {chat_id}: {entity}")

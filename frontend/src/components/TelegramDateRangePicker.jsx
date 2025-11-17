@@ -39,7 +39,7 @@ export default function TelegramDateRangePicker({ chat, onClose, onDownload, loa
     }
 
     setError("");
-    onDownload(chat.chat_id, startDate, endDate);
+    onDownload(chat.id, startDate, endDate);
   };
 
   return (
@@ -83,7 +83,7 @@ export default function TelegramDateRangePicker({ chat, onClose, onDownload, loa
             color: "#6b7280",
             margin: 0
           }}>
-            {chat.chat_name}
+            {chat.name}
           </p>
         </div>
 
