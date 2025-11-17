@@ -690,68 +690,109 @@ export default function TelegramConnect() {
                 <div
                   key={chat.id}
                   style={{
-                    padding: "16px",
                     border: "2px solid #e5e7eb",
                     borderRadius: "12px",
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
-                    transition: "border-color 0.2s"
+                    alignItems: "stretch",
+                    transition: "border-color 0.2s",
+                    overflow: "hidden"
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.borderColor = "#0088CC"}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = "#e5e7eb"}
                 >
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      color: "#1a202c",
-                      margin: "0 0 2px 0"
-                    }}>
-                      {chat.name.split(' (@')[0]}
-                    </h3>
+                  {/* Vertical folder tab on the left */}
+                  {chat.folder_name && (
                     <div style={{
-                      fontSize: "12px",
-                      color: "#a0a0a0",
-                      fontWeight: "400",
-                      marginBottom: "4px",
+                      background: "#0088CC",
+                      color: "white",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      padding: "8px 6px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "6px"
+                      justifyContent: "center",
+                      writingMode: "vertical-rl",
+                      textOrientation: "mixed",
+                      letterSpacing: "0.5px",
+                      minWidth: "28px"
                     }}>
-                      <span>
-                        {chat.type === 'user' ? '👤' :
-                         chat.type === 'group' ? '👥' :
-                         chat.type === 'supergroup' ? '👥' :
-                         '📢'}
-                      </span>
-                      {chat.name.includes('@') && (
-                        <span>@{chat.name.split('@')[1].replace(')', '')}</span>
-                      )}
-                      {chat.pinned && (
-                        <span style={{ fontSize: "14px" }}>📌</span>
-                      )}
+                      {chat.folder_name}
                     </div>
+                  )}
+
+                  <div style={{
+                    flex: 1,
+                    padding: "16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        color: "#1a202c",
+                        margin: "0 0 2px 0"
+                      }}>
+                        {chat.name.split(' (@')[0]}
+                      </h3>
+                      <div style={{
+                        fontSize: "12px",
+                        color: "#a0a0a0",
+                        fontWeight: "400",
+                        marginBottom: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}>
+                        <span>
+                          {chat.type === 'user' ? '👤' :
+                           chat.type === 'group' ? '👥' :
+                           chat.type === 'supergroup' ? '👥' :
+                           '📢'}
+                        </span>
+                        {chat.name.includes('@') && (
+                          <span>@{chat.name.split('@')[1].replace(')', '')}</span>
+                        )}
+                        {chat.pinned && (
+                          <span style={{ fontSize: "14px" }}>📌</span>
+                        )}
+                        {chat.unread_count > 0 && (
+                          <span style={{
+                            background: "#0088CC",
+                            color: "white",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontWeight: "600",
+                            fontSize: "11px",
+                            marginLeft: "4px"
+                          }}>
+                            {chat.unread_count}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSelectChat(chat)}
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "white",
+                        background: "#0088CC",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                        transition: "background 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = "#0077B3"}
+                      onMouseLeave={(e) => e.target.style.background = "#0088CC"}
+                    >
+                      Download
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleSelectChat(chat)}
-                    style={{
-                      padding: "10px 20px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "white",
-                      background: "#0088CC",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-                      transition: "background 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = "#0077B3"}
-                    onMouseLeave={(e) => e.target.style.background = "#0088CC"}
-                  >
-                    Download
-                  </button>
                 </div>
               ))}
 
