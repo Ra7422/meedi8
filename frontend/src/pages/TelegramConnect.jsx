@@ -678,28 +678,6 @@ export default function TelegramConnect() {
                     📁 {folder.name} {loading && selectedFolder?.id === folder.id ? "⏳" : ""}
                   </button>
                 ))}
-                {contacts.some(c => !c.folder_name) && (
-                  <button
-                    onClick={() => handleFolderSelect("none")}
-                    disabled={loading}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-                      color: selectedFolder === "none" ? "#0088CC" : "#8A8A8F",
-                      background: selectedFolder === "none" ? "#E3F2FD" : "transparent",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: loading ? "wait" : "pointer",
-                      whiteSpace: "nowrap",
-                      transition: "all 0.2s",
-                      opacity: loading ? 0.6 : 1
-                    }}
-                  >
-                    No Folder {loading && selectedFolder === "none" ? "⏳" : ""}
-                  </button>
-                )}
               </div>
 
               {/* Contacts List */}
@@ -728,10 +706,20 @@ export default function TelegramConnect() {
                       fontSize: "16px",
                       fontWeight: "600",
                       color: "#1a202c",
-                      margin: "0 0 4px 0"
+                      margin: "0 0 2px 0"
                     }}>
-                      {chat.name}
+                      {chat.name.split(' (@')[0]}
                     </h3>
+                    {chat.name.includes('@') && (
+                      <div style={{
+                        fontSize: "12px",
+                        color: "#a0a0a0",
+                        fontWeight: "400",
+                        marginBottom: "4px"
+                      }}>
+                        @{chat.name.split('@')[1].replace(')', '')}
+                      </div>
+                    )}
                     <div style={{
                       display: "flex",
                       gap: "8px",
@@ -740,9 +728,12 @@ export default function TelegramConnect() {
                       flexWrap: "wrap"
                     }}>
                       <span>
-                        {chat.type === 'user' ? '👤' : chat.type === 'group' ? '👥' : '📢'}
+                        {chat.type === 'user' ? '👤' :
+                         chat.type === 'group' ? '👥' :
+                         chat.type === 'supergroup' ? '👥' :
+                         '📢'}
                         {' '}
-                        {chat.type}
+                        {chat.type === 'supergroup' ? 'group' : chat.type}
                       </span>
                       {chat.unread_count > 0 && (
                         <span style={{

@@ -279,18 +279,14 @@ class TelegramService:
                 logger.exception("Full traceback:")
                 # Continue without custom folder names
 
-            # Fetch dialogs and filter to users only
-            # We iterate through ALL dialogs (no limit) until we find enough users
-            # This ensures we always get the requested number of users, even if
-            # the account has many channels/groups at the top of the dialog list
+            # Fetch dialogs - include users, groups, and channels
             dialog_count = 0
-            user_count = 0
-            # No limit on iter_dialogs - we'll stop manually when we have enough users
+            item_count = 0
             async for dialog in client.iter_dialogs():
                 dialog_count += 1
                 entity = dialog.entity
 
-                # Determine chat type and ONLY include users (skip channels/supergroups)
+                # Determine chat type and name
                 if isinstance(entity, TelegramUser):
                     chat_type = "user"
                     chat_name = entity.first_name or ""
@@ -299,8 +295,18 @@ class TelegramService:
                     # Add username if available
                     if hasattr(entity, 'username') and entity.username:
                         chat_name += f" (@{entity.username})"
+                elif isinstance(entity, Chat):
+                    chat_type = "group"
+                    chat_name = entity.title or "Unnamed Group"
+                elif isinstance(entity, Channel):
+                    # Channels can be broadcast channels or supergroups
+                    if entity.megagroup:
+                        chat_type = "supergroup"
+                    else:
+                        chat_type = "channel"
+                    chat_name = entity.title or "Unnamed Channel"
                 else:
-                    # Skip non-user chats (channels, groups, supergroups)
+                    # Unknown type - skip
                     continue
 
                 # Get folder information from peer_to_folder mapping
@@ -351,16 +357,16 @@ class TelegramService:
                     "profile_picture_url": None  # Lazy-loaded when chat is downloaded
                 })
 
-                user_count += 1
+                item_count += 1
 
-                # Stop once we have enough users
-                if user_count >= limit:
-                    logger.info(f"Reached target of {limit} users, stopping iteration")
+                # Stop once we have enough items
+                if item_count >= limit:
+                    logger.info(f"Reached target of {limit} items, stopping iteration")
                     break
 
                 # Log progress every 10 dialogs for debugging
                 if dialog_count % 10 == 0:
-                    logger.info(f"Processed {dialog_count} dialogs, found {user_count} users so far...")
+                    logger.info(f"Processed {dialog_count} dialogs, found {item_count} items so far...")
 
             logger.info(f"Successfully fetched {len(dialogs)} dialogs from Telegram (iterated through {dialog_count} total)")
 
