@@ -1,14 +1,14 @@
 # Current Development Status
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ## Latest Stable State
 
-**Commit:** `bfd9e59` (2025-11-15)
+**Commit:** `01bdf26` (2025-11-17) - **DEPLOYED AND VERIFIED** ✅
 
 **Deployed:**
 - Frontend: Vercel (auto-deploy from `main`)
-- Backend: Railway (auto-deploy from `main`)
+- Backend: Railway (auto-deploy from `main`) - Deployment `5dbaa435`
 
 **What's Working:**
 ✅ User authentication (Google, Facebook, Telegram OAuth)
@@ -24,30 +24,45 @@
 ✅ Email notifications (SendGrid - disabled by default)
 ✅ Professional PDF report generation
 ✅ Telegram integration with lazy loading folders
+✅ **Telegram message preview (FIXED 2025-11-17)**
 ✅ PostgreSQL compatibility (Railway) + SQLite (local dev)
 
 ## Current Issues
 
-### ⚠️ PAUSED - Telegram Folders Not Displaying (2025-11-15)
+### ✅ RESOLVED - Telegram Message Preview (2025-11-17)
 
-**Problem:** User's custom Telegram folders (Top G, Safeguard, House, Depin, etc.) are NOT showing on TelegramConnect page. Only "All" and "No folder" tabs appear.
+**Problem:** 500 error when previewing messages: `'>' not supported between instances of 'int' and 'NoneType'`
 
-**What We Know:**
-- Backend bug fixed in commit `bc4dab1` (DialogFilters iteration bug)
-- Fix deployed to Railway via disconnect/reconnect GitHub integration
-- Service health check passing
-- Frontend still only showing 2 tabs instead of 7-8
+**Root Cause:** Telethon's `iter_messages()` has a bug where it compares `offset_id` with `max_id` using `max()`, which fails when `offset_id` is None.
 
-**Next Steps When Resuming:**
-1. Verify Railway logs contain new folder extraction logging
-2. Test `/telegram/contacts` endpoint directly with auth token
-3. Check if `folder_name` field is present in API response
-4. Test locally with `uvicorn` to isolate issue
-5. Consider re-authenticating Telegram session
+**Fix Applied (Commit `01bdf26`):**
+- Build `iter_messages()` kwargs dynamically to only include `offset_id` when not None
+- Added defensive checks and logging for pagination
+- Deployed as FIX v4
 
-See `TROUBLESHOOTING.md` for full debugging context.
+**Status:** ✅ RESOLVED - User confirmed "that worked i now see the messages"
+
+**Previous Fixes (Deployed in `01bdf26`):**
+1. ✅ **Message Preview Error** - Telethon offset_id NoneType comparison fixed
+2. ✅ **Entity Resolution** - Increased get_dialogs() limit from 1 to 100
+3. ✅ **Exception Handling** - Added comprehensive Telethon error handling
+4. ✅ **Timezone Comparison** - Timezone-aware datetime handling (commit `ca40d9c`)
+5. ✅ **Download History** - New `/telegram/downloads` endpoint and modal UI (commit `a77ab4b`)
+
+**Files Modified (Already Deployed):**
+- `backend/app/services/telegram_service.py` - Dynamic kwargs for iter_messages()
+- `backend/app/routes/telegram.py` - Enhanced error messages
+- `backend/app/main.py` - FIX v4 deployment marker
 
 ## Recent Updates (Last 30 Days)
+
+### 2025-11-17 - Telegram Message Preview Fixed ✅
+- **Telethon NoneType Fix:** Dynamic kwargs for iter_messages() to avoid offset_id comparison bug (commit `01bdf26`)
+- **Exception Handling:** Added comprehensive Telethon error types and user-friendly messages (commit `95e3769`)
+- **Entity Resolution:** Increased get_dialogs() limit from 1 to 100 for better caching (commit `95e3769`)
+- **Download History Modal:** View all Telegram chat downloads with status (commit `a77ab4b`)
+- **Timezone Fix:** Handle timezone-aware datetime comparisons (commit `ca40d9c`)
+- **Deployment Marker:** FIX v4 deployed successfully to Railway (deployment `5dbaa435`)
 
 ### 2025-11-15 - Telegram UX Improvements
 - **Lazy Loading:** Folder tabs load contacts on-demand (commit `76dcf1c`)
@@ -93,13 +108,19 @@ See `TODO.md` for detailed task list.
 
 ## Version History
 
-| Date | Commit | Description |
-|------|--------|-------------|
-| 2025-11-15 | `9eceea2` | Trigger Railway deployment - DialogFilters fix |
-| 2025-11-15 | `bc4dab1` | Fix DialogFilters iteration bug |
-| 2025-11-15 | `8439d85` | Fix critical bug: Return dialog's folder_id |
-| 2025-11-15 | `76dcf1c` | Implement lazy loading for Telegram folders |
-| 2025-11-15 | `bfd9e59` | Apply Telegram design system |
+| Date | Commit | Description | Deployed? |
+|------|--------|-------------|-----------|
+| 2025-11-17 | `17a028c` | Add startup deployment marker - FIX v3 | ❌ NO |
+| 2025-11-17 | `e057791` | Trigger Railway deployment (empty) | ❌ NO |
+| 2025-11-17 | `ca40d9c` | Fix timezone-aware datetime comparison | ❌ NO |
+| 2025-11-17 | `a77ab4b` | Add Telegram download history feature | ❌ NO |
+| 2025-11-17 | `c1773b0` | Fix has_more initialization + entity cache | ❌ NO |
+| 2025-11-17 | `42eb6cf` | FIX v3: Defensive programming for has_more | ❌ NO |
+| 2025-11-15 | `9eceea2` | Trigger Railway deployment - DialogFilters fix | ✅ YES |
+| 2025-11-15 | `bc4dab1` | Fix DialogFilters iteration bug | ✅ YES |
+| 2025-11-15 | `8439d85` | Fix critical bug: Return dialog's folder_id | ✅ YES |
+| 2025-11-15 | `76dcf1c` | Implement lazy loading for Telegram folders | ✅ YES |
+| 2025-11-15 | `bfd9e59` | Apply Telegram design system | ✅ YES |
 | 2025-11-14 | `25fe58c` | Add Telethon dependency |
 | 2025-11-14 | `0f17eb2` | Fix profile picture in FloatingMenu |
 | 2025-11-14 | `e858e27` | Add Meedi illustration to Subscription page |
