@@ -616,9 +616,17 @@ class TelegramService:
                 logger.error(f"Failed to get entity for chat {chat_id}: {e}")
                 raise ValueError(f"Could not find chat with ID {chat_id}")
 
+            # FIX v3: Ensure all variables are initialized before use
             messages = []
             message_count = 0
-            has_more = False  # Initialize has_more before the loop
+            has_more = False  # CRITICAL: Must initialize to prevent NoneType comparison error
+
+            # Defensive: Ensure limit is valid
+            if limit is None or limit <= 0:
+                logger.warning(f"Invalid limit value: {limit}, defaulting to 50")
+                limit = 50
+
+            logger.info(f"🔧 FIX v3 ACTIVE: Starting message fetch with limit={limit}, has_more={has_more}")
 
             # Fetch messages in reverse chronological order (newest first)
             # Use limit+1 to check if there are more messages
@@ -633,6 +641,7 @@ class TelegramService:
                 # If we got one more than limit, there are more messages
                 if message_count > limit:
                     has_more = True
+                    logger.info(f"📊 Got {message_count} messages (limit was {limit}), has_more={has_more}")
                     break
 
                 # Get sender name
