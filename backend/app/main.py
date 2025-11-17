@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Clean Air API", version="0.4.0")
 
-# DEPLOYMENT MARKER - FIX v3 BUILD
+# DEPLOYMENT MARKER - FIX v4 BUILD
 logger.info("=" * 80)
-logger.info("🚀 DEPLOYMENT FIX v3 - Nov 17 2025 10:22 UTC")
+logger.info("🚀 DEPLOYMENT FIX v4 - Telethon offset_id NoneType fix - Nov 17 2025")
 logger.info("=" * 80)
 
 app.add_middleware(

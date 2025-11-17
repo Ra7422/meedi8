@@ -644,17 +644,23 @@ class TelegramService:
                 logger.warning(f"Invalid limit value: {limit}, defaulting to 50")
                 limit = 50
 
-            logger.info(f"🔧 FIX v4 ACTIVE: Starting message fetch with limit={limit}, has_more={has_more}")
+            logger.info(f"🔧 FIX v4 ACTIVE: Starting message fetch with limit={limit}, offset_id={offset_id}, has_more={has_more}")
 
             # Fetch messages in reverse chronological order (newest first)
             # Use limit+1 to check if there are more messages
             # Use the resolved entity instead of raw chat_id
+            # CRITICAL: Only pass offset_id if not None (Telethon bug with None comparison)
             try:
-                async for message in client.iter_messages(
-                    entity,
-                    limit=limit + 1,
-                    offset_id=offset_id
-                ):
+                # Build kwargs dynamically to avoid NoneType comparison error in Telethon
+                iter_kwargs = {
+                    "entity": entity,
+                    "limit": limit + 1
+                }
+                if offset_id is not None:
+                    iter_kwargs["offset_id"] = offset_id
+                    logger.info(f"📄 Pagination: offset_id={offset_id}")
+
+                async for message in client.iter_messages(**iter_kwargs):
                     message_count += 1
 
                     # If we got one more than limit, there are more messages
