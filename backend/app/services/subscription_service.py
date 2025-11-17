@@ -239,16 +239,25 @@ def check_room_creation_limit(user_id: int, db: Session) -> dict:
             "current_count": subscription.rooms_created_this_month,
         }
 
-    # Check if FREE tier user has reached limit
-    if subscription.rooms_created_this_month >= room_limit:
+    # For FREE tier, check ACTIVE rooms instead of created count to allow testing
+    # Count active rooms for this user
+    from app.models.room import Room
+    from app.models.user import User
+    from sqlalchemy.orm import Session
+
+    user = db.query(User).filter(User.id == user_id).first()
+    active_room_count = db.query(Room).filter(Room.participants.contains(user)).count()
+
+    # Check if FREE tier user has reached limit based on ACTIVE rooms
+    if active_room_count >= room_limit:
         raise HTTPException(
             status_code=402,
             detail={
                 "error": "room_limit_reached",
-                "message": f"You've reached your limit of {room_limit} active room(s) per month. Upgrade to PLUS for unlimited rooms.",
+                "message": f"You've reached your limit of {room_limit} active room(s). Upgrade to PLUS for unlimited rooms.",
                 "tier": subscription.tier.value,
                 "limit": room_limit,
-                "current_count": subscription.rooms_created_this_month,
+                "current_count": active_room_count,
                 "upgrade_url": "/subscription"
             }
         )
@@ -257,7 +266,7 @@ def check_room_creation_limit(user_id: int, db: Session) -> dict:
         "allowed": True,
         "tier": subscription.tier.value,
         "limit": room_limit,
-        "current_count": subscription.rooms_created_this_month,
+        "current_count": active_room_count,
     }
 
 
