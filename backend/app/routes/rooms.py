@@ -2162,6 +2162,77 @@ async def upload_file_main_room(
         )
 
 
+from pydantic import BaseModel
+
+class TelegramImportRequest(BaseModel):
+    download_id: int
+    chat_name: str
+    message_count: int
+
+@router.post("/{room_id}/main-room/telegram-import")
+async def import_telegram_conversation(
+    room_id: int,
+    payload: TelegramImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Import a downloaded Telegram conversation into the main room.
+    Creates a turn with the Telegram data that both users can view.
+    """
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    try:
+        # Get the Telegram download with messages
+        from app.models.telegram import TelegramDownload
+        download = db.query(TelegramDownload).filter(
+            TelegramDownload.id == payload.download_id,
+            TelegramDownload.user_id == current_user.id,
+            TelegramDownload.status == "completed"
+        ).first()
+
+        if not download:
+            raise HTTPException(status_code=404, detail="Download not found or not completed")
+
+        # Create summary for the turn
+        summary_text = f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)"
+
+        # Create a turn with Telegram metadata
+        telegram_turn = Turn(
+            room_id=room_id,
+            user_id=current_user.id,
+            kind="telegram_import",
+            summary=summary_text,
+            context="main",
+            tags=["main_room", "telegram_import"],
+            # Store download_id in text field for reference
+            text=str(payload.download_id)
+        )
+        db.add(telegram_turn)
+        db.commit()
+
+        return {
+            "success": True,
+            "turn_id": telegram_turn.id,
+            "download_id": payload.download_id,
+            "message": "Telegram conversation imported successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Telegram import error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to import Telegram conversation: {str(e)}"
+        )
+
+
 # ============================================
 # SOLO MODE ENDPOINTS
 # ============================================

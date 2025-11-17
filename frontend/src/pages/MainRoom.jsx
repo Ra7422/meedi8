@@ -416,9 +416,23 @@ export default function MainRoom() {
     setShowTelegramImport(true);
   };
 
-  const handleTelegramImportComplete = async () => {
-    // Refresh messages after import
+  const handleTelegramImportComplete = async (telegramData) => {
+    // Send Telegram import to backend for analysis
     try {
+      setSending(true);
+
+      const response = await apiRequest(
+        `/rooms/${roomId}/main-room/telegram-import`,
+        "POST",
+        {
+          download_id: telegramData.download_id,
+          chat_name: telegramData.chat_name,
+          message_count: telegramData.message_count
+        },
+        token
+      );
+
+      // Refresh messages to include the new import
       const history = await apiRequest(`/rooms/${roomId}/main-room/messages`, "GET", null, token);
       const isUser1 = user.id === summaries.user1_id;
       const otherUserSummary = isUser1 ? summaries.user2_summary : summaries.user1_summary;
@@ -437,7 +451,10 @@ export default function MainRoom() {
       setCurrentSpeakerId(history.current_speaker_id);
       setSessionComplete(history.session_complete);
     } catch (error) {
-      console.error("Failed to refresh messages:", error);
+      console.error("Failed to import Telegram conversation:", error);
+      setError(error.message || "Failed to import conversation");
+    } finally {
+      setSending(false);
     }
   };
 

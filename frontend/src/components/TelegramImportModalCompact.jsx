@@ -187,7 +187,14 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
 
   const handleViewInChat = () => {
     if (onImportComplete && downloadedMessages) {
-      onImportComplete(downloadedMessages);
+      // Pass the full download data to parent
+      onImportComplete({
+        download_id: downloadedMessages.download_id,
+        chat_name: downloadedMessages.chat_name,
+        chat_type: downloadedMessages.chat_type,
+        message_count: downloadedMessages.message_count,
+        messages: downloadedMessages.messages
+      });
     }
     onClose();
   };
