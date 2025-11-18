@@ -582,7 +582,9 @@ def get_coaching_turns(
             messages.append({"role": "user", "content": turn.summary or ""})
         elif turn.kind == 'ai_question':
             messages.append({"role": "assistant", "content": turn.summary or ""})
-    
+        elif turn.kind == 'telegram_import':
+            messages.append({"role": "assistant", "content": turn.summary or ""})
+
     return {"messages": messages}
 
 @router.post("/{room_id}/coach/start", response_model=StartCoachingResponse)
