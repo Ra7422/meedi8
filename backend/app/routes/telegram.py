@@ -148,6 +148,7 @@ class DownloadedMessagesResponse(BaseModel):
     chat_type: Optional[str] = None
     message_count: int
     messages: list[DownloadedMessageItem]
+    has_more: bool = False  # Indicates if there are more messages to load
 
 
 # ===== Helper Functions =====
@@ -719,17 +720,29 @@ async def get_download_status_plural(
 @router.get("/downloads/{download_id}/messages", response_model=DownloadedMessagesResponse)
 async def get_download_messages(
     download_id: int,
+    limit: int = 50,
+    offset: int = 0,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve all messages from a completed download.
+    Retrieve messages from a completed download with pagination.
 
     Returns the messages in chronological order (oldest first) along with
     download metadata (chat name, message count, etc.).
 
+    Args:
+        download_id: ID of the download
+        limit: Number of messages to return (default 50, max 200)
+        offset: Number of messages to skip (default 0)
+
     The user must own the download record to access the messages.
     """
+    # Validate pagination parameters
+    if limit < 1 or limit > 200:
+        limit = 50
+    if offset < 0:
+        offset = 0
     try:
         # Get download record and verify ownership
         download = db.query(TelegramDownload).filter(
@@ -750,10 +763,15 @@ async def get_download_messages(
                 detail=f"Download is not completed (status: {download.status})"
             )
 
-        # Get all messages for this download
+        # Get total count of messages
+        total_count = db.query(TelegramMessage).filter(
+            TelegramMessage.download_id == download_id
+        ).count()
+
+        # Get paginated messages for this download
         messages = db.query(TelegramMessage).filter(
             TelegramMessage.download_id == download_id
-        ).order_by(TelegramMessage.date.asc()).all()
+        ).order_by(TelegramMessage.date.asc()).limit(limit).offset(offset).all()
 
         # Convert to response format
         message_items = [
@@ -772,12 +790,16 @@ async def get_download_messages(
             for msg in messages
         ]
 
+        # Check if there are more messages to load
+        has_more = (offset + len(message_items)) < total_count
+
         return DownloadedMessagesResponse(
             download_id=download.id,
             chat_name=download.chat_name,
             chat_type=download.chat_type,
-            message_count=len(message_items),
-            messages=message_items
+            message_count=total_count,  # Total count, not just current page
+            messages=message_items,
+            has_more=has_more
         )
 
     except HTTPException:

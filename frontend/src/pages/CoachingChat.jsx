@@ -1390,28 +1390,52 @@ export default function CoachingChat() {
 function TelegramMessageViewer({ downloadId, chatName, messageCount, onClose, token }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const MESSAGES_PER_PAGE = 50;
+
+  const fetchMessages = async (currentOffset = 0, append = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await apiRequest(
+        `/telegram/downloads/${downloadId}/messages?limit=${MESSAGES_PER_PAGE}&offset=${currentOffset}`,
+        "GET",
+        null,
+        token
+      );
+
+      if (append) {
+        setMessages(prev => [...prev, ...(response.messages || [])]);
+      } else {
+        setMessages(response.messages || []);
+      }
+
+      setHasMore(response.has_more || false);
+      setOffset(currentOffset + (response.messages || []).length);
+    } catch (err) {
+      console.error("Failed to fetch Telegram messages:", err);
+      setError(err.message || "Failed to load messages");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchMessages(offset, true);
+    }
+  };
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        const response = await apiRequest(
-          `/telegram/downloads/${downloadId}/messages`,
-          "GET",
-          null,
-          token
-        );
-        setMessages(response.messages || []);
-      } catch (err) {
-        console.error("Failed to fetch Telegram messages:", err);
-        setError(err.message || "Failed to load messages");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
+    fetchMessages(0, false);
   }, [downloadId, token]);
 
   return (
@@ -1517,6 +1541,29 @@ function TelegramMessageViewer({ downloadId, chatName, messageCount, onClose, to
               </p>
             </div>
           ))}
+
+          {/* Load More Button */}
+          {!loading && !error && hasMore && (
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  padding: "10px 24px",
+                  background: loadingMore ? "#E5E7EB" : "#7DD3C0",
+                  color: loadingMore ? "#6B7280" : "#1F7A5C",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: loadingMore ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {loadingMore ? "Loading..." : "Load more"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
