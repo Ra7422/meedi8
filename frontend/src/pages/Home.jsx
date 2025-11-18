@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../api/client';
 import heroIllustration from '../assets/illustrations/hero-illustration.png';
 import mediationDuo from '../assets/illustrations/mediation-duo.png';
 import soloConversation from '../assets/illustrations/solo-conversation.png';
@@ -11,7 +12,8 @@ import faqIcon from '../assets/icons/FAQ_icon.png';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, login } = useAuth();
+  const [isCreatingGuest, setIsCreatingGuest] = React.useState(false);
   const [isDesktop, setIsDesktop] = React.useState(
     typeof window !== 'undefined' ? window.innerWidth >= 768 : false
   );
@@ -27,11 +29,33 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const createGuestAndNavigate = async (destination) => {
+    if (isCreatingGuest) return; // Prevent double-clicks
+
+    try {
+      setIsCreatingGuest(true);
+      console.log('Creating guest account...');
+
+      // Call the create-guest endpoint
+      const response = await apiRequest('/auth/create-guest', 'POST');
+      console.log('Guest account created:', response);
+
+      // Store the guest token using the AuthContext login function
+      login(response.access_token);
+
+      // Navigate to destination
+      navigate(destination);
+    } catch (error) {
+      console.error('Failed to create guest account:', error);
+      alert('Failed to start session. Please try again.');
+      setIsCreatingGuest(false);
+    }
+  };
+
   const handleMediationClick = () => {
     if (!token) {
-      // Save intent to sessionStorage so we can redirect after login
-      sessionStorage.setItem('postLoginRedirect', '/create');
-      navigate('/login');
+      // Auto-create guest account and navigate
+      createGuestAndNavigate('/create');
     } else {
       navigate('/create');
     }
@@ -39,9 +63,8 @@ export default function Home() {
 
   const handleSoloClick = () => {
     if (!token) {
-      // Save intent to sessionStorage so we can redirect after login
-      sessionStorage.setItem('postLoginRedirect', '/solo/start');
-      navigate('/login');
+      // Auto-create guest account and navigate
+      createGuestAndNavigate('/solo/start');
     } else {
       navigate('/solo/start');
     }

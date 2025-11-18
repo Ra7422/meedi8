@@ -9,6 +9,7 @@ import ShareButtons from "../components/ShareButtons";
 import FloatingMenu from "../components/FloatingMenu";
 import AttachmentMenu from "../components/AttachmentMenu";
 import TelegramImportModal from "../components/TelegramImportModal";
+import BenefitsBanner from "../components/BenefitsBanner";
 
 export default function CoachingChat() {
   const { roomId } = useParams();
@@ -481,6 +482,9 @@ export default function CoachingChat() {
     }}>
       <FloatingMenu />
       <style>{mobileStyles}</style>
+
+      {/* Show benefits banner for guest users (email starts with "guest_") */}
+      {user && user.email && user.email.startsWith('guest_') && <BenefitsBanner />}
 
       <h2 className="coaching-header" style={{
         color: "#7DD3C0",
