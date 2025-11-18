@@ -17,6 +17,7 @@ import CoachingSummaryDemo from "./pages/CoachingSummaryDemo";
 import LobbyDemo from "./pages/LobbyDemo";
 import MainRoomDemo from "./pages/MainRoomDemo";
 import CongratsDemo from "./pages/CongratsDemo";
+import InteractiveDemo from "./pages/InteractiveDemo";
 import InviteShare from "./pages/InviteShare";
 import Lobby from "./pages/Lobby";
 import MainRoom from "./pages/MainRoom";
@@ -51,9 +52,10 @@ function PrivateRoute({ children }) {
 function GlobalMenu() {
   const location = useLocation();
 
-  // Hide FloatingMenu on login, signup, email verification, onboarding, chat pages, and waiting room
+  // Hide FloatingMenu on login, signup, email verification, onboarding, chat pages, waiting room, and demo pages
   const hideMenu = ['/login', '/signup', '/verify-email', '/onboarding'].includes(location.pathname) ||
                    location.pathname.startsWith('/join/') ||
+                   location.pathname.startsWith('/demo/') ||
                    location.pathname.includes('/coaching/') ||
                    location.pathname.includes('/solo/') ||
                    location.pathname.includes('/main-room/') ||
@@ -91,6 +93,7 @@ export default function App() {
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} />
           <Route path="/solo/start" element={<PrivateRoute><StartSolo /></PrivateRoute>} />
+          <Route path="/demo/interactive" element={<InteractiveDemo />} />
           <Route path="/coaching-demo" element={<CoachingChatDemo />} />
           <Route path="/coaching-demo-user2" element={<CoachingChatDemoUser2 />} />
           <Route path="/coaching-summary-demo" element={<CoachingSummaryDemo />} />

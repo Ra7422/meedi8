@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.routes import auth, users, rooms, admin, subscriptions, screening, telegram
+from app.routes import auth, users, rooms, admin, subscriptions, screening, telegram, demo
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(rooms.router)
@@ -29,6 +29,7 @@ app.include_router(admin.router)
 app.include_router(subscriptions.router)
 app.include_router(screening.router)
 app.include_router(telegram.router, prefix="/telegram", tags=["telegram"])
+app.include_router(demo.router, prefix="/demo", tags=["demo"])
 
 @app.get("/health")
 def health():
