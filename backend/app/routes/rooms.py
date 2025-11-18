@@ -2204,17 +2204,12 @@ async def import_telegram_coaching(
         if not download:
             raise HTTPException(status_code=404, detail="Download not found or not completed")
 
-        # For coaching, the user is sharing their conversation with the other person
-        # We'll use the user's name and "Other Person" as a placeholder
-        user1_name = current_user.name or "You"
-        user2_name = "Other Person"  # We don't know who the other person is in coaching phase
-
         # Get messages for analysis
         messages = db.query(TelegramMessage).filter(
             TelegramMessage.download_id == payload.download_id
         ).order_by(TelegramMessage.date.asc()).all()
 
-        # Convert to dict format for Gemini
+        # Convert to dict format for analysis
         message_dicts = [
             {
                 "id": msg.id,
@@ -2226,8 +2221,27 @@ async def import_telegram_coaching(
             for msg in messages
         ]
 
+        # Identify unique sender names in the conversation
+        unique_senders = list(set(msg.sender_name for msg in messages if msg.sender_name))
+
+        # Try to match one of the senders to the current user's name
+        # This helps Claude know who uploaded the conversation
+        uploader_name = current_user.name or "You"
+        other_person_name = "the other person"
+
+        # Check if uploader's name matches any sender in the conversation
+        for sender in unique_senders:
+            if sender and uploader_name.lower() in sender.lower():
+                # Found a match - use the other sender as "other person"
+                other_senders = [s for s in unique_senders if s != sender]
+                if other_senders:
+                    other_person_name = other_senders[0]
+                break
+
         # Format messages for Claude analysis
-        conversation_text = f"=== TELEGRAM CONVERSATION ===\nBetween: {user1_name} and {user2_name}\nTotal Messages: {len(message_dicts)}\n\n"
+        conversation_text = f"=== TELEGRAM CONVERSATION ===\n"
+        conversation_text += f"Uploaded by: {uploader_name}\n"
+        conversation_text += f"Total Messages: {len(message_dicts)}\n\n"
         for msg in message_dicts[:50]:  # Limit to first 50 messages for token efficiency
             conversation_text += f"[{msg['timestamp']}] {msg['sender_name']}: {msg['text']}\n"
 
@@ -2241,12 +2255,14 @@ async def import_telegram_coaching(
 
 {conversation_text}
 
+The person who uploaded this conversation is: {uploader_name}
+
 Write a brief, conversational summary (2-3 sentences) of what you notice in this conversation. Focus on:
 - The overall dynamic between them
 - Any patterns in how they communicate
 - What might be helpful for their mediator to understand
 
-Write in first person as if you're speaking directly to the person who uploaded this. Be warm, insightful, and concise."""
+IMPORTANT: Write in first person as if you're speaking directly to {uploader_name} (the person who uploaded this). When referring to {uploader_name}, use "you" or "your". When referring to the other person in the conversation, use their name or "they/them". Be warm, insightful, and concise."""
 
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-5-20250929",
