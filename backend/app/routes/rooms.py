@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, String
 import io
+import os
 
 from app.db import get_db
 from app.deps import get_current_user, get_current_subscription
