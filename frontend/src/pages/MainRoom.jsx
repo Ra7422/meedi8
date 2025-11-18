@@ -26,6 +26,8 @@ export default function MainRoom() {
   const [otherUserPresent, setOtherUserPresent] = useState(false);  // Is other user in the room?
   const [uploadingFile, setUploadingFile] = useState(false);  // Track file upload state
   const [showTelegramImport, setShowTelegramImport] = useState(false);  // Telegram import modal
+  const [showMessageViewer, setShowMessageViewer] = useState(false);  // Message viewer modal
+  const [viewingTelegramImport, setViewingTelegramImport] = useState(null);  // Current import being viewed
   const messagesEndRef = useRef(null);
   
   useEffect(() => {
@@ -472,11 +474,27 @@ export default function MainRoom() {
       // Remove thinking messages
       setMessages(prev => prev.filter(m => !m.isThinking));
 
-      // Refresh messages to include the new import
+      // Refresh messages to include the new import with telegram metadata
       const history = await apiRequest(`/rooms/${roomId}/main-room/messages`, "GET", null, token);
       const isUser1 = user.id === summaries.user1_id;
       const otherUserSummary = isUser1 ? summaries.user2_summary : summaries.user1_summary;
       const otherUserName = isUser1 ? summaries.user2_name : summaries.user1_name;
+
+      // Add telegram metadata to the last message if it's the import response
+      const messagesWithMetadata = history.messages.map((msg, idx) => {
+        // Check if this is the last message and if it's the telegram import
+        if (idx === history.messages.length - 1 && response.download_id) {
+          return {
+            ...msg,
+            telegramImport: {
+              download_id: response.download_id,
+              message_count: telegramData.message_count,
+              chat_name: telegramData.chat_name
+            }
+          };
+        }
+        return msg;
+      });
 
       const messagesWithSummary = [
         {
@@ -484,7 +502,7 @@ export default function MainRoom() {
           content: otherUserSummary,
           fromUser: otherUserName
         },
-        ...history.messages
+        ...messagesWithMetadata
       ];
 
       setMessages(messagesWithSummary);
@@ -494,7 +512,7 @@ export default function MainRoom() {
       // Remove thinking messages on error
       setMessages(prev => prev.filter(m => !m.isThinking));
       console.error("Failed to import Telegram conversation:", error);
-      setError(error.message || "Failed to import conversation");
+      alert(error.message || "Failed to import conversation");
     } finally {
       setSending(false);
     }
@@ -914,6 +932,40 @@ export default function MainRoom() {
                     {msg.content}
                   </div>
                 )}
+                {/* View source button for Telegram imports */}
+                {msg.telegramImport && (
+                  <button
+                    onClick={() => {
+                      setViewingTelegramImport(msg.telegramImport);
+                      setShowMessageViewer(true);
+                    }}
+                    style={{
+                      marginTop: "12px",
+                      padding: "8px 16px",
+                      background: "transparent",
+                      border: "1px solid #7DD3C0",
+                      borderRadius: "8px",
+                      color: "#1F7A5C",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#E8F9F5";
+                      e.currentTarget.style.borderColor = "#1F7A5C";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.borderColor = "#7DD3C0";
+                    }}
+                  >
+                    📋 View source
+                  </button>
+                )}
                 {msg.role === "user" && msg.audioUrl && msg.userId !== user.id && (
                   <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${isUser1 ? "#7DD3C0" : "#CCB2FF"}` }}>
                     <audio
@@ -1235,6 +1287,227 @@ export default function MainRoom() {
         onImportComplete={handleTelegramImportComplete}
         roomId={roomId}
       />
+
+      {/* Message Viewer Modal */}
+      {showMessageViewer && viewingTelegramImport && (
+        <TelegramMessageViewer
+          downloadId={viewingTelegramImport.download_id}
+          chatName={viewingTelegramImport.chat_name}
+          messageCount={viewingTelegramImport.message_count}
+          onClose={() => {
+            setShowMessageViewer(false);
+            setViewingTelegramImport(null);
+          }}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}
+
+// Telegram Message Viewer component
+function TelegramMessageViewer({ downloadId, chatName, messageCount, onClose, token }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const MESSAGES_PER_PAGE = 50;
+
+  const fetchMessages = async (currentOffset = 0, append = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await apiRequest(
+        `/telegram/downloads/${downloadId}/messages?limit=${MESSAGES_PER_PAGE}&offset=${currentOffset}`,
+        "GET",
+        null,
+        token
+      );
+
+      if (append) {
+        setMessages(prev => [...prev, ...(response.messages || [])]);
+      } else {
+        setMessages(response.messages || []);
+      }
+
+      setHasMore(response.has_more || false);
+      setOffset(currentOffset + (response.messages || []).length);
+    } catch (err) {
+      console.error("Failed to fetch Telegram messages:", err);
+      setError(err.message || "Failed to load messages");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchMessages(offset, true);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages(0, false);
+  }, [downloadId, token]);
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0, 0, 0, 0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: "20px"
+    }}>
+      <div style={{
+        background: "white",
+        borderRadius: "12px",
+        maxWidth: "700px",
+        width: "100%",
+        maxHeight: "80vh",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)"
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px",
+          borderBottom: "1px solid #E5E7EB",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#111827" }}>
+              {chatName || "Telegram Conversation"}
+            </h3>
+            <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B7280" }}>
+              {messageCount} messages
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: "24px",
+              cursor: "pointer",
+              color: "#6B7280",
+              padding: "4px 8px"
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px 24px"
+        }}>
+          {loading && (
+            <div style={{ textAlign: "center", padding: "40px", color: "#6B7280" }}>
+              Loading messages...
+            </div>
+          )}
+
+          {error && (
+            <div style={{
+              background: "#FEF2F2",
+              border: "1px solid #FCA5A5",
+              borderRadius: "8px",
+              padding: "16px",
+              color: "#991B1B"
+            }}>
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && messages.map((msg, idx) => (
+            <div key={idx} style={{
+              marginBottom: "16px",
+              paddingBottom: "16px",
+              borderBottom: idx < messages.length - 1 ? "1px solid #F3F4F6" : "none"
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px"
+              }}>
+                <span style={{ fontWeight: "600", color: "#1F2937", fontSize: "14px" }}>
+                  {msg.sender_name || "Unknown"}
+                </span>
+                <span style={{ fontSize: "12px", color: "#9CA3AF" }}>
+                  {new Date(msg.date).toLocaleString()}
+                </span>
+              </div>
+              <p style={{ margin: 0, color: "#374151", fontSize: "14px", lineHeight: "1.5" }}>
+                {msg.text || <em style={{ color: "#9CA3AF" }}>[Media]</em>}
+              </p>
+            </div>
+          ))}
+
+          {/* Load More Button */}
+          {!loading && !error && hasMore && (
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  padding: "10px 24px",
+                  background: loadingMore ? "#E5E7EB" : "#7DD3C0",
+                  color: loadingMore ? "#6B7280" : "#1F7A5C",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: loadingMore ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {loadingMore ? "Loading..." : "Load more"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: "16px 24px",
+          borderTop: "1px solid #E5E7EB",
+          textAlign: "right"
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              background: "#1F7A5C",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer"
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
