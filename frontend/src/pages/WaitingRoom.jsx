@@ -68,7 +68,8 @@ export default function WaitingRoom() {
 
       // Construct invite link
       if (response.invite_token) {
-        const link = `${window.location.origin}/join/${response.invite_token}`;
+        // Use production domain for invite links (required for Telegram OAuth)
+        const link = `https://meedi8.com/join/${response.invite_token}`;
         setInviteLink(link);
       }
     } catch (error) {

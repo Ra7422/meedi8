@@ -49,7 +49,8 @@ export default function MainRoom() {
 
         // Construct invite link from invite_token
         if (summariesData.invite_token) {
-          const link = `${window.location.origin}/join/${summariesData.invite_token}`;
+          // Use production domain for invite links (required for Telegram OAuth)
+          const link = `https://meedi8.com/join/${summariesData.invite_token}`;
           setInviteLink(link);
         }
 
