@@ -1283,7 +1283,7 @@ export default function CoachingChat() {
               if (thinkingMessages.length > 0) {
                 const msg = thinkingMessages.shift();
                 setMessages(prev => [...prev, {
-                  role: "ai",
+                  role: "assistant",  // Changed from "ai" to show Meedi's profile picture
                   content: msg,
                   isThinking: true,
                   timestamp: new Date().toISOString()

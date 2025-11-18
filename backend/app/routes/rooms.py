@@ -2255,16 +2255,12 @@ Keep it concise and actionable."""
         analysis_summary = response.content[0].text
         print(f"[Coaching Telegram Import] Claude analysis complete")
 
-        # Create simple summary with link to view full conversation
-        summary_text = f"""📱 **Telegram Conversation Imported**
+        # Create summary with follow-up question
+        summary_text = f"""What I see here is: {analysis_summary}
 
-**Chat:** {payload.chat_name}
-**Messages:** {payload.message_count}
+What specifically do you want to look at?
 
-**My Analysis:**
-{analysis_summary}
-
-[View full conversation →](/telegram/downloads/{payload.download_id}/messages)"""
+[View full conversation ({payload.message_count} messages) →](/telegram/downloads/{payload.download_id}/messages)"""
 
         # Create a turn with Telegram metadata and Gemini analysis
         # NOTE: metadata field doesn't exist - storing in summary for now
