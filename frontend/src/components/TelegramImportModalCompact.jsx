@@ -457,22 +457,6 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
               >
                 All
               </button>
-              <button
-                onClick={() => { setSelectedFolder("none"); setCurrentLimit(10); }}
-                style={{
-                  padding: "6px 12px",
-                  fontSize: "11px",
-                  fontWeight: "600",
-                  color: selectedFolder === "none" ? "white" : "#6b7280",
-                  background: selectedFolder === "none" ? "#6b7280" : "white",
-                  border: "1px solid #6b7280",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  marginRight: "6px"
-                }}
-              >
-                No Folder
-              </button>
               {availableFolders.map(folder => (
                 <button
                   key={folder.id}
@@ -489,7 +473,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
                     marginRight: "6px"
                   }}
                 >
-                  {folder.name}
+                  📁 {folder.name}
                 </button>
               ))}
             </div>
