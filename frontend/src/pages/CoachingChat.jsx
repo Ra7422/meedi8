@@ -30,6 +30,8 @@ export default function CoachingChat() {
   const [hasShared, setHasShared] = useState(false);  // Track if user has shared the link
   const [showSummaryPopup, setShowSummaryPopup] = useState(false);  // For User 2 summary popup
   const [showTelegramImport, setShowTelegramImport] = useState(false);  // Telegram import modal
+  const [showMessageViewer, setShowMessageViewer] = useState(false);  // Message viewer modal
+  const [viewingTelegramImport, setViewingTelegramImport] = useState(null);  // Current import being viewed
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -586,8 +588,8 @@ export default function CoachingChat() {
             {msg.telegramImport && (
               <button
                 onClick={() => {
-                  // TODO: Open modal with full conversation
-                  console.log("View Telegram import:", msg.telegramImport);
+                  setViewingTelegramImport(msg.telegramImport);
+                  setShowMessageViewer(true);
                 }}
                 style={{
                   marginTop: "12px",
@@ -613,7 +615,7 @@ export default function CoachingChat() {
                   e.target.style.borderColor = "#7DD3C0";
                 }}
               >
-                📋 View full conversation ({msg.telegramImport.message_count} messages)
+                📋 View source
               </button>
             )}
           </div>
@@ -1366,6 +1368,180 @@ export default function CoachingChat() {
         }}
         roomId={roomId}
       />
+
+      {/* Message Viewer Modal */}
+      {showMessageViewer && viewingTelegramImport && (
+        <TelegramMessageViewer
+          downloadId={viewingTelegramImport.download_id}
+          chatName={viewingTelegramImport.chat_name}
+          messageCount={viewingTelegramImport.message_count}
+          onClose={() => {
+            setShowMessageViewer(false);
+            setViewingTelegramImport(null);
+          }}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}
+
+// Simple inline Telegram Message Viewer component
+function TelegramMessageViewer({ downloadId, chatName, messageCount, onClose, token }) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        const response = await apiRequest(
+          `/telegram/downloads/${downloadId}/messages`,
+          "GET",
+          null,
+          token
+        );
+        setMessages(response.messages || []);
+      } catch (err) {
+        console.error("Failed to fetch Telegram messages:", err);
+        setError(err.message || "Failed to load messages");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [downloadId, token]);
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0, 0, 0, 0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: "20px"
+    }}>
+      <div style={{
+        background: "white",
+        borderRadius: "12px",
+        maxWidth: "700px",
+        width: "100%",
+        maxHeight: "80vh",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)"
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "20px 24px",
+          borderBottom: "1px solid #E5E7EB",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#111827" }}>
+              {chatName || "Telegram Conversation"}
+            </h3>
+            <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6B7280" }}>
+              {messageCount} messages
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: "24px",
+              cursor: "pointer",
+              color: "#6B7280",
+              padding: "4px 8px"
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px 24px"
+        }}>
+          {loading && (
+            <div style={{ textAlign: "center", padding: "40px", color: "#6B7280" }}>
+              Loading messages...
+            </div>
+          )}
+
+          {error && (
+            <div style={{
+              background: "#FEF2F2",
+              border: "1px solid #FCA5A5",
+              borderRadius: "8px",
+              padding: "16px",
+              color: "#991B1B"
+            }}>
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && messages.map((msg, idx) => (
+            <div key={idx} style={{
+              marginBottom: "16px",
+              paddingBottom: "16px",
+              borderBottom: idx < messages.length - 1 ? "1px solid #F3F4F6" : "none"
+            }}>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px"
+              }}>
+                <span style={{ fontWeight: "600", color: "#1F2937", fontSize: "14px" }}>
+                  {msg.sender_name || "Unknown"}
+                </span>
+                <span style={{ fontSize: "12px", color: "#9CA3AF" }}>
+                  {new Date(msg.date).toLocaleString()}
+                </span>
+              </div>
+              <p style={{ margin: 0, color: "#374151", fontSize: "14px", lineHeight: "1.5" }}>
+                {msg.text || <em style={{ color: "#9CA3AF" }}>[Media]</em>}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: "16px 24px",
+          borderTop: "1px solid #E5E7EB",
+          textAlign: "right"
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              background: "#1F7A5C",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer"
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
