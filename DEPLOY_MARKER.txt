@@ -1,2 +1,2 @@
-Deployment trigger: 9690653 - Fix telegram_import turns appearing in coaching chat
-Timestamp: 2025-11-18 12:30 UTC
+Deployment trigger: Fix TelegramImportRequest NameError - move to top of file
+Timestamp: 2025-11-18 19:13 UTC

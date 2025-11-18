@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File,
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, String
+from pydantic import BaseModel
 import io
 import os
 
@@ -26,6 +27,12 @@ from app.schemas.room import StartCoachingRequest, StartCoachingResponse, Coachi
 from app.models.room import Room, Turn
 from app.schemas.room import RoomCreate, RoomResponse, IntakeRequest, IntakeResponse, TurnResponse, TurnFeedItem, AIQuestionOut, MediateOut, RespondRequest, RespondOut, SignalRequest
 router = APIRouter(prefix="/rooms", tags=["rooms"])
+
+# ---- Pydantic Models ----
+class TelegramImportRequest(BaseModel):
+    download_id: int
+    chat_name: str
+    message_count: int
 
 # ---- Helpers ----
 def extract_tags(text: str) -> List[str]:
@@ -2164,13 +2171,6 @@ async def upload_file_main_room(
             detail=f"Failed to upload file: {str(e)}"
         )
 
-
-from pydantic import BaseModel
-
-class TelegramImportRequest(BaseModel):
-    download_id: int
-    chat_name: str
-    message_count: int
 
 @router.post("/{room_id}/coach/telegram-import")
 async def import_telegram_coaching(
