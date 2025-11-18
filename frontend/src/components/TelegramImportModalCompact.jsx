@@ -73,6 +73,13 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     }
   }, [downloadId, downloadStatus, token]);
 
+  // Reload contacts when folder selection or limit changes
+  useEffect(() => {
+    if (step === 3 && token) {
+      loadContacts();
+    }
+  }, [selectedFolder, currentLimit]);
+
   const checkExistingSession = async () => {
     if (!token) {
       setCheckingSession(false);
@@ -442,7 +449,10 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
           {availableFolders.length > 0 && (
             <div style={{ marginBottom: "12px", overflowX: "auto", whiteSpace: "nowrap", paddingBottom: "4px" }}>
               <button
-                onClick={() => { setSelectedFolder("all"); setCurrentLimit(10); }}
+                onClick={() => {
+                  setSelectedFolder("all");
+                  setCurrentLimit(10);
+                }}
                 style={{
                   padding: "6px 12px",
                   fontSize: "11px",
@@ -460,7 +470,10 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
               {availableFolders.map(folder => (
                 <button
                   key={folder.id}
-                  onClick={() => { setSelectedFolder(String(folder.id)); setCurrentLimit(10); }}
+                  onClick={() => {
+                    setSelectedFolder(String(folder.id));
+                    setCurrentLimit(10);
+                  }}
                   style={{
                     padding: "6px 12px",
                     fontSize: "11px",
