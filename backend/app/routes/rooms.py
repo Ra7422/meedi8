@@ -2251,18 +2251,23 @@ async def import_telegram_coaching(
         from anthropic import Anthropic
         anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-        analysis_prompt = f"""You're reviewing a Telegram conversation between two people who are about to enter mediation coaching.
+        analysis_prompt = f"""You're reviewing a Telegram conversation between two people who are about to enter mediation coaching with Meedi (an AI mediator).
 
 {conversation_text}
 
 The person who uploaded this conversation is: {uploader_name}
 
-Write a brief, conversational summary (2-3 sentences) of what you notice in this conversation. Focus on:
+Write a brief, conversational summary (2-3 sentences) of what you notice in this conversation, then end with a relevant follow-up question to keep the conversation flowing. Focus on:
 - The overall dynamic between them
 - Any patterns in how they communicate
-- What might be helpful for their mediator to understand
+- What might be helpful for Meedi (the AI mediator) to understand
 
-IMPORTANT: Write in first person as if you're speaking directly to {uploader_name} (the person who uploaded this). When referring to {uploader_name}, use "you" or "your". When referring to the other person in the conversation, use their name or "they/them". Be warm, insightful, and concise."""
+IMPORTANT:
+- Write in first person as if you're speaking directly to {uploader_name} (the person who uploaded this)
+- When referring to {uploader_name}, use "you" or "your"
+- When referring to the other person, use their name or "they/them"
+- End with a thoughtful question that invites {uploader_name} to share more about the situation or their feelings
+- Be warm, insightful, and concise"""
 
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-5-20250929",
