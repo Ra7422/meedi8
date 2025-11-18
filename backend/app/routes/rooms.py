@@ -2223,45 +2223,47 @@ async def import_telegram_coaching(
             for msg in messages
         ]
 
-        # Analyze with Gemini (async) - Creates persistent corpus for future retrieval
-        gemini_service = GeminiRAGService()
-        print(f"[Coaching Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
+        # Format messages for Claude analysis
+        conversation_text = f"=== TELEGRAM CONVERSATION ===\nBetween: {user1_name} and {user2_name}\nTotal Messages: {len(message_dicts)}\n\n"
+        for msg in message_dicts[:50]:  # Limit to first 50 messages for token efficiency
+            conversation_text += f"[{msg['timestamp']}] {msg['sender_name']}: {msg['text']}\n"
 
-        analysis = await gemini_service.analyze_telegram_history(
-            messages=message_dicts,
-            user1_name=user1_name,
-            user2_name=user2_name,
-            room_id=room_id,
-            download_id=payload.download_id
+        # Analyze with Claude (much simpler than Gemini!)
+        print(f"[Coaching Telegram Import] Analyzing {len(message_dicts)} messages with Claude...")
+
+        from anthropic import Anthropic
+        anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+        analysis_prompt = f"""You're reviewing a Telegram conversation between two people who are about to enter mediation coaching.
+
+{conversation_text}
+
+Please provide a brief analysis (3-4 sentences) covering:
+1. Main conflict themes
+2. Communication patterns you notice
+3. Key insights that would help their mediator
+
+Keep it concise and actionable."""
+
+        response = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=500,
+            messages=[{"role": "user", "content": analysis_prompt}]
         )
 
-        print(f"[Coaching Telegram Import] Gemini analysis complete")
+        analysis_summary = response.content[0].text
+        print(f"[Coaching Telegram Import] Claude analysis complete")
 
-        # Save corpus_id to TelegramDownload for persistent storage
-        corpus_id = analysis.get("corpus_id")
-        if corpus_id:
-            download.gemini_corpus_id = corpus_id
-            db.commit()
-            print(f"[Coaching Telegram Import] Saved corpus ID to download: {corpus_id}")
+        # Create simple summary with link to view full conversation
+        summary_text = f"""📱 **Telegram Conversation Imported**
 
-        # Create rich summary from analysis
-        summary_parts = [
-            f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)",
-            "",
-            f"**Summary:** {analysis.get('summary', 'Conversation analyzed.')}"
-        ]
+**Chat:** {payload.chat_name}
+**Messages:** {payload.message_count}
 
-        # Add key themes
-        themes = analysis.get('recurring_themes', [])
-        if themes:
-            summary_parts.append("")
-            summary_parts.append("**Key Themes:**")
-            for theme in themes[:3]:  # Top 3 themes
-                theme_name = theme.get('theme', 'Unknown')
-                freq = theme.get('frequency', 'unknown')
-                summary_parts.append(f"• {theme_name} ({freq} frequency)")
+**My Analysis:**
+{analysis_summary}
 
-        summary_text = "\n".join(summary_parts)
+[View full conversation →](/telegram/downloads/{payload.download_id}/messages)"""
 
         # Create a turn with Telegram metadata and Gemini analysis
         # NOTE: metadata field doesn't exist - storing in summary for now
@@ -2281,7 +2283,7 @@ async def import_telegram_coaching(
             "success": True,
             "turn_id": telegram_turn.id,
             "download_id": payload.download_id,
-            "analysis": analysis,
+            "analysis_summary": analysis_summary,
             "message": "Telegram conversation analyzed and imported successfully"
         }
 
@@ -2352,48 +2354,46 @@ async def import_telegram_conversation(
             for msg in messages
         ]
 
-        # Analyze with Gemini (async) - Creates persistent corpus for future retrieval
-        gemini_service = GeminiRAGService()
-        print(f"[Telegram Import] Analyzing {len(message_dicts)} messages with Gemini...")
+        # Format messages for Claude analysis
+        conversation_text = f"=== TELEGRAM CONVERSATION ===\nBetween: {user1_name} and {user2_name}\nTotal Messages: {len(message_dicts)}\n\n"
+        for msg in message_dicts[:50]:  # Limit to first 50 messages for token efficiency
+            conversation_text += f"[{msg['timestamp']}] {msg['sender_name']}: {msg['text']}\n"
 
-        analysis = await gemini_service.analyze_telegram_history(
-            messages=message_dicts,
-            user1_name=user1_name,
-            user2_name=user2_name,
-            room_id=room_id,
-            download_id=payload.download_id
+        # Analyze with Claude (much simpler than Gemini!)
+        from anthropic import Anthropic
+        anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+        analysis_prompt = f"""You're reviewing a Telegram conversation between two people who are in mediation together.
+
+{conversation_text}
+
+Please provide a brief analysis (3-4 sentences) covering:
+1. Main conflict themes
+2. Communication patterns you notice
+3. Key insights that would help their mediator
+
+Keep it concise and actionable."""
+
+        response = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=500,
+            messages=[{"role": "user", "content": analysis_prompt}]
         )
 
-        print(f"[Telegram Import] Gemini analysis complete")
+        analysis_summary = response.content[0].text
 
-        # Save corpus_id to TelegramDownload for persistent storage
-        corpus_id = analysis.get("corpus_id")
-        if corpus_id:
-            download.gemini_corpus_id = corpus_id
-            db.commit()
-            print(f"[Telegram Import] Saved corpus ID to download: {corpus_id}")
+        # Create simple summary with link to view full conversation
+        summary_text = f"""📱 **Telegram Conversation Imported**
 
-        # Create rich summary from analysis
-        summary_parts = [
-            f"📱 Imported Telegram conversation: '{payload.chat_name}' ({payload.message_count} messages)",
-            "",
-            f"**Summary:** {analysis.get('summary', 'Conversation analyzed.')}"
-        ]
+**Chat:** {payload.chat_name}
+**Messages:** {payload.message_count}
 
-        # Add key themes
-        themes = analysis.get('recurring_themes', [])
-        if themes:
-            summary_parts.append("")
-            summary_parts.append("**Key Themes:**")
-            for theme in themes[:3]:  # Top 3 themes
-                theme_name = theme.get('theme', 'Unknown')
-                freq = theme.get('frequency', 'unknown')
-                summary_parts.append(f"• {theme_name} ({freq} frequency)")
+**My Analysis:**
+{analysis_summary}
 
-        summary_text = "\n".join(summary_parts)
+[View full conversation →](/telegram/downloads/{payload.download_id}/messages)"""
 
-        # Create a turn with Telegram metadata and Gemini analysis
-        # NOTE: metadata and text fields don't exist - storing in summary and tags for now
+        # Create a turn with Telegram metadata and Claude analysis
         telegram_turn = Turn(
             room_id=room_id,
             user_id=current_user.id,
@@ -2410,7 +2410,7 @@ async def import_telegram_conversation(
             "success": True,
             "turn_id": telegram_turn.id,
             "download_id": payload.download_id,
-            "analysis": analysis,
+            "analysis_summary": analysis_summary,
             "message": "Telegram conversation analyzed and imported successfully"
         }
 
