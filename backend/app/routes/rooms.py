@@ -2251,8 +2251,8 @@ async def import_telegram_coaching(
             prior_context = "\n=== PRIOR CONVERSATION CONTEXT ===\n"
             for turn in previous_turns[-5:]:  # Last 5 turns for context
                 role = "User" if turn.kind == "user_message" else "Meedi"
-                # Extract text from content (it's stored as markdown)
-                content = turn.content if turn.content else turn.summary if turn.summary else ""
+                # Extract text from summary field
+                content = turn.summary if turn.summary else ""
                 if content and len(content) < 500:  # Keep it concise
                     prior_context += f"{role}: {content}\n"
             prior_context += "\n"
