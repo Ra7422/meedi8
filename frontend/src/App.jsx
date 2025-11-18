@@ -70,7 +70,7 @@ export default function App() {
       <Router>
         <GlobalMenu />
         <Routes>
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/" element={<Home />} />
           <Route path="/plasmic-host" element={<PlаsmicHost />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

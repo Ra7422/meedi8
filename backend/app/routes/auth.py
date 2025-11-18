@@ -291,3 +291,62 @@ def get_my_usage(
     """Get current user's subscription usage"""
     from app.middleware.rate_limit import get_usage_info
     return get_usage_info(current_user)
+
+@router.post("/create-guest", response_model=TokenOut, status_code=201)
+def create_guest(db: Session = Depends(get_db)):
+    """Create a temporary guest account for users to try the platform"""
+    import uuid
+    import secrets
+
+    # Generate unique guest email
+    guest_uuid = str(uuid.uuid4())[:8]
+    guest_email = f"guest_{guest_uuid}@temp.meedi8.com"
+
+    # Create guest user with random password (user won't see it)
+    guest = User(
+        email=guest_email,
+        name=f"Guest {guest_uuid}",
+        hashed_password=hash_password(secrets.token_urlsafe(32)),  # Random password
+        is_guest=True  # Mark as guest account
+    )
+    db.add(guest)
+    db.commit()
+    db.refresh(guest)
+
+    # Create access token
+    token = create_access_token({"sub": str(guest.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return TokenOut(access_token=token)
+
+class ConvertGuestIn(BaseModel):
+    email: EmailStr
+    name: Optional[str] = None
+    password: str
+
+@router.put("/convert-guest", response_model=TokenOut)
+def convert_guest(
+    payload: ConvertGuestIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Convert a guest account to a real account with email and password"""
+    # Verify user is actually a guest
+    if not current_user.is_guest:
+        raise HTTPException(status_code=400, detail="Only guest accounts can be converted")
+
+    # Check if email is already taken
+    existing = db.query(User).filter(User.email == payload.email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    # Update guest account to real account
+    current_user.email = payload.email
+    current_user.name = payload.name or current_user.name
+    current_user.hashed_password = hash_password(payload.password)
+    current_user.is_guest = False
+
+    db.commit()
+    db.refresh(current_user)
+
+    # Return new token with updated user data
+    token = create_access_token({"sub": str(current_user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return TokenOut(access_token=token)

@@ -10,6 +10,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     is_admin = Column(Integer, default=0, nullable=False)  # 0 = regular user, 1 = admin
+    is_guest = Column(Boolean, default=False, nullable=False)  # True for temporary guest accounts
     stripe_customer_id = Column(String(255), nullable=True, unique=True, index=True)  # Stripe customer ID
     profile_picture_url = Column(String(500), nullable=True)  # Google OAuth profile picture URL
     has_completed_screening = Column(Boolean, default=False, nullable=False)  # First-time screening gate
