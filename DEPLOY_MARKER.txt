@@ -1,2 +1,2 @@
-Deployment trigger: e794c69 - Add os import for Claude Telegram analysis
-Timestamp: 2025-11-18 12:05 UTC
+Deployment trigger: 9690653 - Fix telegram_import turns appearing in coaching chat
+Timestamp: 2025-11-18 12:30 UTC
