@@ -1,5 +1,3 @@
-ALLOWED_SIGNALS = {"agree","disagree","sorry","hear_you","break","hurt"}
-
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
@@ -26,7 +24,10 @@ from app.services.email_service import send_turn_notification, send_break_notifi
 from app.schemas.room import StartCoachingRequest, StartCoachingResponse, CoachingResponseRequest, CoachingResponseOut, FinalizeCoachingResponse, LobbyInfoResponse, MainRoomSummariesResponse, MainRoomStartResponse, MainRoomRespondRequest, MainRoomRespondResponse
 from app.models.room import Room, Turn
 from app.schemas.room import RoomCreate, RoomResponse, IntakeRequest, IntakeResponse, TurnResponse, TurnFeedItem, AIQuestionOut, MediateOut, RespondRequest, RespondOut, SignalRequest
+
 router = APIRouter(prefix="/rooms", tags=["rooms"])
+
+ALLOWED_SIGNALS = {"agree","disagree","sorry","hear_you","break","hurt"}
 
 # ---- Pydantic Models ----
 class TelegramImportRequest(BaseModel):
