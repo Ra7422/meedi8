@@ -1,0 +1,2 @@
+Deployment trigger: e794c69 - Add os import for Claude Telegram analysis
+Timestamp: 2025-11-18 12:05 UTC
