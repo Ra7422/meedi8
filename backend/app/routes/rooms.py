@@ -2238,6 +2238,25 @@ async def import_telegram_coaching(
                     other_person_name = other_senders[0]
                 break
 
+        # Get previous conversation turns for context
+        previous_turns = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "pre_mediation",
+            Turn.user_id == current_user.id
+        ).order_by(Turn.created_at.asc()).all()
+
+        # Build prior context from conversation history
+        prior_context = ""
+        if previous_turns:
+            prior_context = "\n=== PRIOR CONVERSATION CONTEXT ===\n"
+            for turn in previous_turns[-5:]:  # Last 5 turns for context
+                role = "User" if turn.kind == "user_message" else "Meedi"
+                # Extract text from content (it's stored as markdown)
+                content = turn.content if turn.content else turn.summary if turn.summary else ""
+                if content and len(content) < 500:  # Keep it concise
+                    prior_context += f"{role}: {content}\n"
+            prior_context += "\n"
+
         # Format messages for Claude analysis
         conversation_text = f"=== TELEGRAM CONVERSATION ===\n"
         conversation_text += f"Uploaded by: {uploader_name}\n"
@@ -2253,7 +2272,7 @@ async def import_telegram_coaching(
 
         analysis_prompt = f"""You're reviewing a Telegram conversation between two people who are about to enter mediation coaching with Meedi (an AI mediator).
 
-{conversation_text}
+{prior_context}{conversation_text}
 
 The person who uploaded this conversation is: {uploader_name}
 
@@ -2261,8 +2280,10 @@ Write a brief, conversational summary (2-3 sentences) of what you notice in this
 - The overall dynamic between them
 - Any patterns in how they communicate
 - What might be helpful for Meedi (the AI mediator) to understand
+- How this Telegram conversation relates to the context they've already shared (if any prior context exists above)
 
 IMPORTANT:
+- If prior conversation context exists, integrate it into your analysis - reference what they've already told you about the situation
 - Write in first person as if you're speaking directly to {uploader_name} (the person who uploaded this)
 - When referring to {uploader_name}, use "you" or "your"
 - When referring to the other person, use their name or "they/them"
