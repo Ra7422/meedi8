@@ -583,6 +583,39 @@ export default function CoachingChat() {
             }}>
               {msg.content}
             </p>
+            {msg.telegramImport && (
+              <button
+                onClick={() => {
+                  // TODO: Open modal with full conversation
+                  console.log("View Telegram import:", msg.telegramImport);
+                }}
+                style={{
+                  marginTop: "12px",
+                  padding: "8px 16px",
+                  background: "transparent",
+                  border: "1px solid #7DD3C0",
+                  borderRadius: "8px",
+                  color: "#1F7A5C",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = "#E8F9F5";
+                  e.target.style.borderColor = "#1F7A5C";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = "transparent";
+                  e.target.style.borderColor = "#7DD3C0";
+                }}
+              >
+                📋 View full conversation ({msg.telegramImport.message_count} messages)
+              </button>
+            )}
           </div>
           );
         })}
@@ -1313,8 +1346,13 @@ export default function CoachingChat() {
             // Add the summary message directly from the response
             const summaryMessage = {
               role: "assistant",
-              content: `What I see here is: ${response.analysis_summary}\n\nWhat specifically do you want to look at?\n\n[View full conversation (${telegramData.message_count} messages) →](/telegram/downloads/${response.download_id}/messages)`,
-              timestamp: new Date().toISOString()
+              content: response.analysis_summary,
+              timestamp: new Date().toISOString(),
+              telegramImport: {
+                download_id: response.download_id,
+                message_count: telegramData.message_count,
+                chat_name: telegramData.chat_name
+              }
             };
 
             setMessages(prev => [...prev, summaryMessage]);

@@ -2241,12 +2241,12 @@ async def import_telegram_coaching(
 
 {conversation_text}
 
-Please provide a brief analysis (3-4 sentences) covering:
-1. Main conflict themes
-2. Communication patterns you notice
-3. Key insights that would help their mediator
+Write a brief, conversational summary (2-3 sentences) of what you notice in this conversation. Focus on:
+- The overall dynamic between them
+- Any patterns in how they communicate
+- What might be helpful for their mediator to understand
 
-Keep it concise and actionable."""
+Write in first person as if you're speaking directly to the person who uploaded this. Be warm, insightful, and concise."""
 
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-5-20250929",
