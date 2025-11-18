@@ -1,7 +1,7 @@
 """add is_guest to users
 
 Revision ID: zzzz_add_is_guest
-Revises:
+Revises: add_gemini_corpus_id
 Create Date: 2025-11-18
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'zzzz_add_is_guest'
-down_revision = 'zzz_unique_participant'
+down_revision = 'add_gemini_corpus_id'
 branch_labels = None
 depends_on = None
 
