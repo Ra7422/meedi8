@@ -1310,9 +1310,14 @@ export default function CoachingChat() {
             // Remove thinking messages
             setMessages(prev => prev.filter(m => !m.isThinking));
 
-            // Refresh messages to include the new import
-            const history = await apiRequest(`/rooms/${roomId}/coach/turns`, "GET", null, token);
-            setMessages(history.messages || []);
+            // Add the summary message directly from the response
+            const summaryMessage = {
+              role: "assistant",
+              content: `What I see here is: ${response.analysis_summary}\n\nWhat specifically do you want to look at?\n\n[View full conversation (${telegramData.message_count} messages) →](/telegram/downloads/${response.download_id}/messages)`,
+              timestamp: new Date().toISOString()
+            };
+
+            setMessages(prev => [...prev, summaryMessage]);
           } catch (error) {
             setMessages(prev => prev.filter(m => !m.isThinking));
             console.error("Failed to import Telegram conversation:", error);
