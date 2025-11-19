@@ -2,16 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
-import { soloTheme, soloStyles } from '../styles/soloTheme';
+import WaveDecoration from '../components/WaveDecoration';
+import CategoryIcon from '../components/ui/CategoryIcon';
 
 export default function CreateSoloSession() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState(null);
   const [conflictDescription, setConflictDescription] = useState('');
-  const [category, setCategory] = useState('personal');
+  const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCategorySelection, setShowCategorySelection] = useState(false);
+  const [paywallModal, setPaywallModal] = useState(null);
+
+  const categories = [
+    { id: 'work', label: 'Work' },
+    { id: 'family', label: 'Family' },
+    { id: 'romance', label: 'Romance' },
+    { id: 'money', label: 'Money' },
+    { id: 'friendship', label: 'Friendship' },
+    { id: 'other', label: 'Other' },
+  ];
 
   useEffect(() => {
     // Get the conflict description from sessionStorage
@@ -34,10 +44,14 @@ export default function CreateSoloSession() {
   }, [token, navigate]);
 
   const handleCreateSession = async () => {
+    if (!category) {
+      alert('Please select a category');
+      return;
+    }
+
     if (loading) return;
 
     setLoading(true);
-    setError(null);
 
     try {
       console.log('Creating solo coaching room...');
@@ -45,7 +59,7 @@ export default function CreateSoloSession() {
       // Create a solo coaching room
       const response = await apiRequest('/rooms/', 'POST', {
         title: 'Solo Coaching Session',
-        category,
+        category: category.toLowerCase(),
         initial_issue: conflictDescription,
         room_type: 'solo'
       }, token);
@@ -59,132 +73,43 @@ export default function CreateSoloSession() {
       window.location.href = `/rooms/${response.id}/solo`;
     } catch (err) {
       console.error('Failed to create solo session:', err);
-      setError(err.message || 'Failed to create session');
+
+      // Handle paywall errors (402 Payment Required)
+      if (err.paywallError) {
+        const details = err.details || {};
+        setPaywallModal({
+          message: err.message,
+          tier: details.tier,
+          limit: details.limit,
+          currentCount: details.current_count
+        });
+      } else {
+        alert('Failed to create session: ' + err.message);
+      }
+
       setLoading(false);
     }
   };
 
-  const categories = [
-    { value: "personal", label: "Personal" },
-    { value: "work", label: "Work" },
-    { value: "family", label: "Family" },
-    { value: "relationship", label: "Relationship" },
-    { value: "friendship", label: "Friendship" },
-    { value: "other", label: "Other" },
-  ];
-
-  const styles = {
-    container: {
-      ...soloStyles.pageContainer,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    card: {
-      backgroundColor: soloTheme.colors.backgroundWhite,
-      borderRadius: soloTheme.borderRadius.xl,
-      padding: "40px",
-      maxWidth: "600px",
-      width: "100%",
-      boxShadow: soloTheme.shadows.lg,
-      border: `2px solid ${soloTheme.colors.border}`,
-    },
-    heading: {
-      ...soloStyles.heading,
-      marginBottom: "12px",
-    },
-    subheading: {
-      ...soloStyles.subheading,
-      textAlign: "center",
-      color: soloTheme.colors.textLight,
-      marginBottom: "32px",
-    },
-    label: {
-      fontSize: soloTheme.fontSize.md,
-      fontWeight: soloTheme.fontWeight.semibold,
-      color: soloTheme.colors.textSecondary,
-      marginBottom: "16px",
-      display: "block",
-    },
-    categoryGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, 1fr)",
-      gap: "12px",
-      marginBottom: "24px",
-    },
-    categoryOption: {
-      padding: "16px",
-      borderRadius: soloTheme.borderRadius.md,
-      border: `2px solid ${soloTheme.colors.border}`,
-      backgroundColor: soloTheme.colors.backgroundWhite,
-      cursor: "pointer",
-      textAlign: "center",
-      fontSize: soloTheme.fontSize.md,
-      fontWeight: soloTheme.fontWeight.medium,
-      color: soloTheme.colors.textSecondary,
-      transition: "all 0.2s ease",
-    },
-    categoryOptionSelected: {
-      borderColor: soloTheme.colors.primary,
-      backgroundColor: soloTheme.colors.primaryPale,
-      color: soloTheme.colors.primary,
-    },
-    button: {
-      ...soloStyles.buttonPrimary,
-      width: "100%",
-      opacity: loading ? 0.6 : 1,
-      cursor: loading ? "not-allowed" : "pointer",
-    },
-    error: {
-      color: soloTheme.colors.caution,
-      fontSize: soloTheme.fontSize.sm,
-      textAlign: "center",
-      padding: "12px",
-      backgroundColor: `${soloTheme.colors.caution}20`,
-      borderRadius: soloTheme.borderRadius.md,
-      marginBottom: "16px",
-    },
-  };
-
-  if (error) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={{
-            textAlign: 'center',
-            fontSize: '48px',
-            marginBottom: '16px',
-          }}>⚠️</div>
-          <h2 style={{
-            ...styles.heading,
-            color: '#ef4444',
-            textAlign: 'center',
-          }}>
-            Oops! Something went wrong
-          </h2>
-          <p style={{
-            textAlign: 'center',
-            color: '#666',
-            marginBottom: '24px',
-          }}>
-            {error}
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            style={styles.button}
-          >
-            Return to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if (!showCategorySelection) {
     return (
-      <div style={styles.container}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: '#EAF7F0',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <WaveDecoration />
         <div style={{
           textAlign: 'center',
           maxWidth: '500px',
+          position: 'relative',
+          zIndex: 1,
         }}>
           <div style={{
             width: '80px',
@@ -195,7 +120,12 @@ export default function CreateSoloSession() {
             margin: '0 auto 24px',
             animation: 'spin 1s linear infinite',
           }}></div>
-          <h2 style={styles.heading}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#6750A4',
+            marginBottom: '12px',
+          }}>
             Preparing your coaching session...
           </h2>
           <p style={{
@@ -215,41 +145,239 @@ export default function CreateSoloSession() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.heading}>What type of situation is this?</h1>
-        <p style={styles.subheading}>
-          This helps Meedi understand the context better
-        </p>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+      backgroundColor: '#EAF7F0',
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <WaveDecoration />
 
-        <div>
-          <label style={styles.label}>Select a category</label>
-          <div style={styles.categoryGrid}>
-            {categories.map((cat) => (
-              <div
-                key={cat.value}
-                style={{
-                  ...styles.categoryOption,
-                  ...(category === cat.value ? styles.categoryOptionSelected : {})
-                }}
-                onClick={() => !loading && setCategory(cat.value)}
-              >
-                {cat.label}
-              </div>
-            ))}
-          </div>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        flex: 1,
+        position: 'relative',
+        zIndex: 1,
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(28px, 6vw, 40px)',
+          color: '#7DD3C0',
+          fontWeight: '400',
+          textAlign: 'center',
+          margin: '0 0 16px 0',
+        }}>
+          What type of situation?
+        </h1>
+
+        {/* Down Arrow */}
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ marginBottom: '24px' }}>
+          <path d="M7 10L12 15L17 10" stroke="#7DD3C0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+
+        {/* Category Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '16px',
+          width: '100%',
+          maxWidth: '520px',
+          marginBottom: '32px',
+        }}>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => !loading && setCategory(cat.id)}
+              disabled={loading}
+              style={{
+                backgroundColor: category === cat.id ? '#7C6CB6' : 'white',
+                color: category === cat.id ? 'white' : '#333',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '20px',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              <CategoryIcon category={cat.id} size={32} />
+              {cat.label}
+            </button>
+          ))}
         </div>
 
-        {error && <div style={styles.error}>{error}</div>}
-
+        {/* Start Button */}
         <button
           onClick={handleCreateSession}
-          style={styles.button}
-          disabled={loading}
+          disabled={loading || !category}
+          style={{
+            backgroundColor: '#7DD3C0',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '16px 48px',
+            fontSize: '20px',
+            fontWeight: '400',
+            cursor: (loading || !category) ? 'not-allowed' : 'pointer',
+            width: '100%',
+            maxWidth: '520px',
+            opacity: (loading || !category) ? 0.6 : 1,
+          }}
         >
-          {loading ? "Starting your session..." : "Start Coaching"}
+          {loading ? 'Starting...' : 'Start Coaching'}
         </button>
       </div>
+
+      {/* Paywall Modal */}
+      {paywallModal && (
+        <>
+          <div
+            onClick={() => setPaywallModal(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+              animation: 'fadeIn 0.2s ease'
+            }}
+          />
+
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: 'calc(100% - 40px)',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            animation: 'slideUp 0.3s ease',
+            fontFamily: "'Nunito', sans-serif",
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚀</div>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#6750A4', marginBottom: '12px', margin: 0 }}>
+                Room Limit Reached
+              </h2>
+              <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.6', margin: 0 }}>
+                {paywallModal.message}
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: '#F3F4F6',
+              padding: '16px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              fontSize: '14px',
+              color: '#666',
+            }}>
+              <strong>Your options:</strong>
+              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                <li>Delete an existing session from your Sessions page</li>
+                <li>Upgrade to PLUS or PRO for unlimited rooms</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => navigate('/sessions')}
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: "'Nunito', sans-serif",
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: 'white',
+                  backgroundColor: '#7DD3C0',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(125, 211, 192, 0.3)',
+                }}
+              >
+                Go to Sessions
+              </button>
+
+              <button
+                onClick={() => navigate('/subscription')}
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  fontFamily: "'Nunito', sans-serif",
+                  border: '2px solid #7DD3C0',
+                  borderRadius: '12px',
+                  color: '#7DD3C0',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Upgrade Plan
+              </button>
+
+              <button
+                onClick={() => {
+                  setPaywallModal(null);
+                  navigate('/');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  fontFamily: "'Nunito', sans-serif",
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#666',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Go Back Home
+              </button>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+
+            @keyframes slideUp {
+              from {
+                opacity: 0;
+                transform: translate(-50%, -45%);
+              }
+              to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+              }
+            }
+          `}</style>
+        </>
+      )}
     </div>
   );
 }
