@@ -52,6 +52,9 @@ class UserOut(BaseModel):
     profile_picture_url: Optional[str] = None
     has_completed_screening: bool = False
 
+class UpdateUserIn(BaseModel):
+    name: Optional[str] = None
+
 @router.post("/register", response_model=TokenOut, status_code=201)
 def register(payload: RegisterIn, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
@@ -276,6 +279,27 @@ async def telegram_login(payload: TelegramAuthIn, db: Session = Depends(get_db))
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
+    return UserOut(
+        id=current_user.id,
+        email=current_user.email,
+        name=current_user.name,
+        profile_picture_url=current_user.profile_picture_url,
+        has_completed_screening=current_user.has_completed_screening
+    )
+
+@router.put("/me", response_model=UserOut)
+def update_me(
+    payload: UpdateUserIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's profile (name)"""
+    if payload.name is not None:
+        current_user.name = payload.name.strip() if payload.name else current_user.name
+
+    db.commit()
+    db.refresh(current_user)
+
     return UserOut(
         id=current_user.id,
         email=current_user.email,
