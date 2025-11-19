@@ -705,6 +705,8 @@ export default function CoachingChat() {
             onTelegramImport={() => setShowTelegramImport(true)}
             disabled={sending}
             uploading={uploadingFiles}
+            isGuest={user?.email?.startsWith('guest_')}
+            isPremium={true}  // Backend will check and return 402 if not premium
           />
 
           {/* Input field with microphone inside */}

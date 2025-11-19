@@ -8,13 +8,21 @@ import React, { useState, useRef, useEffect } from "react";
  * - onTelegramImport: function() - Callback when Telegram import is clicked
  * - disabled: boolean - Whether the menu is disabled
  * - uploading: boolean - Whether a file is currently uploading
+ * - isGuest: boolean - Whether user is a guest (restricts all features)
+ * - isPremium: boolean - Whether user has premium subscription
  */
 export default function AttachmentMenu({
   onFileSelect,
   onTelegramImport,
   disabled = false,
-  uploading = false
+  uploading = false,
+  isGuest = false,
+  isPremium = true
 }) {
+  // File upload restricted for guests and non-premium users
+  const isUploadRestricted = isGuest || !isPremium;
+  // Telegram import restricted for guests and non-premium users
+  const isTelegramRestricted = isGuest || !isPremium;
   const [showMenu, setShowMenu] = useState(false);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
@@ -112,7 +120,16 @@ export default function AttachmentMenu({
         }}>
           {/* Upload from device */}
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (isUploadRestricted) {
+                alert(isGuest
+                  ? "File uploads are available when you create an account. Sign up to share images and documents!"
+                  : "File uploads are available with Plus or Pro subscription. Upgrade to express yourself better!");
+                setShowMenu(false);
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}
             style={{
               width: "100%",
               padding: "14px 16px",
@@ -121,21 +138,28 @@ export default function AttachmentMenu({
               gap: "12px",
               background: "none",
               border: "none",
-              cursor: "pointer",
+              cursor: isUploadRestricted ? "not-allowed" : "pointer",
               fontSize: "15px",
-              color: "#000",
+              color: isUploadRestricted ? "#9ca3af" : "#000",
               transition: "background 0.2s",
-              textAlign: "left"
+              textAlign: "left",
+              opacity: isUploadRestricted ? 0.6 : 1
             }}
-            onMouseEnter={(e) => e.target.style.background = "#f3f4f6"}
-            onMouseLeave={(e) => e.target.style.background = "none"}
+            onMouseEnter={(e) => !isUploadRestricted && (e.currentTarget.style.background = "#f3f4f6")}
+            onMouseLeave={(e) => e.currentTarget.style.background = "none"}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <span>Upload from Device</span>
+            <span style={{ flex: 1 }}>Upload from Device</span>
+            {isUploadRestricted && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            )}
           </button>
 
           {/* Divider */}
@@ -147,7 +171,16 @@ export default function AttachmentMenu({
 
           {/* Import from Telegram */}
           <button
-            onClick={handleTelegramClick}
+            onClick={() => {
+              if (isTelegramRestricted) {
+                alert(isGuest
+                  ? "Telegram import is available when you create an account. Sign up to import your conversations!"
+                  : "Telegram import is available with Plus or Pro subscription. Upgrade to analyze your conversations!");
+                setShowMenu(false);
+              } else {
+                handleTelegramClick();
+              }
+            }}
             style={{
               width: "100%",
               padding: "14px 16px",
@@ -156,25 +189,32 @@ export default function AttachmentMenu({
               gap: "12px",
               background: "none",
               border: "none",
-              cursor: "pointer",
+              cursor: isTelegramRestricted ? "not-allowed" : "pointer",
               fontSize: "15px",
-              color: "#0088CC",
+              color: isTelegramRestricted ? "#9ca3af" : "#0088CC",
               transition: "background 0.2s",
-              textAlign: "left"
+              textAlign: "left",
+              opacity: isTelegramRestricted ? 0.6 : 1
             }}
-            onMouseEnter={(e) => e.target.style.background = "#f0f9ff"}
-            onMouseLeave={(e) => e.target.style.background = "none"}
+            onMouseEnter={(e) => !isTelegramRestricted && (e.currentTarget.style.background = "#f0f9ff")}
+            onMouseLeave={(e) => e.currentTarget.style.background = "none"}
           >
             {/* Telegram icon */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161l-1.563 7.359c-.117.541-.428.676-.864.421l-2.39-1.76-1.151 1.107c-.128.128-.236.236-.485.236l.173-2.447 4.476-4.047c.195-.173-.043-.27-.301-.098l-5.533 3.484-2.386-.747c-.521-.162-.531-.521.109-.771l9.338-3.605c.436-.162.817.098.677.768z"/>
             </svg>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontWeight: "600" }}>Import from Telegram</div>
               <div style={{ fontSize: "12px", color: "#8A8A8F", marginTop: "2px" }}>
                 Browse your chats
               </div>
             </div>
+            {isTelegramRestricted && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            )}
           </button>
 
           {/* Future: More import options can be added here */}

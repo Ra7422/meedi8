@@ -61,11 +61,15 @@ export default function FloatingMenu({
   // Check if user is a guest (email starts with "guest_")
   const isGuest = user?.email?.startsWith('guest_');
 
+  // For premium checks - currently we assume isPremium=true until backend integration
+  // Backend will enforce actual premium checks via 402 responses
+  const isPremium = true;  // TODO: Get from user subscription status
+
   const menuItems = [
     { label: "Sessions", path: "/sessions", guestRestricted: true },
     { label: "New Mediation", path: "/create" },
     { label: "Solo Coaching", path: "/solo/start" },
-    { label: "Telegram Chats", path: "/telegram", guestRestricted: true },
+    { label: "Telegram Chats", path: "/telegram", guestRestricted: true, premiumRequired: true },
     { label: "How It Works", path: "/onboarding" },
     { label: "Pricing", path: "/subscription" },
     { label: "FAQ", path: "/faq" },
@@ -423,13 +427,24 @@ export default function FloatingMenu({
                     <span style={{ fontSize: "20px" }}>👤</span>
                   )}
                   Profile
-                  {isGuest && <span style={{ fontSize: "12px", marginLeft: "auto" }}>🔒</span>}
+                  {isGuest && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto" }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  )}
                 </button>
               )}
 
               {/* Regular navigation items */}
               {menuItems.map((item) => {
-                const isRestricted = isGuest && item.guestRestricted;
+                // Restricted if guest and guestRestricted, OR if not premium and premiumRequired
+                const isRestricted = (isGuest && item.guestRestricted) || (!isPremium && item.premiumRequired);
+                const tooltipText = isGuest && item.guestRestricted
+                  ? "Sign up to access this feature"
+                  : !isPremium && item.premiumRequired
+                    ? "Upgrade to Plus or Pro to access this feature"
+                    : "";
                 return (
                   <button
                     key={item.path}
@@ -456,10 +471,15 @@ export default function FloatingMenu({
                     }}
                     onMouseEnter={(e) => !isRestricted && (e.currentTarget.style.background = "#f9fafb")}
                     onMouseLeave={(e) => e.currentTarget.style.background = "none"}
-                    title={isRestricted ? "Sign up to access this feature" : ""}
+                    title={tooltipText}
                   >
                     {item.label}
-                    {isRestricted && <span style={{ fontSize: "12px" }}>🔒</span>}
+                    {isRestricted && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    )}
                   </button>
                 );
               })}
