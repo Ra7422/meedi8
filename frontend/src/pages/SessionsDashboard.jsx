@@ -154,10 +154,10 @@ export default function SessionsDashboard() {
           navigate(`/coaching/${id}`);
           break;
         case "user2_lobby":
-          navigate(`/waiting/${id}`); // Waiting room with summary, link, breathing
+          navigate(`/rooms/${id}/invite`); // Invite share page
           break;
         case "user2_coaching":
-          navigate(`/waiting/${id}`); // Still waiting while User 2 coaches
+          navigate(`/rooms/${id}/invite`); // Show invite page while waiting
           break;
         case "main_room":
         case "in_session":
@@ -188,8 +188,8 @@ export default function SessionsDashboard() {
       // In main room - go there
       navigate(`/main-room/${roomId}`);
     } else if (isUser1 && (phase === "user2_lobby" || phase === "user2_coaching")) {
-      // User 1 waiting for User 2 - go to waiting room
-      navigate(`/waiting/${roomId}`);
+      // User 1 waiting for User 2 - go to invite page
+      navigate(`/rooms/${roomId}/invite`);
     } else {
       // In coaching - go to coaching page
       navigate(`/coaching/${roomId}`);

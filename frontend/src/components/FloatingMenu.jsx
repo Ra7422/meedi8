@@ -66,7 +66,7 @@ export default function FloatingMenu({
   const isPremium = true;  // TODO: Get from user subscription status
 
   const menuItems = [
-    { label: "Sessions", path: "/sessions", guestRestricted: true },
+    { label: "Sessions", path: "/sessions" },
     { label: "New Mediation", path: "/create" },
     { label: "Solo Coaching", path: "/solo/start" },
     { label: "Telegram Chats", path: "/telegram", guestRestricted: true, premiumRequired: true },
