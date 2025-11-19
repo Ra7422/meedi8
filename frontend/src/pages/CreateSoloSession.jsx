@@ -29,7 +29,7 @@ export default function CreateSoloSession() {
         console.log('Creating solo coaching room...');
 
         // Create a solo coaching room
-        const response = await apiRequest('/rooms', 'POST', {
+        const response = await apiRequest('/rooms/', 'POST', {
           title: 'Solo Coaching Session',
           category: 'other',
           initial_issue: conflictDescription,
