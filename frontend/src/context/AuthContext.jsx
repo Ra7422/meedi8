@@ -78,6 +78,7 @@ export function AuthProvider({ children }) {
       token,
       user,
       setUser,
+      setToken,
       login,
       register,
       googleLogin,

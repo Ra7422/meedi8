@@ -7,7 +7,7 @@ import FloatingMenu from '../components/FloatingMenu';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, token, login } = useAuth();
+  const { user, token, setToken } = useAuth();
   const [conflictDescription, setConflictDescription] = React.useState('');
   const [isCreatingSession, setIsCreatingSession] = React.useState(false);
 
@@ -29,7 +29,7 @@ export default function Home() {
         console.log('Guest account created:', response);
 
         // Store the guest token
-        login(response.access_token);
+        setToken(response.access_token);
 
         // Store conflict description for next page
         sessionStorage.setItem('initialConflictDescription', conflictDescription);

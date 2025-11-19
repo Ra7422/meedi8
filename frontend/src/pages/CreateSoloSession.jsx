@@ -54,25 +54,26 @@ export default function CreateSoloSession() {
     setLoading(true);
 
     try {
-      console.log('Creating solo coaching room...');
+      console.log('Creating mediation room...');
 
-      // Create a solo coaching room
+      // Create a mediation room (same as CreateRoom.jsx)
       const response = await apiRequest('/rooms/', 'POST', {
-        title: 'Solo Coaching Session',
-        category: category.toLowerCase(),
-        initial_issue: conflictDescription,
-        room_type: 'solo'
+        title: 'Coaching Session',
+        category: category.toLowerCase()
       }, token);
 
-      console.log('Solo room created:', response);
+      console.log('Room created:', response);
 
-      // Clear the stored description
+      // Store the conflict description for CoachingChat to pick up
+      sessionStorage.setItem(`room_${response.id}_initial`, conflictDescription);
+
+      // Clear the temporary storage
       sessionStorage.removeItem('initialConflictDescription');
 
-      // Navigate to the solo coaching page
-      window.location.href = `/rooms/${response.id}/solo`;
+      // Navigate to the mediation coaching page (same flow as CreateRoom.jsx)
+      navigate(`/rooms/${response.id}/coaching`);
     } catch (err) {
-      console.error('Failed to create solo session:', err);
+      console.error('Failed to create session:', err);
 
       // Handle paywall errors (402 Payment Required)
       if (err.paywallError) {
