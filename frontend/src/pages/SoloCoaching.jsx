@@ -700,7 +700,7 @@ export default function SoloCoaching() {
                       onClick={() => {
                         // Handle action button clicks
                         if (action.type === 'invite_to_mediation') {
-                          navigate('/rooms/create');
+                          navigate('/create');
                         } else {
                           alert(`Action: ${action.label}\n\n${action.description || 'This action is suggested based on your reflection.'}`);
                         }

@@ -366,7 +366,7 @@ export default function Subscription() {
 
           {currentTier === "free" && (
             <button
-              onClick={() => navigate('/rooms/create')}
+              onClick={() => navigate('/create')}
               style={{
                 padding: "14px",
                 background: "#7DD3C0",
@@ -844,34 +844,6 @@ export default function Subscription() {
         </div>
       </div>
 
-        {/* Get Started Button */}
-        <div style={{ marginTop: "40px", textAlign: "center" }}>
-          <button
-            onClick={() => {
-              if (!token) {
-                sessionStorage.setItem('postLoginRedirect', '/create');
-                navigate('/signup');
-              } else {
-                navigate('/create');
-              }
-            }}
-            style={{
-              padding: "14px 36px",
-              background: "#7DD3C0",
-              border: "none",
-              borderRadius: "12px",
-              fontWeight: "700",
-              fontFamily: "'Nunito', sans-serif",
-              cursor: "pointer",
-              fontSize: "16px",
-              color: "white",
-              transition: "all 0.2s",
-              boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
-            }}
-          >
-            Get Started Now →
-          </button>
-        </div>
       </div>
 
       {/* Card Payment Modal */}
