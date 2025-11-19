@@ -8,6 +8,7 @@ export default function SubscriptionSuccess() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const subscriptionId = searchParams.get("subscription_id");
+  const paymentIntentId = searchParams.get("payment_intent");
   const { token, setToken } = useAuth();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
@@ -15,7 +16,7 @@ export default function SubscriptionSuccess() {
   useEffect(() => {
     // If not authenticated and we have a session/subscription ID, try to auto-login
     const attemptAutoLogin = async () => {
-      if (!token && !autoLoginAttempted && (sessionId || subscriptionId)) {
+      if (!token && !autoLoginAttempted && (sessionId || subscriptionId || paymentIntentId)) {
         setAutoLoginAttempted(true);
 
         try {
@@ -35,7 +36,8 @@ export default function SubscriptionSuccess() {
                 "POST",
                 {
                   session_id: sessionId,
-                  subscription_id: subscriptionId
+                  subscription_id: subscriptionId,
+                  payment_intent_id: paymentIntentId
                 }
               );
 
@@ -63,7 +65,7 @@ export default function SubscriptionSuccess() {
     };
 
     attemptAutoLogin();
-  }, [token, sessionId, subscriptionId, autoLoginAttempted, setToken]);
+  }, [token, sessionId, subscriptionId, paymentIntentId, autoLoginAttempted, setToken]);
 
   useEffect(() => {
     // If authenticated, auto-redirect after 5 seconds
