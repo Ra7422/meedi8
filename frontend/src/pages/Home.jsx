@@ -43,8 +43,9 @@ export default function Home() {
       // Store the guest token using the AuthContext login function
       login(response.access_token);
 
-      // Navigate to destination
-      navigate(destination);
+      // Use window.location to ensure the token is in localStorage before navigation
+      // This avoids race condition with React state updates
+      window.location.href = destination;
     } catch (error) {
       console.error('Failed to create guest account:', error);
       alert('Failed to start session. Please try again.');
