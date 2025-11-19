@@ -28,13 +28,17 @@ export default function Home() {
         const response = await apiRequest('/auth/create-guest', 'POST');
         console.log('Guest account created:', response);
 
-        // Store the guest token
-        setToken(response.access_token);
+        // CRITICAL: Write token to localStorage FIRST before navigating
+        // This ensures the token is available when PrivateRoute checks
+        localStorage.setItem('token', response.access_token);
 
         // Store conflict description for next page
         sessionStorage.setItem('initialConflictDescription', conflictDescription);
 
-        // Use window.location to ensure token is in localStorage before navigation
+        // Now set in React state (this will trigger useEffect but localStorage is already set)
+        setToken(response.access_token);
+
+        // Use window.location to do full page reload with fresh token from localStorage
         window.location.href = '/create-solo-session';
       } else {
         // User is already logged in, store description and navigate
