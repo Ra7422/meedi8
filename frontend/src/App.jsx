@@ -40,6 +40,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Home from "./pages/Home";
 import TelegramConnect from "./pages/TelegramConnect";
+import CreateSoloSession from "./pages/CreateSoloSession";
 import PlаsmicHost from "./plasmic-host";
 
 function PrivateRoute({ children }) {
@@ -87,6 +88,7 @@ export default function App() {
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/create" element={<PrivateRoute><CreateRoom /></PrivateRoute>} />
+          <Route path="/create-solo-session" element={<PrivateRoute><CreateSoloSession /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} />

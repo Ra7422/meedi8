@@ -61,6 +61,7 @@ export default function FloatingMenu({
   const menuItems = [
     { label: "Sessions", path: "/sessions" },
     { label: "New Mediation", path: "/create" },
+    { label: "Solo Coaching", path: "/solo/start" },
     { label: "Telegram Chats", path: "/telegram" },
     { label: "How It Works", path: "/onboarding" },
     { label: "Pricing", path: "/subscription" },
