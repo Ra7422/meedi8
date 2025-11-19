@@ -273,49 +273,56 @@ export default function CreateSoloSession() {
             fontFamily: "'Nunito', sans-serif",
             overflow: 'hidden',
           }}>
-            {/* Background Meedi illustration */}
-            <img
-              src={paywallIllustration}
-              alt=""
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '300px',
-                height: '300px',
-                opacity: 0.15,
-                pointerEvents: 'none',
-                zIndex: 0,
-              }}
-            />
-
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#6750A4', marginBottom: '12px', margin: 0 }}>
-                  Room Limit Reached
-                </h2>
-                <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.6', margin: '12px 0 0 0' }}>
-                  {paywallModal.message}
-                </p>
-                <p style={{ fontSize: '12px', color: '#999', margin: '8px 0 0 0' }}>
-                  Less than 30p per day
-                </p>
-              </div>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#6750A4', marginBottom: '12px', margin: 0 }}>
+                Room Limit Reached
+              </h2>
+              <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.6', margin: '12px 0 0 0' }}>
+                {paywallModal.message}
+              </p>
+            </div>
 
               <div style={{
                 backgroundColor: '#7ED957',
                 padding: '16px',
+                paddingBottom: '250px',
                 borderRadius: '12px',
                 marginBottom: '24px',
                 fontSize: '14px',
                 color: 'white',
+                position: 'relative',
               }}>
                 <strong>I'd love to help you resolve the issue, please:</strong>
                 <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
                   <li>Delete an existing session from your Sessions page</li>
-                  <li>Upgrade to PLUS or PRO for unlimited rooms</li>
+                  <li>Upgrade to PLUS or PRO for<br />unlimited rooms</li>
                 </ul>
+                {/* Meedi illustration inside green card */}
+                <img
+                  src={paywallIllustration}
+                  alt=""
+                  style={{
+                    position: 'absolute',
+                    bottom: '40px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '200px',
+                    height: '200px',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <p style={{
+                  position: 'absolute',
+                  bottom: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  margin: 0,
+                  fontSize: '12px',
+                  color: 'white',
+                  fontWeight: '600',
+                }}>
+                  Less than 30p per day
+                </p>
               </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -379,7 +386,6 @@ export default function CreateSoloSession() {
               >
                 Go Back Home
               </button>
-            </div>
             </div>
           </div>
 
