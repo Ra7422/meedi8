@@ -575,16 +575,32 @@ def get_coaching_turns(
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    
+
+    # Determine if current user is User 1 or User 2
+    is_user1 = len(room.participants) > 0 and room.participants[0].id == current_user.id
+
     # Get all pre-mediation turns for this room
     turns = db.query(Turn).filter(
         Turn.room_id == room_id,
         Turn.user_id == current_user.id,
         Turn.context == 'pre_mediation'
     ).order_by(Turn.id).all()  # Use id for guaranteed sequential ordering
-    
+
     # Format as conversation messages
     messages = []
+
+    # For User 2, prepend intro message with User 1's summary
+    if not is_user1 and room.user1_summary:
+        user1 = room.participants[0] if room.participants else None
+        user1_name = user1.name if user1 else "Other person"
+        user1_profile_picture = user1.profile_picture_url if user1 else None
+        messages.append({
+            "role": "intro",
+            "content": room.user1_summary,
+            "fromUser": user1_name,
+            "fromUserProfilePicture": user1_profile_picture
+        })
+
     for turn in turns:
         if turn.kind == 'user_response':
             messages.append({"role": "user", "content": turn.summary or ""})
@@ -656,17 +672,20 @@ def start_coaching(
     # For User 2, include User 1's name and summary so frontend can display it properly
     other_user_name = None
     other_user_summary = None
+    other_user_profile_picture = None
     if not is_user1:
         user1 = room.participants[0]
         other_user_name = user1.name
         other_user_summary = room.user1_summary
+        other_user_profile_picture = user1.profile_picture_url
 
     return StartCoachingResponse(
         ai_question=result["ai_question"],
         exchange_count=result["exchange_count"],
         room_phase=room.phase,
         other_user_name=other_user_name,
-        other_user_summary=other_user_summary
+        other_user_summary=other_user_summary,
+        other_user_profile_picture=other_user_profile_picture
     )
 
 

@@ -51,7 +51,7 @@ Provide 2-3 paragraphs of actionable next steps:
 - How can they maintain the progress made?
 - What skills should they continue practicing (active listening, empathy, etc.)?
 - When should they consider seeking professional therapy or additional mediation?
-- Include a link to professional therapy resources: https://meedi8.vercel.app/therapy
+- Include a link to professional therapy resources: https://meedi8.com/therapy
 
 Keep the report professional, constructive, and focused on growth opportunities. Be specific with examples from the transcript where appropriate."""
 

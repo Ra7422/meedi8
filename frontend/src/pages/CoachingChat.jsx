@@ -116,7 +116,12 @@ export default function CoachingChat() {
 
           // Show intro message with User 1's perspective
           setMessages([
-            { role: "intro", content: response.other_user_summary, fromUser: response.other_user_name },
+            {
+              role: "intro",
+              content: response.other_user_summary,
+              fromUser: response.other_user_name,
+              fromUserProfilePicture: response.other_user_profile_picture
+            },
             { role: "assistant", content: response.ai_question }
           ]);
         } else {
@@ -595,6 +600,33 @@ export default function CoachingChat() {
                     }}
                   />
                 </div>
+              )}
+              {msg.role === "intro" && (
+                msg.fromUserProfilePicture ? (
+                  <img
+                    src={msg.fromUserProfilePicture}
+                    alt={msg.fromUser}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      border: "2px solid #f59e0b",
+                      objectFit: "cover"
+                    }}
+                  />
+                ) : (
+                  <img
+                    src="/assets/illustrations/Guest_Profile.svg"
+                    alt={msg.fromUser}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      border: "2px solid #f59e0b",
+                      objectFit: "cover"
+                    }}
+                  />
+                )
               )}
               {msg.role === "user" && (
                 user?.profile_picture_url ? (

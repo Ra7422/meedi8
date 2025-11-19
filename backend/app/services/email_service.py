@@ -48,7 +48,7 @@ def send_turn_notification(
 
     try:
         # Generate room URL
-        frontend_url = os.getenv("FRONTEND_URL", "https://meedi8.vercel.app")
+        frontend_url = os.getenv("FRONTEND_URL", "https://meedi8.com")
         room_url = f"{frontend_url}/main-room/{room_id}"
 
         # Create email content
@@ -223,7 +223,7 @@ def send_break_notification(
         return False
 
     try:
-        frontend_url = os.getenv("FRONTEND_URL", "https://meedi8.vercel.app")
+        frontend_url = os.getenv("FRONTEND_URL", "https://meedi8.com")
         room_url = f"{frontend_url}/main-room/{room_id}"
 
         subject = f"{requester_name} requested a break - Meedi8"

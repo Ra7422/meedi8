@@ -83,6 +83,7 @@ class StartCoachingResponse(BaseModel):
     room_phase: str
     other_user_name: Optional[str] = None  # For User 2: shows User 1's name
     other_user_summary: Optional[str] = None  # For User 2: shows User 1's perspective
+    other_user_profile_picture: Optional[str] = None  # For User 2: shows User 1's avatar
 
 class CoachingResponseRequest(BaseModel):
     user_message: str

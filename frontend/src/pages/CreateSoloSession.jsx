@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api/client';
 import WaveDecoration from '../components/WaveDecoration';
-import CategoryIcon from '../components/ui/CategoryIcon';
 import paywallIllustration from '../assets/illustrations/paywall-meedi.png';
 
 export default function CreateSoloSession() {
@@ -200,7 +199,7 @@ export default function CreateSoloSession() {
                 color: category === cat.id ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '16px',
+                padding: '1px',
                 fontSize: '16px',
                 fontWeight: '500',
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -211,9 +210,18 @@ export default function CreateSoloSession() {
                 justifyContent: 'center',
                 aspectRatio: '1',
                 opacity: loading ? 0.6 : 1,
+                overflow: 'hidden',
               }}
             >
-              <CategoryIcon category={cat.id} size={56} />
+              <img
+                src={`/assets/icons/${cat.id}.svg`}
+                alt={`${cat.label} icon`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
             </button>
           ))}
         </div>
