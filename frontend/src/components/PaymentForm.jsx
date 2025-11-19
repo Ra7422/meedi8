@@ -36,10 +36,19 @@ function PaymentForm({ clientSecret, onSuccess, onError }) {
     });
 
     if (error) {
-      // Payment failed
-      setMessage(error.message);
+      // Payment failed - show error but don't close modal
+      // Common errors: card_declined, incorrect_cvc, expired_card, etc.
+      setMessage(error.message || 'Payment failed. Please check your card details.');
       setIsProcessing(false);
-      onError(error);
+      // Don't call onError for recoverable errors - let user fix and retry
+      if (error.type === 'validation_error') {
+        // Validation errors can be fixed by the user
+        return;
+      }
+      // For other errors, still notify parent but don't close modal
+      if (onError) {
+        onError(error);
+      }
     } else {
       // Payment succeeded (will redirect to return_url)
       setMessage('Payment successful! Redirecting...');

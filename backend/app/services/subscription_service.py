@@ -168,18 +168,21 @@ TIER_LIMITS = {
         "file_upload_enabled": False,
         "max_file_size_mb": 0,
         "reports_per_month": 0,
+        "telegram_import_enabled": False,
     },
     SubscriptionTier.PLUS: {
         "rooms_per_month": -1,  # -1 = unlimited
         "file_upload_enabled": True,
         "max_file_size_mb": 10,
         "reports_per_month": 0,
+        "telegram_import_enabled": False,
     },
     SubscriptionTier.PRO: {
         "rooms_per_month": -1,  # -1 = unlimited
         "file_upload_enabled": True,
         "max_file_size_mb": 50,
         "reports_per_month": 3,
+        "telegram_import_enabled": True,
     },
 }
 
@@ -386,3 +389,33 @@ def increment_report_counter(user_id: int, db: Session) -> None:
     if subscription:
         subscription.reports_generated_this_month += 1
         db.commit()
+
+
+def check_telegram_import_allowed(user_id: int, db: Session) -> dict:
+    """
+    Check if user can import Telegram conversations based on their subscription tier.
+
+    Raises:
+        HTTPException: 402 Payment Required if not allowed
+    """
+    subscription = get_or_create_subscription(db, user_id)
+
+    limits = get_tier_limits(subscription.tier)
+    telegram_enabled = limits.get("telegram_import_enabled", False)
+
+    if not telegram_enabled:
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error": "telegram_import_not_allowed",
+                "message": "Telegram import is only available on the PRO tier. Upgrade to PRO to import your Telegram conversations.",
+                "tier": subscription.tier.value,
+                "required_tier": "pro",
+                "upgrade_url": "/subscription"
+            }
+        )
+
+    return {
+        "allowed": True,
+        "tier": subscription.tier.value,
+    }

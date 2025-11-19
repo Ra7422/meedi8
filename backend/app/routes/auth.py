@@ -390,7 +390,13 @@ def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(ge
         return TokenOut(access_token=token)
 
     except stripe.error.StripeError as e:
+        print(f"❌ Stripe error in stripe-session-login: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except Exception as e:
+        print(f"❌ Unexpected error in stripe-session-login: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 class ConvertGuestIn(BaseModel):
     email: EmailStr

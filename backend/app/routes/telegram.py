@@ -17,6 +17,7 @@ from ..deps import get_current_user
 from ..models.user import User
 from ..models.telegram import TelegramSession, TelegramDownload, TelegramMessage
 from ..services.telegram_service import TelegramService
+from ..services.subscription_service import check_telegram_import_allowed
 
 router = APIRouter()
 
@@ -195,7 +196,12 @@ async def connect_telegram(
 
     The TelegramClient instance is stored in memory with the user's ID as the key.
     User must call /verify within a few minutes with the code received via SMS.
+
+    Note: Telegram import is only available on PRO tier.
     """
+    # Check PRO tier access for Telegram import
+    check_telegram_import_allowed(current_user.id, db)
+
     try:
         # Send verification code
         client, phone_code_hash = await TelegramService.send_verification_code(

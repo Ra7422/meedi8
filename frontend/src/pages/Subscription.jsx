@@ -883,9 +883,13 @@ export default function Subscription() {
               clientSecret={checkoutSession.clientSecret}
               onSuccess={handleCheckoutComplete}
               onError={(error) => {
+                // Log error but don't close modal - let user retry
                 console.error('Payment error:', error);
-                alert('Payment failed: ' + error.message);
-                handleCloseModal();
+                // Only show alert for non-validation errors
+                if (error.type !== 'validation_error') {
+                  // Error message is already shown in the PaymentForm component
+                  console.log('Card payment error - user can retry');
+                }
               }}
             />
           </div>
