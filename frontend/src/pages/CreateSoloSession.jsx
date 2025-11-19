@@ -172,7 +172,7 @@ export default function CreateSoloSession() {
           textAlign: 'center',
           margin: '0 0 16px 0',
         }}>
-          What type of situation?
+          Communication Style
         </h1>
 
         {/* Down Arrow */}
@@ -199,7 +199,7 @@ export default function CreateSoloSession() {
                 color: category === cat.id ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '20px',
+                padding: '16px',
                 fontSize: '16px',
                 fontWeight: '500',
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -207,12 +207,12 @@ export default function CreateSoloSession() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'center',
+                aspectRatio: '1',
                 opacity: loading ? 0.6 : 1,
               }}
             >
-              <CategoryIcon category={cat.id} size={32} />
-              {cat.label}
+              <CategoryIcon category={cat.id} size={56} />
             </button>
           ))}
         </div>

@@ -43,11 +43,11 @@ export default function Home() {
         setToken(response.access_token);
 
         // Use window.location to do full page reload with fresh token from localStorage
-        window.location.href = '/create-solo-session';
+        window.location.href = '/create';
       } else {
         // User is already logged in, store description and navigate
         sessionStorage.setItem('initialConflictDescription', conflictDescription);
-        navigate('/create-solo-session');
+        navigate('/create');
       }
     } catch (error) {
       console.error('Failed to start session:', error);

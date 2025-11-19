@@ -7,7 +7,6 @@ import Signup from "./pages/Signup";
 import EmailVerification from "./pages/EmailVerification";
 import Rooms from "./pages/Rooms";
 import SessionsDashboard from "./pages/SessionsDashboard";
-import CreateRoom from "./pages/CreateRoom";
 import CoachingChat from "./pages/CoachingChat";
 import SoloCoaching from "./pages/SoloCoaching";
 import StartSolo from "./pages/StartSolo";
@@ -87,8 +86,7 @@ export default function App() {
           <Route path="/sessions" element={<PrivateRoute><SessionsDashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-          <Route path="/create" element={<PrivateRoute><CreateRoom /></PrivateRoute>} />
-          <Route path="/create-solo-session" element={<PrivateRoute><CreateSoloSession /></PrivateRoute>} />
+          <Route path="/create" element={<PrivateRoute><CreateSoloSession /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} />
