@@ -825,9 +825,8 @@ def finalize_coaching(
         from app.config import settings
         import os
 
-        # Check if running in production (Railway has DATABASE_URL env var)
-        is_production = "railway" in os.getenv("DATABASE_URL", "").lower() or settings.APP_ENV == "prod"
-        frontend_url = "https://meedi8.vercel.app" if is_production else "http://localhost:5173"
+        # Use settings.FRONTEND_URL for production domain
+        frontend_url = settings.FRONTEND_URL
         invite_link = f"{frontend_url}/join/{room.invite_token}"
 
         return FinalizeCoachingResponse(
@@ -2872,9 +2871,8 @@ def convert_solo_to_mediation(
     from app.config import settings
     import os
 
-    # Check if running in production
-    is_production = "railway" in os.getenv("DATABASE_URL", "").lower() or settings.APP_ENV == "prod"
-    frontend_url = "https://meedi8.vercel.app" if is_production else "http://localhost:5173"
+    # Use settings.FRONTEND_URL for production domain
+    frontend_url = settings.FRONTEND_URL
     invite_link = f"{frontend_url}/join/{room.invite_token}"
 
     return {
