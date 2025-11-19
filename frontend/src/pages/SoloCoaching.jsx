@@ -5,6 +5,7 @@ import { apiRequest, API_URL } from "../api/client";
 import VoiceRecorder from "../components/VoiceRecorder";
 import FileUpload from "../components/FileUpload";
 import FloatingMenu from "../components/FloatingMenu";
+import GuestConversionModal from "../components/GuestConversionModal";
 import { soloTheme, soloStyles, getActionButtonStyle } from "../styles/soloTheme";
 
 export default function SoloCoaching() {
@@ -21,6 +22,7 @@ export default function SoloCoaching() {
   const [editedSummary, setEditedSummary] = useState("");
   const [evidenceFiles, setEvidenceFiles] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -110,6 +112,11 @@ export default function SoloCoaching() {
         setFinalized(true);
         setClaritySummary(response.clarity_summary);
         setEditedSummary(JSON.stringify(response.clarity_summary, null, 2));
+
+        // Show guest conversion modal if user is a guest
+        if (user?.is_guest) {
+          setTimeout(() => setShowGuestModal(true), 1000); // Small delay for better UX
+        }
       }
     } catch (error) {
       alert("Error: " + error.message);
@@ -172,6 +179,11 @@ export default function SoloCoaching() {
         setFinalized(true);
         setClaritySummary(result.clarity_summary);
         setEditedSummary(JSON.stringify(result.clarity_summary, null, 2));
+
+        // Show guest conversion modal if user is a guest
+        if (user?.is_guest) {
+          setTimeout(() => setShowGuestModal(true), 1000); // Small delay for better UX
+        }
       }
     } catch (error) {
       console.error("Voice recording error:", error);
@@ -737,6 +749,12 @@ export default function SoloCoaching() {
           </button>
         </div>
       )}
+
+      {/* Guest Conversion Modal */}
+      <GuestConversionModal
+        isOpen={showGuestModal}
+        onClose={() => setShowGuestModal(false)}
+      />
     </div>
   );
 }
