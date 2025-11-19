@@ -7,7 +7,7 @@ import About from './pages/About';
 import Referrals from './pages/Referrals';
 import ReferralsDetail from './pages/ReferralsDetail';
 import Start from './pages/Start';
-import CreateRoom from './pages/CreateRoom';
+import CreateSoloSession from './pages/CreateSoloSession';
 import InviteShare from './pages/InviteShare';
 import Subscription from './pages/Subscription';
 import SubscriptionCancelled from './pages/SubscriptionCancelled';
@@ -48,11 +48,11 @@ registerComponent(Start, {
   importPath: './pages/Start',
 });
 
-registerComponent(CreateRoom, {
-  name: 'CreateRoom',
-  description: 'Create new mediation room',
+registerComponent(CreateSoloSession, {
+  name: 'CreateSoloSession',
+  description: 'Category selection for new session',
   props: {},
-  importPath: './pages/CreateRoom',
+  importPath: './pages/CreateSoloSession',
 });
 
 registerComponent(InviteShare, {
