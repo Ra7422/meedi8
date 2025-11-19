@@ -72,7 +72,7 @@ export default function AttachmentMenu({
         style={{
           background: "none",
           border: "none",
-          color: "#7DD3C0",
+          color: "#6b7280",
           cursor: disabled || uploading ? "not-allowed" : "pointer",
           padding: "8px",
           display: "flex",
@@ -88,8 +88,9 @@ export default function AttachmentMenu({
         {uploading ? (
           <span style={{ fontSize: "16px" }}>⏳</span>
         ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         )}
       </button>

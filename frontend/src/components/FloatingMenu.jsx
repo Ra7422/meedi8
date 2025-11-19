@@ -58,11 +58,14 @@ export default function FloatingMenu({
     navigate("/login");
   };
 
+  // Check if user is a guest (email starts with "guest_")
+  const isGuest = user?.email?.startsWith('guest_');
+
   const menuItems = [
-    { label: "Sessions", path: "/sessions" },
+    { label: "Sessions", path: "/sessions", guestRestricted: true },
     { label: "New Mediation", path: "/create" },
     { label: "Solo Coaching", path: "/solo/start" },
-    { label: "Telegram Chats", path: "/telegram" },
+    { label: "Telegram Chats", path: "/telegram", guestRestricted: true },
     { label: "How It Works", path: "/onboarding" },
     { label: "Pricing", path: "/subscription" },
     { label: "FAQ", path: "/faq" },
@@ -365,12 +368,14 @@ export default function FloatingMenu({
                 }} />
               )}
 
-              {/* Profile button (only when logged in) */}
+              {/* Profile button (only when logged in, greyed out for guests) */}
               {user && (
                 <button
                   onClick={() => {
-                    navigate("/profile");
-                    setIsOpen(false);
+                    if (!isGuest) {
+                      navigate("/profile");
+                      setIsOpen(false);
+                    }
                   }}
                   style={{
                     width: "100%",
@@ -379,16 +384,18 @@ export default function FloatingMenu({
                     background: "none",
                     border: "none",
                     fontSize: "16px",
-                    color: "#374151",
-                    cursor: "pointer",
+                    color: isGuest ? "#9ca3af" : "#374151",
+                    cursor: isGuest ? "not-allowed" : "pointer",
                     transition: "background 0.2s",
                     fontWeight: "500",
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px"
+                    gap: "8px",
+                    opacity: isGuest ? 0.5 : 1
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
+                  onMouseEnter={(e) => !isGuest && (e.currentTarget.style.background = "#f9fafb")}
                   onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                  title={isGuest ? "Sign up to access your profile" : ""}
                 >
                   {user.profile_picture_url ? (
                     <img
@@ -401,38 +408,61 @@ export default function FloatingMenu({
                         objectFit: "cover"
                       }}
                     />
+                  ) : isGuest ? (
+                    <img
+                      src="/assets/illustrations/Guest_Profile.svg"
+                      alt="Guest"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        objectFit: "cover"
+                      }}
+                    />
                   ) : (
                     <span style={{ fontSize: "20px" }}>👤</span>
                   )}
                   Profile
+                  {isGuest && <span style={{ fontSize: "12px", marginLeft: "auto" }}>🔒</span>}
                 </button>
               )}
 
               {/* Regular navigation items */}
-              {menuItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => {
-                    navigate(item.path);
-                    setIsOpen(false);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "14px 20px",
-                    textAlign: "left",
-                    background: "none",
-                    border: "none",
-                    fontSize: "16px",
-                    color: "#374151",
-                    cursor: "pointer",
-                    transition: "background 0.2s"
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {menuItems.map((item) => {
+                const isRestricted = isGuest && item.guestRestricted;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      if (!isRestricted) {
+                        navigate(item.path);
+                        setIsOpen(false);
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "14px 20px",
+                      textAlign: "left",
+                      background: "none",
+                      border: "none",
+                      fontSize: "16px",
+                      color: isRestricted ? "#9ca3af" : "#374151",
+                      cursor: isRestricted ? "not-allowed" : "pointer",
+                      transition: "background 0.2s",
+                      opacity: isRestricted ? 0.5 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between"
+                    }}
+                    onMouseEnter={(e) => !isRestricted && (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+                    title={isRestricted ? "Sign up to access this feature" : ""}
+                  >
+                    {item.label}
+                    {isRestricted && <span style={{ fontSize: "12px" }}>🔒</span>}
+                  </button>
+                );
+              })}
             </nav>
 
             {/* Menu Footer */}

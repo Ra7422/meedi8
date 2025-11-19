@@ -13,7 +13,7 @@ import BenefitsBanner from "../components/BenefitsBanner";
 
 export default function CoachingChat() {
   const { roomId } = useParams();
-  const { token, user } = useAuth();
+  const { token, user, setUser } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
@@ -33,11 +33,49 @@ export default function CoachingChat() {
   const [showTelegramImport, setShowTelegramImport] = useState(false);  // Telegram import modal
   const [showMessageViewer, setShowMessageViewer] = useState(false);  // Message viewer modal
   const [viewingTelegramImport, setViewingTelegramImport] = useState(null);  // Current import being viewed
+  const [showNameModal, setShowNameModal] = useState(false);  // Guest name entry modal
+  const [guestName, setGuestName] = useState('');  // Guest's chosen name
+  const [savingName, setSavingName] = useState(false);  // Loading state for saving name
   const messagesEndRef = useRef(null);
+
+  // Check if user is a guest
+  const isGuest = user?.email?.startsWith('guest_');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Show name modal for guests when they reach the share link step
+  useEffect(() => {
+    if (inviteLink && isGuest && !guestName && user?.name?.startsWith('Guest ')) {
+      setShowNameModal(true);
+    }
+  }, [inviteLink, isGuest, guestName, user]);
+
+  // Function to save guest name
+  const handleSaveGuestName = async () => {
+    if (!guestName.trim()) {
+      alert("Please enter your name");
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      // Update user profile with the new name
+      await apiRequest('/auth/me', 'PUT', { name: guestName.trim() }, token);
+
+      // Fetch updated user data and update AuthContext
+      const userData = await apiRequest('/auth/me', 'GET', null, token);
+      setUser(userData);
+
+      setShowNameModal(false);
+    } catch (error) {
+      console.error("Failed to save name:", error);
+      alert("Failed to save name. Please try again.");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   useEffect(() => {
     const loadOrStartCoaching = async () => {
@@ -289,7 +327,19 @@ export default function CoachingChat() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload files");
+        const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 402) {
+          // Payment required - show upgrade message
+          const message = typeof errorData.detail === 'object'
+            ? errorData.detail.message
+            : errorData.detail;
+          alert(message || "File uploads are available with Plus or Pro subscription. Upgrade to express yourself better with images and documents!");
+          setUploadingFiles(false);
+          return;
+        }
+
+        throw new Error(errorData.detail || "Failed to upload files");
       }
 
       const result = await response.json();
@@ -297,7 +347,10 @@ export default function CoachingChat() {
       alert(`${files.length} file(s) uploaded successfully!`);
     } catch (error) {
       console.error("File upload error:", error);
-      alert("Failed to upload files: " + error.message);
+      const errorMessage = typeof error.message === 'object'
+        ? JSON.stringify(error.message)
+        : error.message;
+      alert("Failed to upload files: " + errorMessage);
     } finally {
       setUploadingFiles(false);
     }
@@ -332,8 +385,8 @@ export default function CoachingChat() {
       gap: 8px;
       align-items: center;
       padding: 8px 16px;
-      background: white;
-      border-top: 1px solid #e5e7eb;
+      background: transparent;
+      border-top: none;
       position: sticky;
       bottom: 0;
       left: 0;
@@ -556,6 +609,18 @@ export default function CoachingChat() {
                       objectFit: "cover"
                     }}
                   />
+                ) : isGuest ? (
+                  <img
+                    src="/assets/illustrations/Guest_Profile.svg"
+                    alt="Guest"
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      border: "2px solid #C4A7E7",
+                      objectFit: "cover"
+                    }}
+                  />
                 ) : (
                   <div style={{
                     width: "32px",
@@ -668,6 +733,11 @@ export default function CoachingChat() {
                 onRecordingComplete={handleVoiceRecording}
                 disabled={sending}
                 inline={true}
+                isGuest={user?.email?.startsWith('guest_')}
+                isPremium={true}  // Backend will check and return 402 if not premium
+                onPremiumRequired={() => {
+                  alert("Voice messages are available with Plus or Pro subscription. Upgrade to express yourself better!");
+                }}
               />
             </div>
           </div>
@@ -1385,6 +1455,102 @@ export default function CoachingChat() {
           }}
           token={token}
         />
+      )}
+
+      {/* Guest Name Entry Modal */}
+      {showNameModal && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "20px"
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "16px",
+            padding: "32px",
+            maxWidth: "400px",
+            width: "100%",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            fontFamily: "'Nunito', sans-serif"
+          }}>
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>👋</div>
+              <h2 style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "#6750A4",
+                marginBottom: "12px",
+                margin: "0 0 12px 0"
+              }}>
+                What should we call you?
+              </h2>
+              <p style={{
+                fontSize: "16px",
+                color: "#666",
+                lineHeight: "1.5",
+                margin: 0
+              }}>
+                Enter your name so the other person knows who they're talking to
+              </p>
+            </div>
+
+            <input
+              type="text"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              placeholder="Your name"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSaveGuestName();
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "16px",
+                fontSize: "18px",
+                border: "2px solid #e5e7eb",
+                borderRadius: "12px",
+                marginBottom: "24px",
+                fontFamily: "'Nunito', sans-serif",
+                boxSizing: "border-box",
+                textAlign: "center"
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#7DD3C0'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+            />
+
+            <button
+              onClick={handleSaveGuestName}
+              disabled={savingName || !guestName.trim()}
+              style={{
+                width: "100%",
+                padding: "14px 24px",
+                fontSize: "16px",
+                fontWeight: "700",
+                fontFamily: "'Nunito', sans-serif",
+                border: "none",
+                borderRadius: "12px",
+                color: "white",
+                backgroundColor: "#7DD3C0",
+                cursor: (savingName || !guestName.trim()) ? "not-allowed" : "pointer",
+                opacity: (savingName || !guestName.trim()) ? 0.6 : 1,
+                transition: "all 0.2s",
+                boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
+              }}
+            >
+              {savingName ? "Saving..." : "Continue"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
