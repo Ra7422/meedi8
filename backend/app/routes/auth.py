@@ -341,6 +341,57 @@ def create_guest(db: Session = Depends(get_db)):
     token = create_access_token({"sub": str(guest.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return TokenOut(access_token=token)
 
+class StripeSessionLoginIn(BaseModel):
+    session_id: Optional[str] = None
+    subscription_id: Optional[str] = None
+
+@router.post("/stripe-session-login", response_model=TokenOut)
+def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(get_db)):
+    """
+    Exchange a Stripe checkout session or subscription ID for a login token.
+    Used after guest checkout to automatically log in the newly created user.
+    """
+    import stripe
+    from app.config import settings
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    customer_email = None
+
+    try:
+        if payload.session_id:
+            # Get customer email from checkout session
+            session = stripe.checkout.Session.retrieve(payload.session_id)
+            customer_id = session.get("customer")
+            if customer_id:
+                customer = stripe.Customer.retrieve(customer_id)
+                customer_email = customer.get("email")
+        elif payload.subscription_id:
+            # Get customer email from subscription
+            subscription = stripe.Subscription.retrieve(payload.subscription_id)
+            customer_id = subscription.get("customer")
+            if customer_id:
+                customer = stripe.Customer.retrieve(customer_id)
+                customer_email = customer.get("email")
+        else:
+            raise HTTPException(status_code=400, detail="Either session_id or subscription_id is required")
+
+        if not customer_email:
+            raise HTTPException(status_code=404, detail="No customer email found for this session")
+
+        # Find user by email
+        user = db.query(User).filter(User.email == customer_email).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User account not found. Payment may still be processing.")
+
+        # Create and return access token
+        token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        return TokenOut(access_token=token)
+
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+
 class ConvertGuestIn(BaseModel):
     email: EmailStr
     name: Optional[str] = None
