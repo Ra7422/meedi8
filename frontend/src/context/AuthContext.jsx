@@ -3,13 +3,30 @@ import { apiRequest } from "../api/client";
 
 const AuthContext = createContext(null);
 
+// SSR-safe localStorage access helper
+const getStoredToken = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem("token") || null;
+  } catch (e) {
+    // Safari private browsing or localStorage blocked
+    console.warn('localStorage not available:', e);
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [token, setToken] = useState(getStoredToken);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
+    if (typeof window === 'undefined') return;
+    try {
+      if (token) localStorage.setItem("token", token);
+      else localStorage.removeItem("token");
+    } catch (e) {
+      console.warn('Failed to update localStorage:', e);
+    }
   }, [token]);
 
   // Fetch user data when token changes

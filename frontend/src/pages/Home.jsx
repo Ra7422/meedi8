@@ -30,7 +30,11 @@ export default function Home() {
 
         // CRITICAL: Write token to localStorage FIRST before navigating
         // This ensures the token is available when PrivateRoute checks
-        localStorage.setItem('token', response.access_token);
+        try {
+          localStorage.setItem('token', response.access_token);
+        } catch (e) {
+          console.warn('Failed to save token to localStorage:', e);
+        }
 
         // Store conflict description for next page
         sessionStorage.setItem('initialConflictDescription', conflictDescription);
