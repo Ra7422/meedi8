@@ -486,8 +486,23 @@ def handle_payment_intent_succeeded(db: Session, payment_intent: dict):
             customer = stripe.Customer.retrieve(customer_id)
             customer_email = customer.get("email")
 
+            # If customer email is not set, try to get it from the payment method
             if not customer_email:
-                print("⚠️ Guest checkout missing customer email")
+                payment_method_id = stripe_subscription.get("default_payment_method")
+                if payment_method_id:
+                    payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+                    # Email can be in billing_details or link object
+                    customer_email = payment_method.get("billing_details", {}).get("email")
+                    if not customer_email and payment_method.get("link"):
+                        customer_email = payment_method.get("link", {}).get("email")
+
+                    # Update customer with the email for future reference
+                    if customer_email:
+                        stripe.Customer.modify(customer_id, email=customer_email)
+                        print(f"✅ Updated customer {customer_id} with email {customer_email}")
+
+            if not customer_email:
+                print("⚠️ Guest checkout missing customer email - could not find in customer or payment method")
                 return
 
             # Check if user already exists with this email

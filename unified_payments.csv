@@ -1,0 +1,12 @@
+id,Created date (UTC),Amount,Amount Refunded,Currency,Captured,Converted Amount,Converted Amount Refunded,Converted Currency,Decline Reason,Description,Fee,Refunded date (UTC),Statement Descriptor,Status,Seller Message,Taxes On Fee,Card ID,Customer ID,Customer Description,Customer Email,Invoice ID,Transfer
+py_3SVJfvIFSfYvttlA0iuerAoB,2025-11-19 22:17:46,9.99,0.00,gbp,true,9.99,0.00,gbp,,Subscription creation,0.52,,,Paid,Payment complete.,0.00,,cus_TSE8CDGal0F44M,,one7422@icloud.com,in_1SVJfuIFSfYvttlAgggpWMQP,
+,2025-11-19 22:16:37,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSE8U7C1OCv6lX,,,,
+py_3SVJ8IIFSfYvttlA1BOU3R3J,2025-11-19 21:42:53,9.99,0.00,gbp,true,9.99,0.00,gbp,,Subscription creation,0.52,,,Paid,Payment complete.,0.00,,cus_TSDZ62fTd52bxG,,,in_1SVJ8HIFSfYvttlAcTlj2A0X,
+,2025-11-19 21:41:49,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDZm1D1H2uGhu,,,,
+,2025-11-19 21:41:04,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDYugzGQYQiJW,,,,
+,2025-11-19 21:41:00,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDYerZ2b9xPuh,,,,
+,2025-11-19 21:40:31,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDYOMsXyPhlIG,,,,
+,2025-11-19 21:40:25,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDYGFWf18t0mg,,,,
+,2025-11-19 21:20:18,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSDDdTHx545Z8m,,,,
+ch_3SVH5YIFSfYvttlA1zNXqpCy,2025-11-19 19:31:38,9.99,0.00,gbp,true,9.99,0.00,gbp,,Subscription creation,0.52,,Stripe,Paid,Payment complete.,0.00,pm_1SVH6MIFSfYvttlA6qkcuBF8,cus_TSBSzvlRDAbUBn,,guest_158f9e4b@temp.meedi8.com,in_1SVH5XIFSfYvttlAqIuyizvh,
+,2025-11-19 19:31:08,9.99,,gbp,,,,,,Subscription creation,,,,requires_payment_method,,,,cus_TSBSzvlRDAbUBn,,guest_158f9e4b@temp.meedi8.com,,

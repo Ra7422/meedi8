@@ -373,6 +373,15 @@ def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(ge
             if customer_id:
                 customer = stripe.Customer.retrieve(customer_id)
                 customer_email = customer.get("email")
+
+                # If customer email is not set, try to get from payment method
+                if not customer_email:
+                    payment_method_id = subscription.get("default_payment_method")
+                    if payment_method_id:
+                        payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+                        customer_email = payment_method.get("billing_details", {}).get("email")
+                        if not customer_email and payment_method.get("link"):
+                            customer_email = payment_method.get("link", {}).get("email")
         else:
             raise HTTPException(status_code=400, detail="Either session_id or subscription_id is required")
 
