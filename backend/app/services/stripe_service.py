@@ -418,8 +418,56 @@ def handle_subscription_updated(db: Session, subscription_data: dict):
     ).first()
 
     if not subscription:
-        print(f"Subscription not found: {stripe_sub_id}")
-        return
+        # Subscription not in our database yet - this happens when a new subscription becomes active
+        # from Express Checkout flow. We need to create it.
+        if status == "active":
+            print(f"ℹ️ Subscription {stripe_sub_id} not found but status is active - creating new subscription")
+
+            # Get user_id from metadata or customer
+            metadata = subscription_data.get("metadata", {})
+            user_id = metadata.get("user_id")
+            customer_id = subscription_data.get("customer")
+
+            if not user_id and customer_id:
+                # Try to find user by stripe_customer_id
+                user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+                if user:
+                    user_id = user.id
+                    print(f"✅ Found user {user_id} by customer_id {customer_id}")
+
+            if not user_id:
+                print(f"⚠️ Cannot create subscription - no user_id found for {stripe_sub_id}")
+                return
+
+            user_id = int(user_id)
+
+            # Get tier from price
+            price_id = subscription_data["items"]["data"][0]["price"]["id"]
+            tier = get_tier_from_price_id(price_id)
+
+            # Get or create subscription for user
+            from app.services.subscription_service import get_or_create_subscription
+            subscription = get_or_create_subscription(db, user_id)
+
+            # Update subscription with Stripe data
+            subscription.tier = tier
+            subscription.status = SubscriptionStatus.ACTIVE
+            subscription.stripe_subscription_id = stripe_sub_id
+            subscription.stripe_price_id = price_id
+            subscription.updated_at = datetime.utcnow()
+
+            # Set appropriate limits based on tier
+            if tier == SubscriptionTier.PRO:
+                subscription.voice_conversations_limit = 999999  # Unlimited
+            elif tier == SubscriptionTier.PLUS:
+                subscription.voice_conversations_limit = 999999  # Unlimited
+
+            db.commit()
+            print(f"✅ Created subscription for user {user_id}: {tier.value}")
+            return
+        else:
+            print(f"Subscription not found: {stripe_sub_id}")
+            return
 
     # Map Stripe status to our status
     if status == "active":
