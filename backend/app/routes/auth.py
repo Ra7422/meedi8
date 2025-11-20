@@ -86,7 +86,6 @@ def reset_database(secret: str, db: Session = Depends(get_db)):
 
     # Delete in order to respect foreign keys
     db.execute(text("DELETE FROM turns"))
-    db.execute(text("DELETE FROM messages"))
     db.execute(text("DELETE FROM room_participants"))
     db.execute(text("DELETE FROM rooms"))
     db.execute(text("DELETE FROM subscriptions"))
