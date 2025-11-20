@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # OAuth
     TELEGRAM_BOT_TOKEN: str = ""
 
+    # Cloudflare Turnstile
+    TURNSTILE_SECRET_KEY: str = ""
+
     # Stripe Price IDs (Test Mode)
     STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST4GSIFSfYvttlAuK48AVkK"
     STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST4HPIFSfYvttlA7wcumfd8"

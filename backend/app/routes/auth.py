@@ -12,10 +12,32 @@ from ..deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+async def verify_turnstile(token: str) -> bool:
+    """Verify a Cloudflare Turnstile token"""
+    if not settings.TURNSTILE_SECRET_KEY:
+        # If Turnstile is not configured, skip verification
+        return True
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": token
+                }
+            )
+            result = response.json()
+            return result.get("success", False)
+    except Exception as e:
+        print(f"Turnstile verification error: {e}")
+        return False
+
 class RegisterIn(BaseModel):
     email: EmailStr
     name: Optional[str] = None
     password: str
+    turnstile_token: Optional[str] = None
 
 class TokenOut(BaseModel):
     access_token: str
@@ -24,6 +46,7 @@ class TokenOut(BaseModel):
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+    turnstile_token: Optional[str] = None
 
 class GoogleAuthIn(BaseModel):
     token: str  # Google OAuth ID token
@@ -56,7 +79,15 @@ class UpdateUserIn(BaseModel):
     name: Optional[str] = None
 
 @router.post("/register", response_model=TokenOut, status_code=201)
-def register(payload: RegisterIn, db: Session = Depends(get_db)):
+async def register(payload: RegisterIn, db: Session = Depends(get_db)):
+    # Verify Turnstile token if configured and provided
+    if settings.TURNSTILE_SECRET_KEY and payload.turnstile_token:
+        is_valid = await verify_turnstile(payload.turnstile_token)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="CAPTCHA verification failed")
+    elif settings.TURNSTILE_SECRET_KEY and not payload.turnstile_token:
+        raise HTTPException(status_code=400, detail="CAPTCHA token required")
+
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -185,7 +216,15 @@ def reset_database(secret: str, db: Session = Depends(get_db)):
     }
 
 @router.post("/login", response_model=TokenOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)):
+async def login(payload: LoginIn, db: Session = Depends(get_db)):
+    # Verify Turnstile token if configured and provided
+    if settings.TURNSTILE_SECRET_KEY and payload.turnstile_token:
+        is_valid = await verify_turnstile(payload.turnstile_token)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="CAPTCHA verification failed")
+    elif settings.TURNSTILE_SECRET_KEY and not payload.turnstile_token:
+        raise HTTPException(status_code=400, detail="CAPTCHA token required")
+
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not user.hashed_password or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")

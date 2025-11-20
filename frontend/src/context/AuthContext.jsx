@@ -49,14 +49,18 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  async function login(email, password) {
-    const data = await apiRequest("/auth/login", "POST", { email, password });
+  async function login(email, password, turnstileToken = null) {
+    const payload = { email, password };
+    if (turnstileToken) payload.turnstile_token = turnstileToken;
+    const data = await apiRequest("/auth/login", "POST", payload);
     setToken(data.access_token);
     return data;
   }
 
-  async function register(name, email, password) {
-    const data = await apiRequest("/auth/register", "POST", { name, email, password });
+  async function register(name, email, password, turnstileToken = null) {
+    const payload = { name, email, password };
+    if (turnstileToken) payload.turnstile_token = turnstileToken;
+    const data = await apiRequest("/auth/register", "POST", payload);
     setToken(data.access_token);
     return data;
   }

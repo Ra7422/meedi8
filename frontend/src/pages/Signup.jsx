@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Logo } from "../components/ui";
@@ -6,6 +6,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 import FloatingMenu from "../components/FloatingMenu";
 import TelegramLoginButton from '../components/TelegramLoginButton';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 /**
  * Sign Up Page - Matches Login Design
@@ -28,6 +29,11 @@ export default function Signup() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
+
+  // Turnstile site key from environment
+  const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   // Helper function to handle post-signup redirect
   const handlePostSignupRedirect = () => {
@@ -64,10 +70,15 @@ export default function Signup() {
 
     try {
       const fullName = `${firstName} ${lastName}`.trim();
-      await register(fullName, email, password);
+      await register(fullName, email, password, turnstileToken || null);
       handlePostSignupRedirect();
     } catch (e) {
       setError(e.message || "Signup failed. Please try again.");
+      // Reset Turnstile on error
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
+      setTurnstileToken("");
     } finally {
       setLoading(false);
     }
@@ -212,6 +223,23 @@ export default function Signup() {
               By signing up, you agree to our <a href="/terms" target="_blank" style={styles.termsLink}>Terms & Conditions</a>.
             </span>
           </label>
+
+          {/* Cloudflare Turnstile - invisible CAPTCHA */}
+          {TURNSTILE_SITE_KEY && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => setError("CAPTCHA verification failed. Please try again.")}
+                onExpire={() => setTurnstileToken("")}
+                options={{
+                  theme: 'light',
+                  size: 'flexible'
+                }}
+              />
+            </div>
+          )}
 
           {error && (
             <div style={styles.errorBox}>
