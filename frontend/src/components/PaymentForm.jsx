@@ -3,6 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
+  LinkAuthenticationElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -16,6 +17,7 @@ function PaymentForm({ clientSecret, onSuccess, onError }) {
   const elements = useElements();
   const [message, setMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [email, setEmail] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -32,6 +34,7 @@ function PaymentForm({ clientSecret, onSuccess, onError }) {
       elements,
       confirmParams: {
         return_url: `${window.location.origin}/subscription/success`,
+        receipt_email: email,
       },
     });
 
@@ -58,14 +61,16 @@ function PaymentForm({ clientSecret, onSuccess, onError }) {
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
+      <div style={{ marginBottom: '16px' }}>
+        <LinkAuthenticationElement
+          onChange={(event) => {
+            setEmail(event.value.email);
+          }}
+        />
+      </div>
       <PaymentElement
         options={{
           layout: 'tabs',
-          defaultValues: {
-            billingDetails: {
-              email: '',
-            }
-          }
         }}
       />
 
