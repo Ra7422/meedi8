@@ -12,6 +12,7 @@ export default function SubscriptionSuccess() {
   const { token, setToken } = useAuth();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState(null);
 
   useEffect(() => {
     // If not authenticated and we have a session/subscription ID, try to auto-login
@@ -49,6 +50,13 @@ export default function SubscriptionSuccess() {
               }
             } catch (error) {
               console.log(`Auto-login attempt ${attempts}/${maxAttempts} failed:`, error.message);
+              // Try to extract email from error message (format: "message|email")
+              if (error.message && error.message.includes("|")) {
+                const email = error.message.split("|")[1];
+                if (email && email.includes("@")) {
+                  setCustomerEmail(email);
+                }
+              }
               if (attempts >= maxAttempts) {
                 throw error;
               }
@@ -130,7 +138,10 @@ export default function SubscriptionSuccess() {
         }}>
           <h3 style={{ marginTop: 0, color: "#1F7A5C" }}>Sign in to access your subscription</h3>
           <p style={{ color: "#2D9F7C", marginBottom: "16px" }}>
-            Use the same email you provided during checkout.
+            {customerEmail
+              ? <>Sign in with <strong>{customerEmail}</strong> to complete your purchase.</>
+              : "Use the same email you provided during checkout."
+            }
           </p>
         </div>
 

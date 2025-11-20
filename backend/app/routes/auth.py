@@ -415,7 +415,10 @@ def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(ge
         user = db.query(User).filter(User.email == customer_email).first()
 
         if not user:
-            raise HTTPException(status_code=404, detail="User account not found. Payment may still be processing.")
+            raise HTTPException(
+                status_code=404,
+                detail=f"User account not found. Payment may still be processing.|{customer_email}"
+            )
 
         # Create and return access token
         token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
