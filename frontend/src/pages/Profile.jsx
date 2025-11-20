@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../api/client';
 
 export default function Profile() {
-  const { user, token } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -15,6 +15,9 @@ export default function Profile() {
   const [sessionToDelete, setSessionToDelete] = useState(null);
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [profilePictureUrl, setProfilePictureUrl] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [profileData, setProfileData] = useState({
     name: '',
@@ -33,8 +36,67 @@ export default function Profile() {
         religion: user.religion || '',
         bio: user.bio || '',
       });
+      setProfilePictureUrl(user.profile_picture_url || null);
     }
   }, [user]);
+
+  async function handleProfilePictureUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image too large. Maximum size is 5MB');
+      return;
+    }
+
+    setUploadingPicture(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/auth/me/profile-picture`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to upload profile picture');
+      }
+
+      const updatedUser = await response.json();
+      setProfilePictureUrl(updatedUser.profile_picture_url);
+
+      // Refresh user in context if available
+      if (refreshUser) {
+        refreshUser();
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert(error.message || 'Failed to upload profile picture');
+    } finally {
+      setUploadingPicture(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
 
   useEffect(() => {
     // Add small delay for Safari to ensure token is properly set
@@ -230,6 +292,11 @@ export default function Profile() {
       color: '#888',
       fontFamily: "'Nunito', sans-serif",
     },
+    profilePictureContainer: {
+      position: 'relative',
+      cursor: 'pointer',
+      transition: 'transform 0.2s',
+    },
     headerProfilePicture: {
       width: '80px',
       height: '80px',
@@ -248,6 +315,23 @@ export default function Profile() {
       justifyContent: 'center',
       fontSize: '36px',
       color: '#D3C1FF',
+    },
+    profilePictureOverlay: {
+      position: 'absolute',
+      bottom: '0',
+      right: '0',
+      width: '28px',
+      height: '28px',
+      borderRadius: '50%',
+      backgroundColor: '#D3C1FF',
+      color: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '18px',
+      fontWeight: '700',
+      border: '2px solid white',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
     },
     grid: {
       display: 'grid',
@@ -513,13 +597,28 @@ export default function Profile() {
     <div style={styles.container}>
       <div style={styles.maxWidth}>
         <div style={styles.header}>
-          {user?.profile_picture_url ? (
-            <img src={user.profile_picture_url} alt="Profile" style={styles.headerProfilePicture} />
-          ) : (
-            <div style={styles.headerProfilePicturePlaceholder}>
-              👤
+          <div
+            style={styles.profilePictureContainer}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {profilePictureUrl ? (
+              <img src={profilePictureUrl} alt="Profile" style={styles.headerProfilePicture} />
+            ) : (
+              <div style={styles.headerProfilePicturePlaceholder}>
+                👤
+              </div>
+            )}
+            <div style={styles.profilePictureOverlay}>
+              {uploadingPicture ? '...' : '+'}
             </div>
-          )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleProfilePictureUpload}
+              style={{ display: 'none' }}
+            />
+          </div>
           <div style={styles.headerContent}>
             <h1 style={styles.title}>Your <span style={styles.titleBold}>Profile</span></h1>
             <p style={styles.subtitle}>Manage your information and track your progress</p>

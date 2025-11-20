@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 import httpx
@@ -483,6 +483,58 @@ def get_my_usage(
     """Get current user's subscription usage"""
     from app.middleware.rate_limit import get_usage_info
     return get_usage_info(current_user)
+
+@router.post("/me/profile-picture", response_model=UserOut)
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload a profile picture for the current user"""
+    from app.services.s3_service import upload_profile_picture_to_s3
+
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+        )
+
+    # Validate file size (max 5MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="File too large. Maximum size is 5MB"
+        )
+
+    try:
+        # Upload to S3
+        url = upload_profile_picture_to_s3(
+            image_bytes=contents,
+            user_id=current_user.id,
+            filename=file.filename or "profile.jpg",
+            content_type=file.content_type
+        )
+
+        # Update user's profile picture URL
+        current_user.profile_picture_url = url
+        db.commit()
+        db.refresh(current_user)
+
+        return UserOut(
+            id=current_user.id,
+            email=current_user.email,
+            name=current_user.name,
+            profile_picture_url=current_user.profile_picture_url,
+            has_completed_screening=current_user.has_completed_screening
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to upload profile picture: {str(e)}"
+        )
 
 @router.post("/create-guest", response_model=TokenOut, status_code=201)
 def create_guest(db: Session = Depends(get_db)):

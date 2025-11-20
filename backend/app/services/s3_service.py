@@ -180,6 +180,56 @@ def upload_report_to_s3(pdf_bytes: bytes, room_id: int) -> str:
         raise Exception(error_message)
 
 
+def upload_profile_picture_to_s3(image_bytes: bytes, user_id: int, filename: str, content_type: str = "image/jpeg") -> str:
+    """
+    Upload profile picture to S3 and return the public URL.
+
+    Args:
+        image_bytes: The image file content as bytes
+        user_id: The user ID
+        filename: Original filename
+        content_type: MIME type of the image
+
+    Returns:
+        str: The public URL of the uploaded image
+
+    Raises:
+        Exception: If upload fails
+    """
+    try:
+        # Get S3 client at runtime
+        s3_client, aws_s3_bucket, aws_region = get_s3_client()
+
+        # Generate unique filename
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        file_hash = hashlib.md5(image_bytes).hexdigest()[:8]
+        file_extension = filename.split('.')[-1] if '.' in filename else 'jpg'
+        s3_key = f"profile-pictures/user_{user_id}/{timestamp}_{file_hash}.{file_extension}"
+
+        # Upload to S3
+        s3_client.put_object(
+            Bucket=aws_s3_bucket,
+            Key=s3_key,
+            Body=image_bytes,
+            ContentType=content_type
+        )
+
+        # Generate public URL
+        url = f"https://{aws_s3_bucket}.s3.{aws_region}.amazonaws.com/{s3_key}"
+
+        print(f"Profile picture uploaded successfully to S3: {url}")
+        return url
+
+    except ClientError as e:
+        error_message = f"S3 upload failed: {e}"
+        print(error_message)
+        raise Exception(error_message)
+    except Exception as e:
+        error_message = f"Unexpected error uploading profile picture to S3: {e}"
+        print(error_message)
+        raise Exception(error_message)
+
+
 def delete_audio_from_s3(audio_url: str) -> bool:
     """
     Delete audio file from S3.
