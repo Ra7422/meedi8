@@ -35,6 +35,9 @@ export default function AdminDashboard() {
   const [featureFlags, setFeatureFlags] = useState({});
   const [webhookLogs, setWebhookLogs] = useState([]);
   const [impersonateToken, setImpersonateToken] = useState(null);
+  const [emailTemplates, setEmailTemplates] = useState({});
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
 
   const adminToken = localStorage.getItem("admin_token");
 
@@ -94,6 +97,19 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
+      // Fetch email templates and system health
+      const [templatesRes, healthRes] = await Promise.all([
+        fetch(`${API_URL}/admin/email-templates`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/system-health`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+      ]);
+
+      const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
+      const healthData = healthRes.ok ? await healthRes.json() : null;
+
       setUsers(usersData.users || []);
       setSettings(settingsData);
       setRooms(roomsData.rooms || []);
@@ -102,6 +118,8 @@ export default function AdminDashboard() {
       setRevenue(revenueData);
       setFeatureFlags(flagsData.flags || {});
       setWebhookLogs(webhooksData.events || []);
+      setEmailTemplates(templatesData.templates || {});
+      setSystemHealth(healthData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -354,6 +372,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleTestEmail = async (templateId) => {
+    if (!testEmailAddress) {
+      alert("Please enter an email address");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/admin/email-templates/${templateId}/test?to_email=${encodeURIComponent(testEmailAddress)}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      const data = await res.json();
+      if (data.status === "success") {
+        alert(`Test email sent to ${testEmailAddress}`);
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Nunito', sans-serif" }}>
@@ -439,6 +480,18 @@ export default function AdminDashboard() {
             active={activeTab === "webhooks"}
             onClick={() => setActiveTab("webhooks")}
           />
+          <SidebarItem
+            icon="📧"
+            label="Email Templates"
+            active={activeTab === "emails"}
+            onClick={() => setActiveTab("emails")}
+          />
+          <SidebarItem
+            icon="💓"
+            label="System Health"
+            active={activeTab === "health"}
+            onClick={() => setActiveTab("health")}
+          />
         </nav>
 
         <div style={{ position: "absolute", bottom: "20px", left: "20px", right: "20px" }}>
@@ -482,6 +535,8 @@ export default function AdminDashboard() {
             {activeTab === "revenue" && "Revenue Reporting"}
             {activeTab === "flags" && "Feature Flags"}
             {activeTab === "webhooks" && "Webhook Logs"}
+            {activeTab === "emails" && "Email Templates"}
+            {activeTab === "health" && "System Health"}
           </h2>
           <div style={{ display: "flex", gap: "8px" }}>
             {activeTab === "users" && (
@@ -1452,6 +1507,191 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
+          )}
+
+          {/* Email Templates Tab */}
+          {activeTab === "emails" && (
+            <div style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}>
+              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700" }}>
+                Email Templates
+              </h3>
+              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "16px" }}>
+                Manage email templates used by the notification system.
+              </p>
+
+              {/* Test Email Input */}
+              <div style={{
+                background: "#f9fafb",
+                padding: "16px",
+                borderRadius: "12px",
+                marginBottom: "24px",
+                display: "flex",
+                gap: "12px",
+                alignItems: "center",
+              }}>
+                <label style={{ fontSize: "14px", fontWeight: "500" }}>Test Email:</label>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={testEmailAddress}
+                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gap: "16px" }}>
+                {Object.entries(emailTemplates).map(([templateId, template]) => (
+                  <div key={templateId} style={{
+                    padding: "20px",
+                    background: "#f9fafb",
+                    borderRadius: "16px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
+                      <div>
+                        <div style={{ fontWeight: "600", fontSize: "15px", marginBottom: "4px" }}>
+                          {template.name}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                          {template.description}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleTestEmail(templateId)}
+                        style={{
+                          background: "#6750A4",
+                          color: "white",
+                          border: "none",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Send Test
+                      </button>
+                    </div>
+                    <div style={{ marginBottom: "8px" }}>
+                      <span style={{ fontSize: "12px", color: "#6b7280" }}>Subject: </span>
+                      <span style={{ fontSize: "13px", fontFamily: "monospace" }}>{template.subject}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "12px", color: "#6b7280" }}>Variables: </span>
+                      {template.variables?.map((v) => (
+                        <span key={v} style={{
+                          background: "#e0e7ff",
+                          color: "#3730a3",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          marginRight: "4px",
+                        }}>
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* System Health Tab */}
+          {activeTab === "health" && systemHealth && (
+            <>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+                marginBottom: "24px",
+              }}>
+                <div style={{
+                  background: systemHealth.status === "healthy" ? "#dcfce7" : "#fef3c7",
+                  borderRadius: "24px",
+                  padding: "24px",
+                  textAlign: "center",
+                }}>
+                  <div style={{
+                    fontSize: "40px",
+                    marginBottom: "8px",
+                  }}>
+                    {systemHealth.status === "healthy" ? "💚" : "💛"}
+                  </div>
+                  <div style={{
+                    fontWeight: "700",
+                    fontSize: "18px",
+                    color: systemHealth.status === "healthy" ? "#166534" : "#92400e",
+                  }}>
+                    {systemHealth.status === "healthy" ? "System Healthy" : "Degraded"}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  Health Checks
+                </h3>
+                <div style={{ display: "grid", gap: "12px" }}>
+                  {Object.entries(systemHealth.checks || {}).map(([name, check]) => (
+                    <div key={name} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "16px",
+                      background: "#f9fafb",
+                      borderRadius: "12px",
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: "600", textTransform: "capitalize" }}>{name}</div>
+                        {check.message && (
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>{check.message}</div>
+                        )}
+                        {check.version && (
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>v{check.version}</div>
+                        )}
+                        {check.used_percent !== undefined && (
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                            {check.used_percent}% used
+                            {check.used_gb && ` (${check.used_gb}/${check.total_gb} GB)`}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        background: check.status === "ok" ? "#dcfce7" :
+                                   check.status === "warning" ? "#fef3c7" :
+                                   check.status === "not_configured" ? "#f3f4f6" : "#fee2e2",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                      }}>
+                        {check.status === "ok" ? "✓" :
+                         check.status === "warning" ? "!" :
+                         check.status === "not_configured" ? "○" : "×"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

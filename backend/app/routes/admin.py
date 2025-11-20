@@ -948,3 +948,195 @@ def impersonate_user(
         "token": token,
         "warning": "This token allows full access as this user. Use carefully."
     }
+
+
+# ========================================
+# EMAIL TEMPLATES
+# ========================================
+
+# In-memory email templates (could be moved to DB)
+EMAIL_TEMPLATES = {
+    "turn_notification": {
+        "name": "Turn Notification",
+        "subject": "{other_person_name} has responded - Your turn in Meedi8",
+        "description": "Sent when it's a user's turn to respond in mediation",
+        "variables": ["to_name", "other_person_name", "room_url", "frontend_url"],
+    },
+    "break_notification": {
+        "name": "Break Requested",
+        "subject": "{requester_name} requested a break - Meedi8",
+        "description": "Sent when someone requests a breathing break",
+        "variables": ["to_name", "requester_name", "room_url"],
+    },
+    "welcome": {
+        "name": "Welcome Email",
+        "subject": "Welcome to Meedi8!",
+        "description": "Sent when a new user signs up",
+        "variables": ["to_name", "frontend_url"],
+    },
+    "resolution_complete": {
+        "name": "Resolution Complete",
+        "subject": "Your mediation session is complete - Meedi8",
+        "description": "Sent when a mediation reaches resolution",
+        "variables": ["to_name", "room_url", "resolution_summary"],
+    },
+}
+
+@router.get("/email-templates")
+def get_email_templates(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all email templates"""
+    check_admin(current_user)
+    return {"templates": EMAIL_TEMPLATES}
+
+
+@router.put("/email-templates/{template_id}")
+def update_email_template(
+    template_id: str,
+    subject: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update email template subject"""
+    check_admin(current_user)
+
+    if template_id not in EMAIL_TEMPLATES:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    EMAIL_TEMPLATES[template_id]["subject"] = subject
+    return {"status": "success", "template_id": template_id, "subject": subject}
+
+
+@router.post("/email-templates/{template_id}/test")
+def test_email_template(
+    template_id: str,
+    to_email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Send test email using template"""
+    check_admin(current_user)
+
+    if template_id not in EMAIL_TEMPLATES:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    # Import email service
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+
+    if not settings.SENDGRID_API_KEY:
+        return {"status": "error", "message": "SendGrid API key not configured"}
+
+    try:
+        template = EMAIL_TEMPLATES[template_id]
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://meedi8.com')
+
+        # Generate test content
+        subject = template["subject"].format(
+            other_person_name="Test User",
+            requester_name="Test User",
+            to_name=current_user.name or "Admin"
+        )
+
+        html_content = f"""
+        <div style="font-family: sans-serif; padding: 20px;">
+            <h2>Test Email: {template['name']}</h2>
+            <p><strong>Template ID:</strong> {template_id}</p>
+            <p><strong>Subject:</strong> {subject}</p>
+            <p><strong>Description:</strong> {template['description']}</p>
+            <p><strong>Variables:</strong> {', '.join(template['variables'])}</p>
+            <hr>
+            <p style="color: #666;">This is a test email sent from the Meedi8 admin dashboard.</p>
+        </div>
+        """
+
+        message = Mail(
+            from_email=Email(getattr(settings, 'FROM_EMAIL', 'notifications@meedi8.com'), "Meedi8"),
+            to_emails=To(to_email),
+            subject=f"[TEST] {subject}",
+            html_content=Content("text/html", html_content)
+        )
+
+        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+        response = sg.send(message)
+
+        return {
+            "status": "success",
+            "message": f"Test email sent to {to_email}",
+            "status_code": response.status_code
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ========================================
+# SYSTEM HEALTH
+# ========================================
+
+@router.get("/system-health")
+def get_system_health(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get system health metrics"""
+    check_admin(current_user)
+
+    import psutil
+    import sys
+
+    health = {
+        "status": "healthy",
+        "checks": {}
+    }
+
+    # Database check
+    try:
+        db.execute(text("SELECT 1"))
+        health["checks"]["database"] = {"status": "ok", "message": "Connected"}
+    except Exception as e:
+        health["checks"]["database"] = {"status": "error", "message": str(e)}
+        health["status"] = "degraded"
+
+    # Memory usage
+    try:
+        memory = psutil.virtual_memory()
+        health["checks"]["memory"] = {
+            "status": "ok" if memory.percent < 90 else "warning",
+            "used_percent": round(memory.percent, 1),
+            "used_gb": round(memory.used / (1024**3), 2),
+            "total_gb": round(memory.total / (1024**3), 2)
+        }
+    except:
+        health["checks"]["memory"] = {"status": "unknown"}
+
+    # CPU usage
+    try:
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        health["checks"]["cpu"] = {
+            "status": "ok" if cpu_percent < 90 else "warning",
+            "used_percent": round(cpu_percent, 1)
+        }
+    except:
+        health["checks"]["cpu"] = {"status": "unknown"}
+
+    # Python version
+    health["checks"]["python"] = {
+        "status": "ok",
+        "version": sys.version.split()[0]
+    }
+
+    # External services
+    health["checks"]["stripe"] = {
+        "status": "ok" if settings.STRIPE_SECRET_KEY else "not_configured"
+    }
+    health["checks"]["sendgrid"] = {
+        "status": "ok" if settings.SENDGRID_API_KEY else "not_configured"
+    }
+    health["checks"]["anthropic"] = {
+        "status": "ok" if settings.ANTHROPIC_API_KEY else "not_configured"
+    }
+
+    return health
