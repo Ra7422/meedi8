@@ -504,6 +504,123 @@ def handle_subscription_deleted(db: Session, subscription_data: dict):
     print(f"✅ Subscription cancelled: {stripe_sub_id}")
 
 
+def handle_invoice_paid(db: Session, invoice: dict):
+    """
+    Handle invoice.paid webhook - PRIMARY handler for subscription activation.
+    This is more reliable than payment_intent.succeeded because:
+    1. invoice object directly contains subscription_id
+    2. invoice always has customer_id
+    3. For subscriptions, this event always fires
+    """
+    subscription_id = invoice.get("subscription")
+    customer_id = invoice.get("customer")
+
+    if not subscription_id:
+        # This is a one-time invoice payment, not a subscription
+        print(f"ℹ️ Invoice paid but no subscription - one-time payment")
+        return
+
+    print(f"📋 invoice.paid for subscription {subscription_id}")
+
+    try:
+        # Retrieve full subscription
+        stripe_subscription = stripe.Subscription.retrieve(subscription_id)
+
+        # Extract metadata
+        metadata = stripe_subscription.get("metadata", {})
+        price_id = stripe_subscription["items"]["data"][0]["price"]["id"]
+        tier = get_tier_from_price_id(price_id)
+
+        # Handle guest checkout or authenticated user
+        is_guest_checkout = metadata.get("guest_checkout") == "true"
+
+        if is_guest_checkout:
+            # Create user account for guest checkout
+            customer = stripe.Customer.retrieve(customer_id)
+            customer_email = customer.get("email")
+
+            # If customer email is not set, get from payment method or invoice
+            if not customer_email:
+                # Try subscription's default payment method
+                payment_method_id = stripe_subscription.get("default_payment_method")
+                if payment_method_id:
+                    payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+                    customer_email = payment_method.get("billing_details", {}).get("email")
+                    if not customer_email and payment_method.get("link"):
+                        customer_email = payment_method.get("link", {}).get("email")
+
+                    # Update customer with the email for future reference
+                    if customer_email:
+                        stripe.Customer.modify(customer_id, email=customer_email)
+                        print(f"✅ Updated customer {customer_id} with email {customer_email}")
+
+            # Also check customer_email on invoice
+            if not customer_email:
+                customer_email = invoice.get("customer_email")
+                if customer_email:
+                    stripe.Customer.modify(customer_id, email=customer_email)
+                    print(f"✅ Updated customer {customer_id} with email from invoice: {customer_email}")
+
+            if not customer_email:
+                print(f"⚠️ Guest checkout missing email for invoice {invoice.get('id')}")
+                return
+
+            # Check if user already exists with this email
+            existing_user = db.query(User).filter(User.email == customer_email).first()
+            if existing_user:
+                print(f"ℹ️ User already exists for {customer_email}, linking subscription")
+                user = existing_user
+                # Update stripe customer ID if not set
+                if not user.stripe_customer_id:
+                    user.stripe_customer_id = customer_id
+            else:
+                # Create new user account
+                import secrets
+                user = User(
+                    email=customer_email,
+                    name=customer_email.split("@")[0],  # Use email prefix as default name
+                    hashed_password=secrets.token_urlsafe(32),  # Temporary password
+                    stripe_customer_id=customer_id,
+                    has_completed_screening=False
+                )
+                db.add(user)
+                db.flush()  # Get user.id without committing
+                print(f"✅ Created new user account for guest: {customer_email}")
+
+            user_id = user.id
+        else:
+            # Authenticated checkout - get user_id from metadata
+            user_id = metadata.get("user_id")
+            if not user_id:
+                print(f"⚠️ Missing user_id in subscription metadata for {subscription_id}")
+                return
+            user_id = int(user_id)
+
+        # Get or create subscription for user
+        from app.services.subscription_service import get_or_create_subscription
+        subscription = get_or_create_subscription(db, user_id)
+
+        # Update subscription
+        subscription.tier = tier
+        subscription.status = SubscriptionStatus.ACTIVE
+        subscription.stripe_subscription_id = subscription_id
+        subscription.stripe_price_id = price_id
+        subscription.updated_at = datetime.utcnow()
+
+        # Update limits for paid tiers
+        if tier in [SubscriptionTier.PLUS, SubscriptionTier.PRO]:
+            subscription.voice_conversations_limit = 999999  # Unlimited
+
+        db.commit()
+        print(f"✅ Subscription activated via invoice.paid: user={user_id}, tier={tier}")
+
+    except Exception as e:
+        print(f"❌ Error in handle_invoice_paid: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+
+
 def handle_payment_intent_succeeded(db: Session, payment_intent: dict):
     """
     Handle successful payment for Express Checkout subscriptions.

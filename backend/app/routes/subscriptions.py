@@ -19,7 +19,8 @@ from app.services.stripe_service import (
     handle_checkout_complete,
     handle_subscription_updated,
     handle_subscription_deleted,
-    handle_payment_intent_succeeded
+    handle_payment_intent_succeeded,
+    handle_invoice_paid
 )
 from app.services.subscription_service import get_or_create_subscription
 from app.config import settings
@@ -283,6 +284,11 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     elif event_type == "customer.subscription.deleted":
         # Subscription cancelled
         handle_subscription_deleted(db, data)
+
+    elif event_type == "invoice.paid":
+        # Invoice paid - this is the PRIMARY handler for subscription activation
+        # This is more reliable than payment_intent.succeeded for subscriptions
+        handle_invoice_paid(db, data)
 
     elif event_type == "invoice.payment_failed":
         # Payment failed - you might want to send notification
