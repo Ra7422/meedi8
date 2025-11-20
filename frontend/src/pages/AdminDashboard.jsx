@@ -7,6 +7,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [settings, setSettings] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingSubscription, setEditingSubscription] = useState(null);
@@ -14,6 +16,18 @@ export default function AdminDashboard() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", password: "", name: "", isAdmin: false });
   const [createUserError, setCreateUserError] = useState("");
+
+  // Search and filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterTier, setFilterTier] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Bulk selection
+  const [selectedUsers, setSelectedUsers] = useState([]);
+
+  // Password reset modal
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [tempPassword, setTempPassword] = useState("");
 
   const adminToken = localStorage.getItem("admin_token");
 
@@ -28,11 +42,17 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, settingsRes] = await Promise.all([
+      const [usersRes, settingsRes, roomsRes, analyticsRes] = await Promise.all([
         fetch(`${API_URL}/admin/users`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
         fetch(`${API_URL}/admin/settings`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/rooms`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/analytics`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);
@@ -48,13 +68,141 @@ export default function AdminDashboard() {
 
       const usersData = await usersRes.json();
       const settingsData = await settingsRes.json();
+      const roomsData = roomsRes.ok ? await roomsRes.json() : { rooms: [] };
+      const analyticsData = analyticsRes.ok ? await analyticsRes.json() : null;
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
+      setRooms(roomsData.rooms || []);
+      setAnalytics(analyticsData);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("q", searchQuery);
+      if (filterTier) params.append("tier", filterTier);
+      if (filterStatus) params.append("status", filterStatus);
+
+      const res = await fetch(`${API_URL}/admin/users/search?${params}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users || []);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleExportCSV = () => {
+    window.open(`${API_URL}/admin/users/export?token=${adminToken}`, "_blank");
+  };
+
+  const handleGeneratePassword = async (userId) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/users/${userId}/generate-password`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setTempPassword(data.temp_password);
+        setResetPasswordUser(users.find((u) => u.id === userId));
+      } else {
+        throw new Error("Failed to generate password");
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    if (!confirm("Are you sure you want to delete this room? This cannot be undone.")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/rooms/${roomId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to delete room");
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkUpdateSubscriptions = async (tier, status) => {
+    if (selectedUsers.length === 0) {
+      alert("Select at least one user");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/admin/users/bulk/subscription?tier=${tier}&status=${status}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedUsers),
+      });
+
+      if (!res.ok) throw new Error("Failed to update subscriptions");
+
+      setSelectedUsers([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.length === 0) {
+      alert("Select at least one user");
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/users/bulk/delete`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedUsers),
+      });
+
+      if (!res.ok) throw new Error("Failed to delete users");
+
+      setSelectedUsers([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectAllUsers = () => {
+    if (selectedUsers.length === users.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(users.map((u) => u.id));
     }
   };
 
@@ -174,10 +322,22 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("dashboard")}
           />
           <SidebarItem
+            icon="📈"
+            label="Analytics"
+            active={activeTab === "analytics"}
+            onClick={() => setActiveTab("analytics")}
+          />
+          <SidebarItem
             icon="👥"
             label="Users"
             active={activeTab === "users"}
             onClick={() => setActiveTab("users")}
+          />
+          <SidebarItem
+            icon="💬"
+            label="Rooms"
+            active={activeTab === "rooms"}
+            onClick={() => setActiveTab("rooms")}
           />
           <SidebarItem
             icon="💳"
@@ -225,27 +385,47 @@ export default function AdminDashboard() {
         }}>
           <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#1a1a1a" }}>
             {activeTab === "dashboard" && "Dashboard Overview"}
+            {activeTab === "analytics" && "Analytics"}
             {activeTab === "users" && "User Management"}
+            {activeTab === "rooms" && "Room Management"}
             {activeTab === "subscriptions" && "Subscription Management"}
             {activeTab === "settings" && "Platform Settings"}
           </h2>
-          {activeTab === "users" && (
-            <button
-              onClick={() => setShowCreateUser(true)}
-              style={{
-                background: "#6750A4",
-                color: "white",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "600",
-              }}
-            >
-              + Create User
-            </button>
-          )}
+          <div style={{ display: "flex", gap: "8px" }}>
+            {activeTab === "users" && (
+              <>
+                <button
+                  onClick={handleExportCSV}
+                  style={{
+                    background: "#f3f4f6",
+                    color: "#374151",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => setShowCreateUser(true)}
+                  style={{
+                    background: "#6750A4",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                  }}
+                >
+                  + Create User
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div style={{ padding: "24px" }}>
@@ -297,8 +477,98 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* Users Tab */}
-          {activeTab === "users" && (
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && analytics && (
+            <>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+                marginBottom: "24px",
+              }}>
+                <StatCard title="Active Users (7d)" value={analytics.active_users_7d || 0} color="#6750A4" />
+                <StatCard title="Avg Turns/Room" value={analytics.avg_turns_per_room || 0} color="#22c55e" />
+              </div>
+
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+                marginBottom: "24px",
+              }}>
+                <div style={{
+                  background: "white",
+                  borderRadius: "12px",
+                  padding: "20px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}>
+                  <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                    Tier Breakdown
+                  </h3>
+                  {analytics.tier_breakdown?.map((item) => (
+                    <div key={item.tier} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                    }}>
+                      <span style={{ textTransform: "capitalize" }}>{item.tier}</span>
+                      <span style={{ fontWeight: "600" }}>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{
+                  background: "white",
+                  borderRadius: "12px",
+                  padding: "20px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}>
+                  <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                    Rooms by Phase
+                  </h3>
+                  {analytics.rooms_by_phase?.map((item) => (
+                    <div key={item.phase} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                    }}>
+                      <span style={{ fontSize: "12px" }}>{item.phase}</span>
+                      <span style={{ fontWeight: "600" }}>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "20px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}>
+                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                  Recent Signups
+                </h3>
+                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                  {analytics.signups_over_time?.map((item) => (
+                    <div key={item.date} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "8px 0",
+                      borderBottom: "1px solid #f3f4f6",
+                    }}>
+                      <span>{item.date}</span>
+                      <span style={{ fontWeight: "600" }}>{item.count} signups</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Rooms Tab */}
+          {activeTab === "rooms" && (
             <div style={{
               background: "white",
               borderRadius: "12px",
@@ -310,37 +580,52 @@ export default function AdminDashboard() {
                   <thead>
                     <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
                       <th style={thStyle}>ID</th>
-                      <th style={thStyle}>Email</th>
-                      <th style={thStyle}>Name</th>
+                      <th style={thStyle}>Title</th>
                       <th style={thStyle}>Type</th>
+                      <th style={thStyle}>Phase</th>
+                      <th style={thStyle}>Participants</th>
+                      <th style={thStyle}>Turns</th>
                       <th style={thStyle}>Created</th>
                       <th style={thStyle}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                        <td style={tdStyle}>{user.id}</td>
-                        <td style={tdStyle}>{user.email}</td>
-                        <td style={tdStyle}>{user.name || "-"}</td>
+                    {rooms.map((room) => (
+                      <tr key={room.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={tdStyle}>{room.id}</td>
+                        <td style={tdStyle}>{room.title?.substring(0, 30) || "-"}</td>
                         <td style={tdStyle}>
                           <span style={{
                             padding: "2px 8px",
                             borderRadius: "4px",
-                            background: user.is_admin ? "#fef3c7" : user.is_guest ? "#e0e7ff" : "#f3f4f6",
-                            color: user.is_admin ? "#92400e" : user.is_guest ? "#3730a3" : "#6b7280",
+                            background: room.room_type === "solo" ? "#e0e7ff" : "#dcfce7",
+                            color: room.room_type === "solo" ? "#3730a3" : "#166534",
                             fontSize: "12px",
-                            fontWeight: "600",
                           }}>
-                            {user.is_admin ? "Admin" : user.is_guest ? "Guest" : "User"}
+                            {room.room_type}
                           </span>
                         </td>
                         <td style={tdStyle}>
-                          {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            background: room.phase === "resolved" ? "#dcfce7" : "#fef3c7",
+                            color: room.phase === "resolved" ? "#166534" : "#92400e",
+                            fontSize: "12px",
+                          }}>
+                            {room.phase}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          {room.participants?.map((p) => p.email?.split("@")[0]).join(", ") || "-"}
+                        </td>
+                        <td style={tdStyle}>{room.turn_count}</td>
+                        <td style={tdStyle}>
+                          {room.created_at ? new Date(room.created_at).toLocaleDateString() : "-"}
                         </td>
                         <td style={tdStyle}>
                           <button
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDeleteRoom(room.id)}
                             style={{ ...actionBtnStyle, color: "#dc2626" }}
                           >
                             Delete
@@ -352,6 +637,236 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <>
+              {/* Search and Filter Bar */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                marginBottom: "16px",
+                display: "flex",
+                gap: "12px",
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}>
+                <input
+                  type="text"
+                  placeholder="Search email or name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  style={{
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    flex: 1,
+                    minWidth: "200px",
+                  }}
+                />
+                <select
+                  value={filterTier}
+                  onChange={(e) => setFilterTier(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                  }}
+                >
+                  <option value="">All Tiers</option>
+                  <option value="free">Free</option>
+                  <option value="plus">Plus</option>
+                  <option value="pro">Pro</option>
+                </select>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                  }}
+                >
+                  <option value="">All Status</option>
+                  <option value="trial">Trial</option>
+                  <option value="active">Active</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <button
+                  onClick={handleSearch}
+                  style={{
+                    background: "#6750A4",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  Search
+                </button>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterTier("");
+                    setFilterStatus("");
+                    fetchData();
+                  }}
+                  style={{
+                    background: "#f3f4f6",
+                    color: "#374151",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+
+              {/* Bulk Actions Bar */}
+              {selectedUsers.length > 0 && (
+                <div style={{
+                  background: "#e0e7ff",
+                  borderRadius: "12px",
+                  padding: "12px 16px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  gap: "12px",
+                  alignItems: "center",
+                }}>
+                  <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                    {selectedUsers.length} selected
+                  </span>
+                  <button
+                    onClick={() => handleBulkUpdateSubscriptions("pro", "active")}
+                    style={{
+                      background: "#22c55e",
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Upgrade to Pro
+                  </button>
+                  <button
+                    onClick={() => handleBulkUpdateSubscriptions("free", "trial")}
+                    style={{
+                      background: "#f59e0b",
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Downgrade to Free
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    style={{
+                      background: "#dc2626",
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Delete Selected
+                  </button>
+                </div>
+              )}
+
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "20px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={{ ...thStyle, width: "40px" }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.length === users.length && users.length > 0}
+                            onChange={selectAllUsers}
+                          />
+                        </th>
+                        <th style={thStyle}>ID</th>
+                        <th style={thStyle}>Email</th>
+                        <th style={thStyle}>Name</th>
+                        <th style={thStyle}>Type</th>
+                        <th style={thStyle}>Created</th>
+                        <th style={thStyle}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                          <td style={tdStyle}>
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.includes(user.id)}
+                              onChange={() => toggleUserSelection(user.id)}
+                            />
+                          </td>
+                          <td style={tdStyle}>{user.id}</td>
+                          <td style={tdStyle}>{user.email}</td>
+                          <td style={tdStyle}>{user.name || "-"}</td>
+                          <td style={tdStyle}>
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              background: user.is_admin ? "#fef3c7" : user.is_guest ? "#e0e7ff" : "#f3f4f6",
+                              color: user.is_admin ? "#92400e" : user.is_guest ? "#3730a3" : "#6b7280",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                            }}>
+                              {user.is_admin ? "Admin" : user.is_guest ? "Guest" : "User"}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                          </td>
+                          <td style={tdStyle}>
+                            <button
+                              onClick={() => handleGeneratePassword(user.id)}
+                              style={actionBtnStyle}
+                            >
+                              Reset PW
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              style={{ ...actionBtnStyle, color: "#dc2626" }}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
 
           {/* Subscriptions Tab */}
@@ -646,6 +1161,72 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {resetPasswordUser && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "400px",
+          }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+              Password Reset
+            </h3>
+
+            <p style={{ marginBottom: "16px", color: "#6b7280", fontSize: "14px" }}>
+              Temporary password generated for <strong>{resetPasswordUser.email}</strong>
+            </p>
+
+            <div style={{
+              background: "#f3f4f6",
+              padding: "16px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              fontFamily: "monospace",
+              fontSize: "16px",
+              textAlign: "center",
+              userSelect: "all",
+            }}>
+              {tempPassword}
+            </div>
+
+            <p style={{ marginBottom: "16px", color: "#dc2626", fontSize: "12px" }}>
+              Please copy this password now. It will not be shown again.
+            </p>
+
+            <button
+              onClick={() => {
+                setResetPasswordUser(null);
+                setTempPassword("");
+              }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "#6750A4",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Done
+            </button>
           </div>
         </div>
       )}
