@@ -29,6 +29,13 @@ export default function AdminDashboard() {
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [tempPassword, setTempPassword] = useState("");
 
+  // New feature data
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [revenue, setRevenue] = useState(null);
+  const [featureFlags, setFeatureFlags] = useState({});
+  const [webhookLogs, setWebhookLogs] = useState([]);
+  const [impersonateToken, setImpersonateToken] = useState(null);
+
   const adminToken = localStorage.getItem("admin_token");
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, settingsRes, roomsRes, analyticsRes] = await Promise.all([
+      const [usersRes, settingsRes, roomsRes, analyticsRes, activityRes, revenueRes, flagsRes, webhooksRes] = await Promise.all([
         fetch(`${API_URL}/admin/users`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -53,6 +60,18 @@ export default function AdminDashboard() {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
         fetch(`${API_URL}/admin/analytics`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/activity-logs`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/revenue`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/feature-flags`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/webhook-logs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);
@@ -70,11 +89,19 @@ export default function AdminDashboard() {
       const settingsData = await settingsRes.json();
       const roomsData = roomsRes.ok ? await roomsRes.json() : { rooms: [] };
       const analyticsData = analyticsRes.ok ? await analyticsRes.json() : null;
+      const activityData = activityRes.ok ? await activityRes.json() : { logs: [] };
+      const revenueData = revenueRes.ok ? await revenueRes.json() : null;
+      const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
+      const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
       setRooms(roomsData.rooms || []);
       setAnalytics(analyticsData);
+      setActivityLogs(activityData.logs || []);
+      setRevenue(revenueData);
+      setFeatureFlags(flagsData.flags || {});
+      setWebhookLogs(webhooksData.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -290,6 +317,43 @@ export default function AdminDashboard() {
     navigate("/admin");
   };
 
+  const handleToggleFeatureFlag = async (flagName, currentValue) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/feature-flags/${flagName}?enabled=${!currentValue}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        setFeatureFlags(prev => ({ ...prev, [flagName]: !currentValue }));
+      } else {
+        throw new Error("Failed to update feature flag");
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleImpersonate = async (userId) => {
+    if (!confirm("This will generate a token that allows full access as this user. Continue?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/admin/impersonate/${userId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setImpersonateToken(data);
+      } else {
+        throw new Error("Failed to impersonate user");
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Nunito', sans-serif" }}>
@@ -351,6 +415,30 @@ export default function AdminDashboard() {
             active={activeTab === "settings"}
             onClick={() => setActiveTab("settings")}
           />
+          <SidebarItem
+            icon="📋"
+            label="Activity Logs"
+            active={activeTab === "activity"}
+            onClick={() => setActiveTab("activity")}
+          />
+          <SidebarItem
+            icon="💰"
+            label="Revenue"
+            active={activeTab === "revenue"}
+            onClick={() => setActiveTab("revenue")}
+          />
+          <SidebarItem
+            icon="🚩"
+            label="Feature Flags"
+            active={activeTab === "flags"}
+            onClick={() => setActiveTab("flags")}
+          />
+          <SidebarItem
+            icon="🔗"
+            label="Webhooks"
+            active={activeTab === "webhooks"}
+            onClick={() => setActiveTab("webhooks")}
+          />
         </nav>
 
         <div style={{ position: "absolute", bottom: "20px", left: "20px", right: "20px" }}>
@@ -390,6 +478,10 @@ export default function AdminDashboard() {
             {activeTab === "rooms" && "Room Management"}
             {activeTab === "subscriptions" && "Subscription Management"}
             {activeTab === "settings" && "Platform Settings"}
+            {activeTab === "activity" && "Activity Logs"}
+            {activeTab === "revenue" && "Revenue Reporting"}
+            {activeTab === "flags" && "Feature Flags"}
+            {activeTab === "webhooks" && "Webhook Logs"}
           </h2>
           <div style={{ display: "flex", gap: "8px" }}>
             {activeTab === "users" && (
@@ -918,6 +1010,12 @@ export default function AdminDashboard() {
                               Reset PW
                             </button>
                             <button
+                              onClick={() => handleImpersonate(user.id)}
+                              style={{ ...actionBtnStyle, color: "#f59e0b" }}
+                            >
+                              Impersonate
+                            </button>
+                            <button
                               onClick={() => handleDeleteUser(user.id)}
                               style={{ ...actionBtnStyle, color: "#dc2626" }}
                             >
@@ -1074,6 +1172,284 @@ export default function AdminDashboard() {
                 <SettingsRow label="SendGrid" value={settings.sendgrid_key_configured ? "Configured" : "Not configured"} status={settings.sendgrid_key_configured} />
                 <SettingsRow label="AWS S3" value={settings.aws_configured ? "Configured" : "Not configured"} status={settings.aws_configured} />
                 <SettingsRow label="Telegram Bot" value={settings.telegram_configured ? "Configured" : "Not configured"} status={settings.telegram_configured} />
+              </div>
+            </div>
+          )}
+
+          {/* Activity Logs Tab */}
+          {activeTab === "activity" && (
+            <div style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}>
+              <div style={{ overflowX: "auto", maxHeight: "600px", overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                  <thead style={{ position: "sticky", top: 0, background: "white" }}>
+                    <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                      <th style={thStyle}>ID</th>
+                      <th style={thStyle}>User</th>
+                      <th style={thStyle}>Action</th>
+                      <th style={thStyle}>Context</th>
+                      <th style={thStyle}>Room</th>
+                      <th style={thStyle}>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activityLogs.map((log) => (
+                      <tr key={log.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={tdStyle}>{log.id}</td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "13px" }}>{log.user_email}</span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            background: log.action === "user" ? "#dbeafe" : "#dcfce7",
+                            color: log.action === "user" ? "#1e40af" : "#166534",
+                            fontSize: "12px",
+                          }}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            background: "#f3f4f6",
+                            fontSize: "12px",
+                          }}>
+                            {log.context}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>{log.room_id || "-"}</td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            {log.created_at ? new Date(log.created_at).toLocaleString() : "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Revenue Tab */}
+          {activeTab === "revenue" && (
+            <>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px",
+                marginBottom: "24px",
+              }}>
+                <StatCard title="Total Revenue" value={revenue ? `$${revenue.total_revenue}` : "$0"} color="#22c55e" icon="💵" />
+                <StatCard title="Monthly Recurring" value={revenue ? `$${revenue.mrr}` : "$0"} color="#6750A4" icon="📅" />
+                <StatCard title="Active Subscriptions" value={revenue?.active_subscriptions || 0} color="#3b82f6" icon="💳" />
+              </div>
+
+              {revenue?.error && (
+                <div style={{
+                  background: "#fef3c7",
+                  color: "#92400e",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  marginBottom: "16px",
+                  fontSize: "14px",
+                }}>
+                  Note: {revenue.error}
+                </div>
+              )}
+
+              <div style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  Recent Payments
+                </h3>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={thStyle}>ID</th>
+                        <th style={thStyle}>Amount</th>
+                        <th style={thStyle}>Status</th>
+                        <th style={thStyle}>Customer</th>
+                        <th style={thStyle}>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(revenue?.recent_payments || []).map((payment) => (
+                        <tr key={payment.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                          <td style={tdStyle}>
+                            <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                              {payment.id.slice(0, 15)}...
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                              ${payment.amount} {payment.currency}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "12px",
+                              background: payment.status === "succeeded" ? "#dcfce7" : "#fef3c7",
+                              color: payment.status === "succeeded" ? "#166534" : "#92400e",
+                              fontSize: "12px",
+                            }}>
+                              {payment.status}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>{payment.customer_email || "-"}</td>
+                          <td style={tdStyle}>
+                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                              {new Date(payment.created_at).toLocaleString()}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Feature Flags Tab */}
+          {activeTab === "flags" && (
+            <div style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}>
+              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700" }}>
+                Feature Flags
+              </h3>
+              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "24px" }}>
+                Toggle features on/off for all users. Changes take effect immediately.
+              </p>
+
+              <div style={{ display: "grid", gap: "16px" }}>
+                {Object.entries(featureFlags).map(([flagName, enabled]) => (
+                  <div key={flagName} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "16px",
+                    background: "#f9fafb",
+                    borderRadius: "16px",
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        {flagName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                        {flagName}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleToggleFeatureFlag(flagName, enabled)}
+                      style={{
+                        width: "56px",
+                        height: "32px",
+                        borderRadius: "16px",
+                        background: enabled ? "#22c55e" : "#d1d5db",
+                        border: "none",
+                        cursor: "pointer",
+                        position: "relative",
+                        transition: "background 0.2s",
+                      }}
+                    >
+                      <div style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        background: "white",
+                        position: "absolute",
+                        top: "4px",
+                        left: enabled ? "28px" : "4px",
+                        transition: "left 0.2s",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Webhooks Tab */}
+          {activeTab === "webhooks" && (
+            <div style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+            }}>
+              <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                Recent Stripe Webhook Events
+              </h3>
+              <div style={{ overflowX: "auto", maxHeight: "500px", overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                  <thead style={{ position: "sticky", top: 0, background: "white" }}>
+                    <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                      <th style={thStyle}>Event ID</th>
+                      <th style={thStyle}>Type</th>
+                      <th style={thStyle}>Mode</th>
+                      <th style={thStyle}>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {webhookLogs.map((event) => (
+                      <tr key={event.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={tdStyle}>
+                          <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                            {event.id.slice(0, 20)}...
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            background: event.type.includes("succeeded") ? "#dcfce7" :
+                                       event.type.includes("failed") ? "#fee2e2" : "#dbeafe",
+                            color: event.type.includes("succeeded") ? "#166534" :
+                                   event.type.includes("failed") ? "#dc2626" : "#1e40af",
+                            fontSize: "11px",
+                          }}>
+                            {event.type}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            background: event.livemode ? "#dcfce7" : "#fef3c7",
+                            color: event.livemode ? "#166534" : "#92400e",
+                            fontSize: "11px",
+                          }}>
+                            {event.livemode ? "Live" : "Test"}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            {new Date(event.created_at).toLocaleString()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1291,6 +1667,118 @@ export default function AdminDashboard() {
             >
               Done
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Impersonate Token Modal */}
+      {impersonateToken && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "24px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "500px",
+          }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+              User Impersonation Token
+            </h3>
+
+            <div style={{
+              background: "#fef3c7",
+              color: "#92400e",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontSize: "13px",
+            }}>
+              {impersonateToken.warning}
+            </div>
+
+            <p style={{ marginBottom: "8px", color: "#6b7280", fontSize: "14px" }}>
+              Impersonating: <strong>{impersonateToken.user_email}</strong>
+            </p>
+
+            <div style={{
+              background: "#f3f4f6",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              fontFamily: "monospace",
+              fontSize: "11px",
+              wordBreak: "break-all",
+              userSelect: "all",
+              maxHeight: "120px",
+              overflowY: "auto",
+            }}>
+              {impersonateToken.token}
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(impersonateToken.token);
+                  alert("Token copied to clipboard!");
+                }}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                }}
+              >
+                Copy Token
+              </button>
+              <button
+                onClick={() => {
+                  // Set token in localStorage and redirect to app
+                  localStorage.setItem("token", impersonateToken.token);
+                  window.open("/start", "_blank");
+                }}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  background: "#f59e0b",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Open as User
+              </button>
+              <button
+                onClick={() => setImpersonateToken(null)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  background: "#6750A4",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

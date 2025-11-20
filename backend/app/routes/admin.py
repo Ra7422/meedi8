@@ -759,3 +759,192 @@ def bulk_delete_users(
     db.commit()
 
     return {"status": "success", "deleted_count": deleted}
+
+
+# ========================================
+# ACTIVITY LOGS (derived from turns)
+# ========================================
+
+@router.get("/activity-logs")
+def get_activity_logs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 100
+):
+    """Get recent user activity from turns"""
+    check_admin(current_user)
+
+    # Get recent turns as activity proxy
+    turns = db.query(Turn).order_by(Turn.created_at.desc()).limit(limit).all()
+
+    result = []
+    for turn in turns:
+        user = db.query(User).filter(User.id == turn.user_id).first()
+        result.append({
+            "id": turn.id,
+            "user_id": turn.user_id,
+            "user_email": user.email if user else "Unknown",
+            "action": turn.kind,
+            "context": turn.context,
+            "room_id": turn.room_id,
+            "created_at": str(turn.created_at) if turn.created_at else None,
+        })
+
+    return {"logs": result}
+
+
+# ========================================
+# REVENUE REPORTING (Stripe)
+# ========================================
+
+@router.get("/revenue")
+def get_revenue_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get revenue statistics from Stripe"""
+    check_admin(current_user)
+
+    import stripe
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    try:
+        # Get recent charges
+        charges = stripe.Charge.list(limit=100)
+        total_revenue = sum(c.amount for c in charges.data if c.paid) / 100
+
+        # Get active subscriptions
+        subscriptions = stripe.Subscription.list(status="active", limit=100)
+        mrr = sum(
+            sub.items.data[0].price.unit_amount * sub.items.data[0].quantity
+            for sub in subscriptions.data
+            if sub.items.data
+        ) / 100
+
+        # Recent payments
+        recent_payments = []
+        for charge in charges.data[:20]:
+            recent_payments.append({
+                "id": charge.id,
+                "amount": charge.amount / 100,
+                "currency": charge.currency.upper(),
+                "status": charge.status,
+                "customer_email": charge.billing_details.email if charge.billing_details else None,
+                "created_at": datetime.fromtimestamp(charge.created).isoformat(),
+            })
+
+        return {
+            "total_revenue": round(total_revenue, 2),
+            "mrr": round(mrr, 2),
+            "active_subscriptions": len(subscriptions.data),
+            "recent_payments": recent_payments,
+        }
+    except Exception as e:
+        return {
+            "total_revenue": 0,
+            "mrr": 0,
+            "active_subscriptions": 0,
+            "recent_payments": [],
+            "error": str(e)
+        }
+
+
+# ========================================
+# FEATURE FLAGS
+# ========================================
+
+# Simple in-memory feature flags (could be moved to DB)
+FEATURE_FLAGS = {
+    "telegram_import": True,
+    "voice_messages": True,
+    "file_attachments": True,
+    "solo_mode": True,
+    "professional_reports": True,
+}
+
+@router.get("/feature-flags")
+def get_feature_flags(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current feature flags"""
+    check_admin(current_user)
+    return {"flags": FEATURE_FLAGS}
+
+
+@router.put("/feature-flags/{flag_name}")
+def update_feature_flag(
+    flag_name: str,
+    enabled: bool,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Toggle a feature flag"""
+    check_admin(current_user)
+
+    if flag_name not in FEATURE_FLAGS:
+        raise HTTPException(status_code=404, detail="Feature flag not found")
+
+    FEATURE_FLAGS[flag_name] = enabled
+    return {"status": "success", "flag": flag_name, "enabled": enabled}
+
+
+# ========================================
+# WEBHOOK LOGS (from Stripe)
+# ========================================
+
+@router.get("/webhook-logs")
+def get_webhook_logs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get recent webhook events from Stripe"""
+    check_admin(current_user)
+
+    import stripe
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    try:
+        events = stripe.Event.list(limit=50)
+
+        result = []
+        for event in events.data:
+            result.append({
+                "id": event.id,
+                "type": event.type,
+                "created_at": datetime.fromtimestamp(event.created).isoformat(),
+                "livemode": event.livemode,
+            })
+
+        return {"events": result}
+    except Exception as e:
+        return {"events": [], "error": str(e)}
+
+
+# ========================================
+# USER IMPERSONATION
+# ========================================
+
+@router.post("/impersonate/{user_id}")
+def impersonate_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a token to impersonate a user"""
+    check_admin(current_user)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Generate token for the target user
+    token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    return {
+        "status": "success",
+        "user_id": user_id,
+        "user_email": user.email,
+        "token": token,
+        "warning": "This token allows full access as this user. Use carefully."
+    }
