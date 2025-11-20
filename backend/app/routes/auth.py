@@ -67,6 +67,41 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return TokenOut(access_token=token)
 
+@router.delete("/admin/reset-database")
+def reset_database(secret: str, db: Session = Depends(get_db)):
+    """
+    DANGER: Delete all users, subscriptions, and rooms for testing.
+    Requires the STRIPE_SECRET_KEY as the secret parameter for protection.
+    """
+    # Use Stripe secret key as admin password for protection
+    if secret != settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+
+    from sqlalchemy import text
+
+    # Get counts before
+    user_count = db.execute(text("SELECT COUNT(*) FROM users")).scalar()
+    sub_count = db.execute(text("SELECT COUNT(*) FROM subscriptions")).scalar()
+    room_count = db.execute(text("SELECT COUNT(*) FROM rooms")).scalar()
+
+    # Delete in order to respect foreign keys
+    db.execute(text("DELETE FROM turns"))
+    db.execute(text("DELETE FROM messages"))
+    db.execute(text("DELETE FROM room_participants"))
+    db.execute(text("DELETE FROM rooms"))
+    db.execute(text("DELETE FROM subscriptions"))
+    db.execute(text("DELETE FROM users"))
+    db.commit()
+
+    return {
+        "status": "success",
+        "deleted": {
+            "users": user_count,
+            "subscriptions": sub_count,
+            "rooms": room_count
+        }
+    }
+
 @router.post("/login", response_model=TokenOut)
 def login(payload: LoginIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
