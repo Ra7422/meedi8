@@ -9,8 +9,11 @@ export default function AdminDashboard() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [editingUser, setEditingUser] = useState(null);
   const [editingSubscription, setEditingSubscription] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", isAdmin: false });
+  const [createUserError, setCreateUserError] = useState("");
 
   const adminToken = localStorage.getItem("admin_token");
 
@@ -76,7 +79,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
 
     try {
       const res = await fetch(`${API_URL}/admin/users/${userId}`, {
@@ -89,6 +92,48 @@ export default function AdminDashboard() {
       fetchData();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setCreateUserError("");
+
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: newUser.password,
+          name: newUser.name || newUser.email.split("@")[0],
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Failed to create user");
+      }
+
+      // If user should be admin, update their admin status
+      if (newUser.isAdmin) {
+        const userData = await res.json();
+        // We need to update admin status via admin endpoint
+        await fetch(`${API_URL}/admin/users/${userData.user_id || userData.id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ is_admin: true }),
+        });
+      }
+
+      setShowCreateUser(false);
+      setNewUser({ email: "", password: "", name: "", isAdmin: false });
+      fetchData();
+    } catch (err) {
+      setCreateUserError(err.message);
     }
   };
 
@@ -106,211 +151,541 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", fontFamily: "'Nunito', sans-serif" }}>
-      {/* Header */}
+    <div style={{ minHeight: "100vh", background: "#f5f5f5", fontFamily: "'Nunito', sans-serif", display: "flex" }}>
+      {/* Sidebar */}
       <div style={{
-        background: "#6750A4",
+        width: "240px",
+        background: "#1a1a1a",
         color: "white",
-        padding: "16px 24px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        padding: "20px 0",
+        flexShrink: 0,
       }}>
-        <h1 style={{ margin: 0, fontSize: "20px", fontWeight: "700" }}>
-          Meedi8 Admin Dashboard
-        </h1>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: "rgba(255,255,255,0.2)",
-            color: "white",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
-        >
-          Logout
-        </button>
+        <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #333" }}>
+          <h1 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#7DD3C0" }}>
+            Meedi8 Admin
+          </h1>
+        </div>
+
+        <nav style={{ marginTop: "20px" }}>
+          <SidebarItem
+            icon="📊"
+            label="Dashboard"
+            active={activeTab === "dashboard"}
+            onClick={() => setActiveTab("dashboard")}
+          />
+          <SidebarItem
+            icon="👥"
+            label="Users"
+            active={activeTab === "users"}
+            onClick={() => setActiveTab("users")}
+          />
+          <SidebarItem
+            icon="💳"
+            label="Subscriptions"
+            active={activeTab === "subscriptions"}
+            onClick={() => setActiveTab("subscriptions")}
+          />
+          <SidebarItem
+            icon="🔧"
+            label="Settings"
+            active={activeTab === "settings"}
+            onClick={() => setActiveTab("settings")}
+          />
+        </nav>
+
+        <div style={{ position: "absolute", bottom: "20px", left: "20px", right: "20px" }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%",
+              background: "#333",
+              color: "white",
+              border: "none",
+              padding: "10px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
-      <div style={{ padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
-        {error && (
-          <div style={{
-            background: "#fee2e2",
-            color: "#dc2626",
-            padding: "12px",
-            borderRadius: "8px",
-            marginBottom: "16px",
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        {settings && (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "16px",
-            marginBottom: "24px",
-          }}>
-            <StatCard title="Total Users" value={settings.total_users} />
-            <StatCard title="Active Subscriptions" value={settings.active_subscriptions} />
-            <StatCard title="Total Rooms" value={settings.total_rooms} />
-          </div>
-        )}
-
-        {/* API Configuration Status */}
-        {settings && (
-          <div style={{
-            background: "white",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}>
-            <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: "700" }}>
-              API Configuration
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-              <ConfigItem label="Stripe" configured={settings.stripe_webhook_configured} />
-              <ConfigItem label="Anthropic" configured={settings.anthropic_key_configured} />
-              <ConfigItem label="Gemini" configured={settings.gemini_key_configured} />
-              <ConfigItem label="OpenAI" configured={settings.openai_key_configured} />
-              <ConfigItem label="SendGrid" configured={settings.sendgrid_key_configured} />
-              <ConfigItem label="AWS S3" configured={settings.aws_configured} />
-              <ConfigItem label="Telegram" configured={settings.telegram_configured} />
-            </div>
-          </div>
-        )}
-
-        {/* Users Table */}
+      {/* Main Content */}
+      <div style={{ flex: 1, overflow: "auto" }}>
+        {/* Header */}
         <div style={{
           background: "white",
-          borderRadius: "12px",
-          padding: "20px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          padding: "16px 24px",
+          borderBottom: "1px solid #e5e7eb",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}>
-          <h2 style={{ margin: "0 0 16px", fontSize: "18px", fontWeight: "700" }}>
-            Users ({users.length})
+          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#1a1a1a" }}>
+            {activeTab === "dashboard" && "Dashboard Overview"}
+            {activeTab === "users" && "User Management"}
+            {activeTab === "subscriptions" && "Subscription Management"}
+            {activeTab === "settings" && "Platform Settings"}
           </h2>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
-                  <th style={thStyle}>ID</th>
-                  <th style={thStyle}>Email</th>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Tier</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Admin</th>
-                  <th style={thStyle}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                    <td style={tdStyle}>{user.id}</td>
-                    <td style={tdStyle}>{user.email}</td>
-                    <td style={tdStyle}>{user.name || "-"}</td>
-                    <td style={tdStyle}>
-                      {editingSubscription === user.id ? (
-                        <select
-                          defaultValue={user.subscription?.tier || "free"}
-                          onChange={(e) => {
-                            const status = user.subscription?.status || "trial";
-                            handleUpdateSubscription(user.id, e.target.value, status);
-                          }}
-                          style={{ padding: "4px", borderRadius: "4px" }}
-                        >
-                          <option value="free">Free</option>
-                          <option value="plus">Plus</option>
-                          <option value="pro">Pro</option>
-                        </select>
-                      ) : (
-                        <span style={{
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                          background: user.subscription?.tier === "pro" ? "#dcfce7" :
-                                     user.subscription?.tier === "plus" ? "#dbeafe" : "#f3f4f6",
-                          color: user.subscription?.tier === "pro" ? "#166534" :
-                                 user.subscription?.tier === "plus" ? "#1e40af" : "#6b7280",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                        }}>
-                          {user.subscription?.tier?.toUpperCase() || "FREE"}
-                        </span>
-                      )}
-                    </td>
-                    <td style={tdStyle}>
-                      {editingSubscription === user.id ? (
-                        <select
-                          defaultValue={user.subscription?.status || "trial"}
-                          onChange={(e) => {
-                            const tier = user.subscription?.tier || "free";
-                            handleUpdateSubscription(user.id, tier, e.target.value);
-                          }}
-                          style={{ padding: "4px", borderRadius: "4px" }}
-                        >
-                          <option value="trial">Trial</option>
-                          <option value="active">Active</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="past_due">Past Due</option>
-                        </select>
-                      ) : (
-                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {user.subscription?.status || "trial"}
-                        </span>
-                      )}
-                    </td>
-                    <td style={tdStyle}>
-                      {user.is_admin ? "Yes" : "No"}
-                    </td>
-                    <td style={tdStyle}>
-                      {editingSubscription === user.id ? (
-                        <button
-                          onClick={() => setEditingSubscription(null)}
-                          style={actionBtnStyle}
-                        >
-                          Done
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setEditingSubscription(user.id)}
-                            style={actionBtnStyle}
-                          >
-                            Edit
-                          </button>
+          {activeTab === "users" && (
+            <button
+              onClick={() => setShowCreateUser(true)}
+              style={{
+                background: "#6750A4",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "600",
+              }}
+            >
+              + Create User
+            </button>
+          )}
+        </div>
+
+        <div style={{ padding: "24px" }}>
+          {error && (
+            <div style={{
+              background: "#fee2e2",
+              color: "#dc2626",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "16px",
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Dashboard Tab */}
+          {activeTab === "dashboard" && settings && (
+            <>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+                marginBottom: "24px",
+              }}>
+                <StatCard title="Total Users" value={settings.total_users} color="#6750A4" />
+                <StatCard title="Active Subscriptions" value={settings.active_subscriptions} color="#22c55e" />
+                <StatCard title="Total Rooms" value={settings.total_rooms} color="#3b82f6" />
+              </div>
+
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "20px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}>
+                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                  API Configuration Status
+                </h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
+                  <ConfigItem label="Stripe Webhook" configured={settings.stripe_webhook_configured} />
+                  <ConfigItem label="Anthropic (Claude)" configured={settings.anthropic_key_configured} />
+                  <ConfigItem label="Gemini" configured={settings.gemini_key_configured} />
+                  <ConfigItem label="OpenAI (Whisper)" configured={settings.openai_key_configured} />
+                  <ConfigItem label="SendGrid" configured={settings.sendgrid_key_configured} />
+                  <ConfigItem label="AWS S3" configured={settings.aws_configured} />
+                  <ConfigItem label="Telegram" configured={settings.telegram_configured} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                      <th style={thStyle}>ID</th>
+                      <th style={thStyle}>Email</th>
+                      <th style={thStyle}>Name</th>
+                      <th style={thStyle}>Type</th>
+                      <th style={thStyle}>Created</th>
+                      <th style={thStyle}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={tdStyle}>{user.id}</td>
+                        <td style={tdStyle}>{user.email}</td>
+                        <td style={tdStyle}>{user.name || "-"}</td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            background: user.is_admin ? "#fef3c7" : user.is_guest ? "#e0e7ff" : "#f3f4f6",
+                            color: user.is_admin ? "#92400e" : user.is_guest ? "#3730a3" : "#6b7280",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}>
+                            {user.is_admin ? "Admin" : user.is_guest ? "Guest" : "User"}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                        </td>
+                        <td style={tdStyle}>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
                             style={{ ...actionBtnStyle, color: "#dc2626" }}
                           >
                             Delete
                           </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Subscriptions Tab */}
+          {activeTab === "subscriptions" && (
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                      <th style={thStyle}>User</th>
+                      <th style={thStyle}>Email</th>
+                      <th style={thStyle}>Tier</th>
+                      <th style={thStyle}>Status</th>
+                      <th style={thStyle}>Stripe ID</th>
+                      <th style={thStyle}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.filter(u => u.subscription).map((user) => (
+                      <tr key={user.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={tdStyle}>{user.name || user.id}</td>
+                        <td style={tdStyle}>{user.email}</td>
+                        <td style={tdStyle}>
+                          {editingSubscription === user.id ? (
+                            <select
+                              defaultValue={user.subscription?.tier || "free"}
+                              onChange={(e) => {
+                                const status = user.subscription?.status || "trial";
+                                handleUpdateSubscription(user.id, e.target.value, status);
+                              }}
+                              style={{ padding: "4px 8px", borderRadius: "4px", border: "1px solid #d1d5db" }}
+                            >
+                              <option value="free">Free</option>
+                              <option value="plus">Plus</option>
+                              <option value="pro">Pro</option>
+                            </select>
+                          ) : (
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              background: user.subscription?.tier === "pro" ? "#dcfce7" :
+                                         user.subscription?.tier === "plus" ? "#dbeafe" : "#f3f4f6",
+                              color: user.subscription?.tier === "pro" ? "#166534" :
+                                     user.subscription?.tier === "plus" ? "#1e40af" : "#6b7280",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                            }}>
+                              {user.subscription?.tier?.toUpperCase() || "FREE"}
+                            </span>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          {editingSubscription === user.id ? (
+                            <select
+                              defaultValue={user.subscription?.status || "trial"}
+                              onChange={(e) => {
+                                const tier = user.subscription?.tier || "free";
+                                handleUpdateSubscription(user.id, tier, e.target.value);
+                              }}
+                              style={{ padding: "4px 8px", borderRadius: "4px", border: "1px solid #d1d5db" }}
+                            >
+                              <option value="trial">Trial</option>
+                              <option value="active">Active</option>
+                              <option value="cancelled">Cancelled</option>
+                              <option value="past_due">Past Due</option>
+                            </select>
+                          ) : (
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              background: user.subscription?.status === "active" ? "#dcfce7" :
+                                         user.subscription?.status === "trial" ? "#fef3c7" :
+                                         user.subscription?.status === "cancelled" ? "#fee2e2" : "#f3f4f6",
+                              color: user.subscription?.status === "active" ? "#166534" :
+                                     user.subscription?.status === "trial" ? "#92400e" :
+                                     user.subscription?.status === "cancelled" ? "#dc2626" : "#6b7280",
+                              fontSize: "12px",
+                            }}>
+                              {user.subscription?.status || "trial"}
+                            </span>
+                          )}
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: "11px", color: "#6b7280" }}>
+                            {user.subscription?.stripe_subscription_id
+                              ? user.subscription.stripe_subscription_id.slice(0, 15) + "..."
+                              : "-"}
+                          </span>
+                        </td>
+                        <td style={tdStyle}>
+                          {editingSubscription === user.id ? (
+                            <button
+                              onClick={() => setEditingSubscription(null)}
+                              style={{ ...actionBtnStyle, color: "#22c55e" }}
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setEditingSubscription(user.id)}
+                              style={actionBtnStyle}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === "settings" && settings && (
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                Platform Configuration
+              </h3>
+              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "20px" }}>
+                API keys and configuration are managed via Railway environment variables.
+              </p>
+
+              <div style={{ display: "grid", gap: "16px" }}>
+                <SettingsRow label="Stripe Publishable Key" value={settings.stripe_publishable_key || "Not configured"} />
+                <SettingsRow label="Stripe Webhook" value={settings.stripe_webhook_configured ? "Configured" : "Not configured"} status={settings.stripe_webhook_configured} />
+                <SettingsRow label="Anthropic API" value={settings.anthropic_key_configured ? "Configured" : "Not configured"} status={settings.anthropic_key_configured} />
+                <SettingsRow label="Gemini API" value={settings.gemini_key_configured ? "Configured" : "Not configured"} status={settings.gemini_key_configured} />
+                <SettingsRow label="OpenAI API" value={settings.openai_key_configured ? "Configured" : "Not configured"} status={settings.openai_key_configured} />
+                <SettingsRow label="SendGrid" value={settings.sendgrid_key_configured ? "Configured" : "Not configured"} status={settings.sendgrid_key_configured} />
+                <SettingsRow label="AWS S3" value={settings.aws_configured ? "Configured" : "Not configured"} status={settings.aws_configured} />
+                <SettingsRow label="Telegram Bot" value={settings.telegram_configured ? "Configured" : "Not configured"} status={settings.telegram_configured} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Create User Modal */}
+      {showCreateUser && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "400px",
+          }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+              Create New User
+            </h3>
+
+            {createUserError && (
+              <div style={{
+                background: "#fee2e2",
+                color: "#dc2626",
+                padding: "8px 12px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                fontSize: "14px",
+              }}>
+                {createUserError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUser}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                  Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  minLength={6}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={newUser.isAdmin}
+                    onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })}
+                  />
+                  <span style={{ fontSize: "14px" }}>Make this user an admin</span>
+                </label>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateUser(false);
+                    setCreateUserError("");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "#f3f4f6",
+                    color: "#374151",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "#6750A4",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({ title, value }) {
+function SidebarItem({ icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "12px 20px",
+        background: active ? "#333" : "transparent",
+        color: active ? "white" : "#9ca3af",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "14px",
+        textAlign: "left",
+        borderLeft: active ? "3px solid #7DD3C0" : "3px solid transparent",
+      }}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function StatCard({ title, value, color }) {
   return (
     <div style={{
       background: "white",
       borderRadius: "12px",
       padding: "20px",
       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      borderTop: `4px solid ${color}`,
     }}>
       <div style={{ fontSize: "14px", color: "#6b7280", marginBottom: "4px" }}>{title}</div>
       <div style={{ fontSize: "28px", fontWeight: "700", color: "#1a1a1a" }}>{value}</div>
@@ -328,6 +703,26 @@ function ConfigItem({ label, configured }) {
         background: configured ? "#22c55e" : "#ef4444",
       }} />
       <span style={{ fontSize: "14px", color: "#374151" }}>{label}</span>
+    </div>
+  );
+}
+
+function SettingsRow({ label, value, status }) {
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "12px 0",
+      borderBottom: "1px solid #f3f4f6",
+    }}>
+      <span style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>{label}</span>
+      <span style={{
+        fontSize: "13px",
+        color: status === undefined ? "#6b7280" : status ? "#22c55e" : "#ef4444",
+      }}>
+        {value}
+      </span>
     </div>
   );
 }
