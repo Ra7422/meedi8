@@ -510,10 +510,20 @@ def handle_payment_intent_succeeded(db: Session, payment_intent: dict):
     Activates subscription after PaymentIntent succeeds.
     """
     # Get subscription ID from invoice
+    # Try multiple locations for invoice ID
     invoice_id = payment_intent.get("invoice")
 
+    # Fallback: check payment_details.order_reference (newer Stripe API)
     if not invoice_id:
-        print("⚠️ No invoice found for PaymentIntent")
+        payment_details = payment_intent.get("payment_details", {})
+        order_ref = payment_details.get("order_reference")
+        if order_ref and order_ref.startswith("in_"):
+            invoice_id = order_ref
+            print(f"ℹ️ Found invoice ID from payment_details.order_reference: {invoice_id}")
+
+    if not invoice_id:
+        print(f"⚠️ No invoice found for PaymentIntent {payment_intent.get('id')}")
+        print(f"   payment_intent keys: {list(payment_intent.keys())}")
         return
 
     try:
