@@ -155,7 +155,7 @@ def update_user(
             raise HTTPException(status_code=409, detail="Email already in use")
         user.email = payload.email
     if payload.is_admin is not None:
-        user.is_admin = payload.is_admin
+        user.is_admin = 1 if payload.is_admin else 0
 
     db.commit()
     return {"status": "success", "user_id": user_id}
