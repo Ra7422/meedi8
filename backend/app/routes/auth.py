@@ -370,25 +370,36 @@ def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(ge
         elif payload.payment_intent_id:
             # Get customer email from payment intent -> invoice -> subscription
             payment_intent = stripe.PaymentIntent.retrieve(payload.payment_intent_id)
-            invoice_id = payment_intent.get("invoice")
-            if invoice_id:
-                invoice = stripe.Invoice.retrieve(invoice_id)
-                subscription_id = invoice.get("subscription")
-                if subscription_id:
-                    subscription = stripe.Subscription.retrieve(subscription_id)
-                    customer_id = subscription.get("customer")
-                    if customer_id:
-                        customer = stripe.Customer.retrieve(customer_id)
-                        customer_email = customer.get("email")
 
-                        # If customer email is not set, try to get from payment method
-                        if not customer_email:
-                            payment_method_id = subscription.get("default_payment_method")
-                            if payment_method_id:
-                                payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
-                                customer_email = payment_method.get("billing_details", {}).get("email")
-                                if not customer_email and payment_method.get("link"):
-                                    customer_email = payment_method.get("link", {}).get("email")
+            # First try to get email from payment method attached to payment intent
+            payment_method_id = payment_intent.get("payment_method")
+            if payment_method_id:
+                payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+                customer_email = payment_method.get("billing_details", {}).get("email")
+                if not customer_email and payment_method.get("link"):
+                    customer_email = payment_method.get("link", {}).get("email")
+
+            # If no email yet, try invoice -> subscription -> customer path
+            if not customer_email:
+                invoice_id = payment_intent.get("invoice")
+                if invoice_id:
+                    invoice = stripe.Invoice.retrieve(invoice_id)
+                    subscription_id = invoice.get("subscription")
+                    if subscription_id:
+                        subscription = stripe.Subscription.retrieve(subscription_id)
+                        customer_id = subscription.get("customer")
+                        if customer_id:
+                            customer = stripe.Customer.retrieve(customer_id)
+                            customer_email = customer.get("email")
+
+                            # If customer email is not set, try to get from subscription's payment method
+                            if not customer_email:
+                                sub_payment_method_id = subscription.get("default_payment_method")
+                                if sub_payment_method_id:
+                                    sub_payment_method = stripe.PaymentMethod.retrieve(sub_payment_method_id)
+                                    customer_email = sub_payment_method.get("billing_details", {}).get("email")
+                                    if not customer_email and sub_payment_method.get("link"):
+                                        customer_email = sub_payment_method.get("link", {}).get("email")
         elif payload.subscription_id:
             # Get customer email from subscription
             subscription = stripe.Subscription.retrieve(payload.subscription_id)

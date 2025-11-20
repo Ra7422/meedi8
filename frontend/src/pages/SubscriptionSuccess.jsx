@@ -79,7 +79,7 @@ export default function SubscriptionSuccess() {
     setSignupError('');
     setSignupLoading(true);
     try {
-      const response = await apiRequest('/auth/signup', 'POST', {
+      const response = await apiRequest('/auth/register', 'POST', {
         email: signupEmail || customerEmail,
         password: signupPassword,
         name: signupName || (signupEmail || customerEmail).split('@')[0]
