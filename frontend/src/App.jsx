@@ -41,6 +41,8 @@ import Home from "./pages/Home";
 import TelegramConnect from "./pages/TelegramConnect";
 import CreateSoloSession from "./pages/CreateSoloSession";
 import PlаsmicHost from "./plasmic-host";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -111,6 +113,8 @@ export default function App() {
           <Route path="/subscription/success" element={<SubscriptionSuccess />} />
           <Route path="/subscription/cancelled" element={<SubscriptionCancelled />} />
           <Route path="/telegram" element={<PrivateRoute><TelegramConnect /></PrivateRoute>} />
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>
