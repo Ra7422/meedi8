@@ -35,14 +35,22 @@ def get_tier_from_price_id(price_id: str) -> SubscriptionTier:
 def get_or_create_stripe_customer(db: Session, user: User) -> str:
     """Get existing Stripe customer ID or create new customer"""
     if user.stripe_customer_id:
-        return user.stripe_customer_id
+        # Validate that customer still exists in Stripe
+        try:
+            stripe.Customer.retrieve(user.stripe_customer_id)
+            return user.stripe_customer_id
+        except stripe.InvalidRequestError as e:
+            # Customer was deleted or doesn't exist - clear stale ID and create new
+            print(f"⚠️ Stale Stripe customer ID {user.stripe_customer_id} for user {user.id}: {str(e)}")
+            user.stripe_customer_id = None
+            db.commit()
 
     # Create new Stripe customer
     customer = stripe.Customer.create(
         email=user.email,
         name=user.name,
         metadata={
-            "user_id": user.id
+            "user_id": str(user.id)
         }
     )
 

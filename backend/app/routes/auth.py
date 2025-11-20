@@ -421,7 +421,7 @@ def stripe_session_login(payload: StripeSessionLoginIn, db: Session = Depends(ge
         token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         return TokenOut(access_token=token)
 
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         print(f"❌ Stripe error in stripe-session-login: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
     except Exception as e:
