@@ -67,6 +67,41 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return TokenOut(access_token=token)
 
+@router.get("/admin/users")
+def list_users(secret: str, db: Session = Depends(get_db)):
+    """
+    List all users and their subscriptions for debugging.
+    Requires the STRIPE_SECRET_KEY as the secret parameter for protection.
+    """
+    if secret != settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+
+    from sqlalchemy import text
+    from ..models.subscription import Subscription
+
+    users = db.query(User).all()
+    result = []
+
+    for user in users:
+        subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+        result.append({
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "stripe_customer_id": user.stripe_customer_id,
+            "is_guest": getattr(user, 'is_guest', False),
+            "created_at": str(user.created_at) if hasattr(user, 'created_at') else None,
+            "subscription": {
+                "id": subscription.id,
+                "tier": subscription.tier,
+                "status": subscription.status,
+                "stripe_subscription_id": subscription.stripe_subscription_id,
+                "created_at": str(subscription.created_at) if hasattr(subscription, 'created_at') else None
+            } if subscription else None
+        })
+
+    return {"users": result, "total": len(result)}
+
 @router.delete("/admin/reset-database")
 def reset_database(secret: str, db: Session = Depends(get_db)):
     """

@@ -133,7 +133,11 @@ export default function SubscriptionSuccess() {
               console.log(`Auto-login attempt ${attempts}/${maxAttempts} failed:`, error.message);
               // Try to extract email from error message (format: "message|email")
               if (error.message && error.message.includes("|")) {
-                const email = error.message.split("|")[1];
+                let email = error.message.split("|")[1];
+                // Clean up any trailing characters like "} from JSON parsing
+                if (email) {
+                  email = email.replace(/["\}\s]+$/g, '').trim();
+                }
                 if (email && email.includes("@")) {
                   setCustomerEmail(email);
                 }
