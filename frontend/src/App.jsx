@@ -108,8 +108,8 @@ export default function App() {
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/referrals/detail" element={<ReferralsDetail />} />
           <Route path="/subscription" element={<Subscription />} />
-          <Route path="/subscription/success" element={<PrivateRoute><SubscriptionSuccess /></PrivateRoute>} />
-          <Route path="/subscription/cancelled" element={<PrivateRoute><SubscriptionCancelled /></PrivateRoute>} />
+          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+          <Route path="/subscription/cancelled" element={<SubscriptionCancelled />} />
           <Route path="/telegram" element={<PrivateRoute><TelegramConnect /></PrivateRoute>} />
         </Routes>
       </Router>
