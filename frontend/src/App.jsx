@@ -43,6 +43,8 @@ import CreateSoloSession from "./pages/CreateSoloSession";
 import PlаsmicHost from "./plasmic-host";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -115,6 +117,8 @@ export default function App() {
           <Route path="/telegram" element={<PrivateRoute><TelegramConnect /></PrivateRoute>} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </Router>
     </AuthProvider>

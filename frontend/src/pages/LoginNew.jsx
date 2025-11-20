@@ -202,7 +202,7 @@ export default function LoginNew() {
           <div style={styles.forgotPassword}>
             <button
               type="button"
-              onClick={() => alert('Password reset coming soon')}
+              onClick={() => navigate('/forgot-password')}
               style={styles.forgotButton}
             >
               Forgot Password?

@@ -78,6 +78,18 @@ class UserOut(BaseModel):
 class UpdateUserIn(BaseModel):
     name: Optional[str] = None
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str
+
+# In-memory storage for password reset tokens (use Redis or database in production)
+# Format: {token: {"user_id": id, "expires": timestamp}}
+import time
+PASSWORD_RESET_TOKENS = {}
+
 @router.post("/register", response_model=TokenOut, status_code=201)
 async def register(payload: RegisterIn, db: Session = Depends(get_db)):
     # Verify Turnstile token if configured and provided
@@ -633,3 +645,68 @@ def convert_guest(
     # Return new token with updated user data
     token = create_access_token({"sub": str(current_user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return TokenOut(access_token=token)
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)):
+    """Request a password reset email"""
+    import secrets
+
+    # Find user by email
+    user = db.query(User).filter(User.email == payload.email).first()
+
+    # Always return success to prevent email enumeration attacks
+    if not user:
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+    # Check if user has a password (OAuth users don't)
+    if not user.hashed_password:
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+    # Generate reset token
+    reset_token = secrets.token_urlsafe(32)
+
+    # Store token with expiration (1 hour)
+    PASSWORD_RESET_TOKENS[reset_token] = {
+        "user_id": user.id,
+        "expires": time.time() + 3600  # 1 hour
+    }
+
+    # Clean up expired tokens
+    current_time = time.time()
+    expired_tokens = [t for t, d in PASSWORD_RESET_TOKENS.items() if d["expires"] < current_time]
+    for t in expired_tokens:
+        del PASSWORD_RESET_TOKENS[t]
+
+    # Send email
+    from app.services.email_service import send_password_reset_email
+    send_password_reset_email(user.email, user.name, reset_token)
+
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db)):
+    """Reset password using token from email"""
+    # Find token
+    token_data = PASSWORD_RESET_TOKENS.get(payload.token)
+
+    if not token_data:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    # Check expiration
+    if token_data["expires"] < time.time():
+        del PASSWORD_RESET_TOKENS[payload.token]
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+
+    # Find user
+    user = db.query(User).filter(User.id == token_data["user_id"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update password
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+
+    # Delete used token
+    del PASSWORD_RESET_TOKENS[payload.token]
+
+    return {"message": "Password has been reset successfully"}

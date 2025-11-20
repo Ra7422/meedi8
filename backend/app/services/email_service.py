@@ -316,3 +316,176 @@ def send_break_notification(
     except Exception as e:
         logger.error(f"❌ Failed to send break notification to {to_email}: {str(e)}")
         return False
+
+
+def send_password_reset_email(
+    to_email: str,
+    to_name: str,
+    reset_token: str
+) -> bool:
+    """
+    Send password reset email with reset link
+
+    Args:
+        to_email: Recipient email address
+        to_name: Recipient's name
+        reset_token: Unique token for password reset
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    if not SENDGRID_API_KEY:
+        logger.warning("⚠️ SENDGRID_API_KEY not configured")
+        return False
+
+    try:
+        frontend_url = os.getenv("FRONTEND_URL", "https://meedi8.com")
+        reset_url = f"{frontend_url}/reset-password?token={reset_token}"
+
+        subject = "Reset your Meedi8 password"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+                     background: linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%);
+                     margin: 0;
+                     padding: 40px 20px;">
+
+            <div style="max-width: 600px;
+                        margin: 0 auto;
+                        background: white;
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        overflow: hidden;">
+
+                <!-- Header with logo -->
+                <div style="background: linear-gradient(135deg, #7DD3C0 0%, #4cd3c2 100%);
+                            padding: 30px 20px;
+                            text-align: center;">
+                    <h1 style="color: white;
+                               font-size: 28px;
+                               margin: 0;
+                               font-weight: 300;">
+                        Meedi8
+                    </h1>
+                </div>
+
+                <!-- Body content -->
+                <div style="padding: 40px 30px;">
+                    <h2 style="color: #1f2937;
+                               font-size: 24px;
+                               font-weight: 400;
+                               margin: 0 0 20px 0;">
+                        Hi {to_name if to_name else "there"},
+                    </h2>
+
+                    <p style="color: #4b5563;
+                              font-size: 16px;
+                              line-height: 1.6;
+                              margin: 0 0 20px 0;">
+                        We received a request to reset your password for your Meedi8 account.
+                    </p>
+
+                    <p style="color: #4b5563;
+                              font-size: 16px;
+                              line-height: 1.6;
+                              margin: 0 0 30px 0;">
+                        Click the button below to set a new password. This link will expire in 1 hour.
+                    </p>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="{reset_url}"
+                           style="display: inline-block;
+                                  background: #7DD3C0;
+                                  color: white;
+                                  text-decoration: none;
+                                  padding: 16px 40px;
+                                  border-radius: 12px;
+                                  font-size: 18px;
+                                  font-weight: 500;
+                                  box-shadow: 0 2px 8px rgba(125, 211, 192, 0.3);">
+                            Reset Password →
+                        </a>
+                    </div>
+
+                    <p style="color: #9ca3af;
+                              font-size: 14px;
+                              line-height: 1.6;
+                              margin: 30px 0 0 0;">
+                        If you didn't request a password reset, you can safely ignore this email.
+                        Your password will remain unchanged.
+                    </p>
+
+                    <p style="color: #9ca3af;
+                              font-size: 14px;
+                              line-height: 1.6;
+                              margin: 20px 0 0 0;">
+                        Or copy this link: <br>
+                        <a href="{reset_url}"
+                           style="color: #7DD3C0;
+                                  word-break: break-all;">
+                            {reset_url}
+                        </a>
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background: #f9fafb;
+                            padding: 20px 30px;
+                            border-top: 1px solid #e5e7eb;">
+                    <p style="color: #9ca3af;
+                              font-size: 13px;
+                              line-height: 1.5;
+                              margin: 0;
+                              text-align: center;">
+                        This is an automated message from Meedi8.<br>
+                        <a href="{frontend_url}"
+                           style="color: #7DD3C0; text-decoration: none;">
+                            Visit Meedi8
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+        Hi {to_name if to_name else "there"},
+
+        We received a request to reset your password for your Meedi8 account.
+
+        Click the link below to set a new password. This link will expire in 1 hour.
+
+        Reset password: {reset_url}
+
+        If you didn't request a password reset, you can safely ignore this email.
+        Your password will remain unchanged.
+
+        ---
+        This is an automated message from Meedi8.
+        """
+
+        message = Mail(
+            from_email=Email(FROM_EMAIL, FROM_NAME),
+            to_emails=To(to_email, to_name if to_name else to_email),
+            subject=subject,
+            plain_text_content=Content("text/plain", text_content),
+            html_content=Content("text/html", html_content)
+        )
+
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+
+        logger.info(f"✅ Password reset email sent to {to_email} (status: {response.status_code})")
+        return True
+
+    except Exception as e:
+        logger.error(f"❌ Failed to send password reset email to {to_email}: {str(e)}")
+        return False
