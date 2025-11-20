@@ -102,6 +102,54 @@ def list_users(secret: str, db: Session = Depends(get_db)):
 
     return {"users": result, "total": len(result)}
 
+@router.post("/admin/link-subscription")
+def link_subscription(
+    secret: str,
+    user_email: str,
+    stripe_subscription_id: str,
+    stripe_customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Manually link a Stripe subscription to a user account.
+    Used to fix accounts where webhook failed to link subscription.
+    """
+    if secret != settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+
+    from ..models.subscription import Subscription, SubscriptionTier, SubscriptionStatus
+
+    # Find user
+    user = db.query(User).filter(User.email == user_email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User not found: {user_email}")
+
+    # Update user's stripe customer ID
+    user.stripe_customer_id = stripe_customer_id
+
+    # Find or create subscription
+    subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+    if not subscription:
+        subscription = Subscription(user_id=user.id)
+        db.add(subscription)
+
+    # Update subscription
+    subscription.tier = SubscriptionTier.PLUS
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.stripe_subscription_id = stripe_subscription_id
+    subscription.voice_conversations_limit = 999999  # Unlimited for paid tiers
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "user_id": user.id,
+        "email": user.email,
+        "subscription_id": subscription.id,
+        "tier": subscription.tier.value,
+        "stripe_subscription_id": stripe_subscription_id
+    }
+
 @router.delete("/admin/reset-database")
 def reset_database(secret: str, db: Session = Depends(get_db)):
     """
