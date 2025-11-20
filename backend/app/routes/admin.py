@@ -283,7 +283,7 @@ def create_admin_user(
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         existing.hashed_password = hash_password(payload.password)
-        existing.is_admin = True
+        existing.is_admin = 1
         if payload.name:
             existing.name = payload.name
         db.commit()
@@ -293,7 +293,7 @@ def create_admin_user(
         email=payload.email,
         name=payload.name or payload.email.split("@")[0],
         hashed_password=hash_password(payload.password),
-        is_admin=True
+        is_admin=1
     )
     db.add(user)
     db.commit()
