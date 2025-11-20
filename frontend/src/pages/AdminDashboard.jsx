@@ -446,32 +446,90 @@ export default function AdminDashboard() {
             <>
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "16px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Total Users" value={settings.total_users} color="#6750A4" />
-                <StatCard title="Active Subscriptions" value={settings.active_subscriptions} color="#22c55e" />
-                <StatCard title="Total Rooms" value={settings.total_rooms} color="#3b82f6" />
+                <StatCard title="Total Users" value={settings.total_users} color="#6750A4" icon="👥" />
+                <StatCard title="Active Subscriptions" value={settings.active_subscriptions} color="#22c55e" icon="💳" />
+                <StatCard title="Total Rooms" value={settings.total_rooms} color="#3b82f6" icon="💬" />
+              </div>
+
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "20px",
+                marginBottom: "24px",
+              }}>
+                {/* Pie Chart Card */}
+                {analytics && analytics.tier_breakdown && analytics.tier_breakdown.length > 0 && (
+                  <div style={{
+                    background: "white",
+                    borderRadius: "24px",
+                    padding: "24px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                      Subscription Tiers
+                    </h3>
+                    <PieChart data={analytics.tier_breakdown} size={140} />
+                  </div>
+                )}
+
+                {/* Circular Progress Cards */}
+                <div style={{
+                  background: "white",
+                  borderRadius: "24px",
+                  padding: "24px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                }}>
+                  <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                    Quick Stats
+                  </h3>
+                  <div style={{ display: "flex", justifyContent: "space-around" }}>
+                    <CircularProgress
+                      value={analytics?.active_users_7d || 0}
+                      max={settings.total_users || 1}
+                      color="#6750A4"
+                      label="Active (7d)"
+                    />
+                    <CircularProgress
+                      value={settings.active_subscriptions}
+                      max={settings.total_users || 1}
+                      color="#22c55e"
+                      label="Paid Users"
+                    />
+                    <CircularProgress
+                      value={analytics?.avg_turns_per_room || 0}
+                      max={50}
+                      color="#3b82f6"
+                      label="Avg Turns"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style={{
                 background: "white",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
                   API Configuration Status
                 </h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px" }}>
-                  <ConfigItem label="Stripe Webhook" configured={settings.stripe_webhook_configured} />
-                  <ConfigItem label="Anthropic (Claude)" configured={settings.anthropic_key_configured} />
-                  <ConfigItem label="Gemini" configured={settings.gemini_key_configured} />
-                  <ConfigItem label="OpenAI (Whisper)" configured={settings.openai_key_configured} />
-                  <ConfigItem label="SendGrid" configured={settings.sendgrid_key_configured} />
-                  <ConfigItem label="AWS S3" configured={settings.aws_configured} />
-                  <ConfigItem label="Telegram" configured={settings.telegram_configured} />
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "16px"
+                }}>
+                  <ConfigItemCircle label="Stripe" configured={settings.stripe_webhook_configured} />
+                  <ConfigItemCircle label="Claude AI" configured={settings.anthropic_key_configured} />
+                  <ConfigItemCircle label="Gemini" configured={settings.gemini_key_configured} />
+                  <ConfigItemCircle label="OpenAI" configured={settings.openai_key_configured} />
+                  <ConfigItemCircle label="SendGrid" configured={settings.sendgrid_key_configured} />
+                  <ConfigItemCircle label="AWS S3" configured={settings.aws_configured} />
+                  <ConfigItemCircle label="Telegram" configured={settings.telegram_configured} />
                 </div>
               </div>
             </>
@@ -482,84 +540,90 @@ export default function AdminDashboard() {
             <>
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "16px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Active Users (7d)" value={analytics.active_users_7d || 0} color="#6750A4" />
-                <StatCard title="Avg Turns/Room" value={analytics.avg_turns_per_room || 0} color="#22c55e" />
+                <StatCard title="Active Users (7d)" value={analytics.active_users_7d || 0} color="#6750A4" icon="🔥" />
+                <StatCard title="Avg Turns/Room" value={analytics.avg_turns_per_room || 0} color="#22c55e" icon="💭" />
               </div>
 
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
+                gap: "20px",
                 marginBottom: "24px",
               }}>
-                <div style={{
-                  background: "white",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}>
-                  <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
-                    Tier Breakdown
-                  </h3>
-                  {analytics.tier_breakdown?.map((item) => (
-                    <div key={item.tier} style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                    }}>
-                      <span style={{ textTransform: "capitalize" }}>{item.tier}</span>
-                      <span style={{ fontWeight: "600" }}>{item.count}</span>
-                    </div>
-                  ))}
-                </div>
+                {/* Tier Breakdown Pie Chart */}
+                {analytics.tier_breakdown && analytics.tier_breakdown.length > 0 && (
+                  <div style={{
+                    background: "white",
+                    borderRadius: "24px",
+                    padding: "24px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                      Tier Breakdown
+                    </h3>
+                    <PieChart
+                      data={analytics.tier_breakdown}
+                      size={140}
+                      colors={["#6750A4", "#22c55e", "#3b82f6"]}
+                    />
+                  </div>
+                )}
 
-                <div style={{
-                  background: "white",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}>
-                  <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
-                    Rooms by Phase
-                  </h3>
-                  {analytics.rooms_by_phase?.map((item) => (
-                    <div key={item.phase} style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
-                    }}>
-                      <span style={{ fontSize: "12px" }}>{item.phase}</span>
-                      <span style={{ fontWeight: "600" }}>{item.count}</span>
-                    </div>
-                  ))}
-                </div>
+                {/* Rooms by Phase Pie Chart */}
+                {analytics.rooms_by_phase && analytics.rooms_by_phase.length > 0 && (
+                  <div style={{
+                    background: "white",
+                    borderRadius: "24px",
+                    padding: "24px",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                      Rooms by Phase
+                    </h3>
+                    <PieChart
+                      data={analytics.rooms_by_phase}
+                      size={140}
+                      colors={["#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#22c55e", "#6750A4"]}
+                    />
+                  </div>
+                )}
               </div>
 
               <div style={{
                 background: "white",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
                   Recent Signups
                 </h3>
-                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                <div style={{ maxHeight: "250px", overflowY: "auto" }}>
                   {analytics.signups_over_time?.map((item) => (
                     <div key={item.date} style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      padding: "8px 0",
-                      borderBottom: "1px solid #f3f4f6",
+                      alignItems: "center",
+                      padding: "12px 16px",
+                      marginBottom: "8px",
+                      background: "#f9fafb",
+                      borderRadius: "24px",
                     }}>
-                      <span>{item.date}</span>
-                      <span style={{ fontWeight: "600" }}>{item.count} signups</span>
+                      <span style={{ color: "#6b7280", fontSize: "14px" }}>{item.date}</span>
+                      <span style={{
+                        fontWeight: "600",
+                        background: "#6750A420",
+                        color: "#6750A4",
+                        padding: "4px 12px",
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                      }}>
+                        {item.count} signups
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -571,9 +635,9 @@ export default function AdminDashboard() {
           {activeTab === "rooms" && (
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
             }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -645,9 +709,9 @@ export default function AdminDashboard() {
               {/* Search and Filter Bar */}
               <div style={{
                 background: "white",
-                borderRadius: "12px",
+                borderRadius: "24px",
                 padding: "16px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
                 marginBottom: "16px",
                 display: "flex",
                 gap: "12px",
@@ -738,7 +802,7 @@ export default function AdminDashboard() {
               {selectedUsers.length > 0 && (
                 <div style={{
                   background: "#e0e7ff",
-                  borderRadius: "12px",
+                  borderRadius: "24px",
                   padding: "12px 16px",
                   marginBottom: "16px",
                   display: "flex",
@@ -795,9 +859,9 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
               }}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -873,9 +937,9 @@ export default function AdminDashboard() {
           {activeTab === "subscriptions" && (
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
             }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -990,9 +1054,9 @@ export default function AdminDashboard() {
           {activeTab === "settings" && settings && (
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "20px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              borderRadius: "24px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
             }}>
               <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
                 Platform Configuration
@@ -1029,7 +1093,7 @@ export default function AdminDashboard() {
         }}>
           <div style={{
             background: "white",
-            borderRadius: "12px",
+            borderRadius: "24px",
             padding: "24px",
             width: "100%",
             maxWidth: "400px",
@@ -1178,7 +1242,7 @@ export default function AdminDashboard() {
         }}>
           <div style={{
             background: "white",
-            borderRadius: "12px",
+            borderRadius: "24px",
             padding: "24px",
             width: "100%",
             maxWidth: "400px",
@@ -1259,17 +1323,128 @@ function SidebarItem({ icon, label, active, onClick }) {
   );
 }
 
-function StatCard({ title, value, color }) {
+function StatCard({ title, value, color, icon }) {
   return (
     <div style={{
       background: "white",
-      borderRadius: "12px",
-      padding: "20px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      borderTop: `4px solid ${color}`,
+      borderRadius: "24px",
+      padding: "24px",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+      display: "flex",
+      alignItems: "center",
+      gap: "16px",
     }}>
-      <div style={{ fontSize: "14px", color: "#6b7280", marginBottom: "4px" }}>{title}</div>
-      <div style={{ fontSize: "28px", fontWeight: "700", color: "#1a1a1a" }}>{value}</div>
+      <div style={{
+        width: "56px",
+        height: "56px",
+        borderRadius: "50%",
+        background: `${color}20`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "24px",
+      }}>
+        {icon || "📊"}
+      </div>
+      <div>
+        <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</div>
+        <div style={{ fontSize: "32px", fontWeight: "700", color: "#1a1a1a" }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function PieChart({ data, size = 160, colors }) {
+  const total = data.reduce((sum, item) => sum + item.count, 0);
+  let cumulativePercent = 0;
+
+  const getCoordinates = (percent) => {
+    const x = Math.cos(2 * Math.PI * percent);
+    const y = Math.sin(2 * Math.PI * percent);
+    return [x, y];
+  };
+
+  const defaultColors = ["#6750A4", "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+  const chartColors = colors || defaultColors;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+      <svg width={size} height={size} viewBox="-1 -1 2 2" style={{ transform: "rotate(-90deg)" }}>
+        {data.map((item, i) => {
+          const percent = item.count / total;
+          const [startX, startY] = getCoordinates(cumulativePercent);
+          cumulativePercent += percent;
+          const [endX, endY] = getCoordinates(cumulativePercent);
+          const largeArcFlag = percent > 0.5 ? 1 : 0;
+
+          const pathData = [
+            `M ${startX} ${startY}`,
+            `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+            `L 0 0`,
+          ].join(" ");
+
+          return (
+            <path
+              key={item.tier || item.phase || i}
+              d={pathData}
+              fill={chartColors[i % chartColors.length]}
+            />
+          );
+        })}
+        <circle cx="0" cy="0" r="0.6" fill="white" />
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {data.map((item, i) => (
+          <div key={item.tier || item.phase || i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: chartColors[i % chartColors.length],
+            }} />
+            <span style={{ fontSize: "13px", color: "#374151" }}>
+              {item.tier || item.phase}: <strong>{item.count}</strong>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CircularProgress({ value, max, size = 80, color = "#6750A4", label }) {
+  const percentage = (value / max) * 100;
+  const circumference = 2 * Math.PI * 35;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width={size} height={size} viewBox="0 0 80 80">
+        <circle
+          cx="40"
+          cy="40"
+          r="35"
+          fill="none"
+          stroke="#f3f4f6"
+          strokeWidth="8"
+        />
+        <circle
+          cx="40"
+          cy="40"
+          r="35"
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          transform="rotate(-90 40 40)"
+        />
+        <text x="40" y="45" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1a1a1a">
+          {value}
+        </text>
+      </svg>
+      {label && <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>{label}</div>}
     </div>
   );
 }
@@ -1284,6 +1459,35 @@ function ConfigItem({ label, configured }) {
         background: configured ? "#22c55e" : "#ef4444",
       }} />
       <span style={{ fontSize: "14px", color: "#374151" }}>{label}</span>
+    </div>
+  );
+}
+
+function ConfigItemCircle({ label, configured }) {
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "8px",
+      padding: "16px",
+      background: configured ? "#dcfce720" : "#fee2e220",
+      borderRadius: "16px",
+    }}>
+      <div style={{
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: configured ? "#22c55e" : "#ef4444",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontSize: "18px",
+      }}>
+        {configured ? "✓" : "×"}
+      </div>
+      <span style={{ fontSize: "13px", color: "#374151", fontWeight: "500" }}>{label}</span>
     </div>
   );
 }
