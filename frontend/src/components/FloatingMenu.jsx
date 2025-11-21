@@ -20,21 +20,69 @@ export default function FloatingMenu({
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const videoRef = useRef(null);
   const { user, logout, googleLogin, facebookLogin, telegramQRLogin } = useAuth();
   const navigate = useNavigate();
 
   // Control video playback based on menu state
   useEffect(() => {
-    if (isOpen && videoRef.current) {
+    if (isOpen && videoRef.current && !isMinimized) {
       videoRef.current.play().catch(err => {
         console.log('Autoplay prevented:', err);
       });
     } else if (!isOpen && videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      setIsMinimized(false);
+      setIsMuted(true);
+      setVideoProgress(0);
     }
-  }, [isOpen]);
+  }, [isOpen, isMinimized]);
+
+  // Handle video end
+  const handleVideoEnded = () => {
+    if (!isMuted) {
+      // Video finished playing with sound - minimize it
+      setIsMinimized(true);
+      setIsMuted(true);
+    } else {
+      // Muted - restart loop
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play();
+      }
+    }
+  };
+
+  // Handle mute toggle
+  const handleToggleMute = () => {
+    if (isMuted && videoRef.current) {
+      // Unmuting - restart from beginning
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+    setIsMuted(!isMuted);
+  };
+
+  // Handle mini player click
+  const handleExpandVideo = () => {
+    setIsMinimized(false);
+    setVideoProgress(0);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+  };
+
+  // Handle progress updates
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.duration) {
+      const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      setVideoProgress(progress);
+    }
+  };
 
   // Environment variables for OAuth
   const GOOGLE_CLIENT_ID = typeof window !== 'undefined' ? import.meta.env.VITE_GOOGLE_CLIENT_ID : null;
@@ -551,34 +599,165 @@ export default function FloatingMenu({
               })}
 
               {/* Video Section */}
-              <div style={{
-                padding: "16px 20px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                borderTop: "1px solid #e5e7eb",
-                marginTop: "8px"
-              }}>
+              {!isMinimized ? (
                 <div style={{
-                  position: "relative",
-                  width: "120px",
-                  height: "120px"
+                  padding: "16px 20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  borderTop: "1px solid #e5e7eb",
+                  marginTop: "8px"
                 }}>
-                  {/* Circular video container */}
                   <div style={{
-                    width: "120px",
-                    height: "120px",
+                    position: "relative",
+                    width: "126px",
+                    height: "126px"
+                  }}>
+                    {/* Progress ring SVG */}
+                    <svg style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "126px",
+                      height: "126px",
+                      transform: "rotate(-90deg)",
+                      pointerEvents: "none"
+                    }}>
+                      {/* Background circle */}
+                      <circle
+                        cx="63"
+                        cy="63"
+                        r="60"
+                        fill="none"
+                        stroke="rgba(204, 178, 255, 0.3)"
+                        strokeWidth="3"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="63"
+                        cy="63"
+                        r="60"
+                        fill="none"
+                        stroke="#CCB2FF"
+                        strokeWidth="3"
+                        strokeDasharray="377"
+                        strokeDashoffset={377 - (videoProgress / 100) * 377}
+                        strokeLinecap="round"
+                        style={{ transition: "stroke-dashoffset 0.1s linear" }}
+                      />
+                    </svg>
+
+                    {/* Circular video container */}
+                    <div style={{
+                      position: "absolute",
+                      top: "3px",
+                      left: "3px",
+                      width: "120px",
+                      height: "120px",
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      boxShadow: !isMuted
+                        ? "0 4px 12px rgba(0, 0, 0, 0.15), 0 0 25px rgba(204, 178, 255, 0.5)"
+                        : "0 4px 12px rgba(0, 0, 0, 0.15)",
+                      transition: "box-shadow 0.3s ease"
+                    }}>
+                      <video
+                        ref={videoRef}
+                        src="/assets/videos/meedi_intro_round.mp4"
+                        muted={isMuted}
+                        playsInline
+                        preload={isOpen ? "auto" : "metadata"}
+                        onEnded={handleVideoEnded}
+                        onTimeUpdate={handleTimeUpdate}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover"
+                        }}
+                      />
+                    </div>
+
+                    {/* Mute/Unmute toggle button */}
+                    <button
+                      onClick={handleToggleMute}
+                      style={{
+                        position: "absolute",
+                        bottom: "7px",
+                        right: "7px",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        border: "none",
+                        background: "rgba(0, 0, 0, 0.6)",
+                        color: "white",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 0,
+                        transition: "background 0.2s",
+                        zIndex: 2
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.8)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"}
+                      aria-label={isMuted ? "Unmute video" : "Mute video"}
+                    >
+                      {isMuted ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                          <line x1="23" y1="9" x2="17" y2="15"/>
+                          <line x1="17" y1="9" x2="23" y2="15"/>
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Mini player in corner */
+                <div
+                  onClick={handleExpandVideo}
+                  style={{
+                    position: "absolute",
+                    bottom: "70px",
+                    right: "16px",
+                    width: "48px",
+                    height: "48px",
+                    cursor: "pointer",
+                    zIndex: 10
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Expand video player"
+                  onKeyDown={(e) => e.key === 'Enter' && handleExpandVideo()}
+                >
+                  {/* Mini player border */}
+                  <div style={{
+                    position: "absolute",
+                    top: "-2px",
+                    left: "-2px",
+                    width: "52px",
+                    height: "52px",
+                    borderRadius: "50%",
+                    border: "2px solid #CCB2FF",
+                    animation: "pulseGlow 2s infinite"
+                  }} />
+
+                  <div style={{
+                    width: "48px",
+                    height: "48px",
                     borderRadius: "50%",
                     overflow: "hidden",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)"
                   }}>
                     <video
-                      ref={videoRef}
                       src="/assets/videos/meedi_intro_round.mp4"
-                      muted={isMuted}
-                      loop
+                      muted
                       playsInline
-                      preload={isOpen ? "auto" : "metadata"}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -587,45 +766,26 @@ export default function FloatingMenu({
                     />
                   </div>
 
-                  {/* Mute/Unmute toggle button */}
-                  <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    style={{
-                      position: "absolute",
-                      bottom: "4px",
-                      right: "4px",
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "50%",
-                      border: "none",
-                      background: "rgba(0, 0, 0, 0.6)",
-                      color: "white",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 0,
-                      transition: "background 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.8)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"}
-                    aria-label={isMuted ? "Unmute video" : "Mute video"}
-                  >
-                    {isMuted ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                        <line x1="23" y1="9" x2="17" y2="15"/>
-                        <line x1="17" y1="9" x2="23" y2="15"/>
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                      </svg>
-                    )}
-                  </button>
+                  {/* Replay icon overlay */}
+                  <div style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    background: "rgba(0, 0, 0, 0.5)",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              )}
             </nav>
 
             {/* Menu Footer */}
@@ -772,6 +932,15 @@ export default function FloatingMenu({
           }
           100% {
             box-shadow: 0 0 0 0 rgba(125, 211, 192, 0);
+          }
+        }
+
+        @keyframes pulseGlow {
+          0%, 100% {
+            box-shadow: 0 0 10px rgba(204, 178, 255, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(204, 178, 255, 0.8);
           }
         }
 
