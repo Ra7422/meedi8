@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import SimpleBreathing from "./SimpleBreathing";
+import { GoogleLogin } from '@react-oauth/google';
+import FacebookLogin from '@greatsumini/react-facebook-login';
+import TelegramQRLoginModal from './TelegramQRLoginModal';
 
 export default function FloatingMenu({
   // Room-specific props (optional)
@@ -15,8 +18,49 @@ export default function FloatingMenu({
   const [showLink, setShowLink] = useState(false);
   const [showBreathingSection, setShowBreathingSection] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const { user, logout } = useAuth();
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
+  const { user, logout, googleLogin, facebookLogin, telegramQRLogin } = useAuth();
   const navigate = useNavigate();
+
+  // Environment variables for OAuth
+  const GOOGLE_CLIENT_ID = typeof window !== 'undefined' ? import.meta.env.VITE_GOOGLE_CLIENT_ID : null;
+  const FACEBOOK_APP_ID = typeof window !== 'undefined' ? import.meta.env.VITE_FACEBOOK_APP_ID : null;
+
+  // Check if OAuth is properly configured
+  const hasGoogleOAuth = typeof window !== 'undefined' && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 20 && !GOOGLE_CLIENT_ID.includes('YOUR_');
+  const hasFacebookOAuth = typeof window !== 'undefined' && FACEBOOK_APP_ID && FACEBOOK_APP_ID.length > 10 && !FACEBOOK_APP_ID.includes('YOUR_');
+
+  // OAuth handlers
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      setIsOpen(false);
+      navigate('/');
+    } catch (e) {
+      console.error("Google login failed:", e);
+    }
+  };
+
+  const handleFacebookSuccess = async (response) => {
+    try {
+      await facebookLogin(response.accessToken, response.userID);
+      setIsOpen(false);
+      navigate('/');
+    } catch (e) {
+      console.error("Facebook login failed:", e);
+    }
+  };
+
+  const handleTelegramQRSuccess = async (tokenData) => {
+    try {
+      await telegramQRLogin(tokenData);
+      setShowTelegramModal(false);
+      setIsOpen(false);
+      navigate('/');
+    } catch (e) {
+      console.error("Telegram login failed:", e);
+    }
+  };
 
   // Show tooltip hint for perspectives (only if summaries exist and user hasn't seen it)
   React.useEffect(() => {
@@ -506,25 +550,97 @@ export default function FloatingMenu({
                   Logout
                 </button>
               ) : (
-                <button
-                  onClick={() => {
-                    navigate("/login");
-                    setIsOpen(false);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    background: "#7DD3C0",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    cursor: "pointer"
-                  }}
-                >
-                  Login
-                </button>
+                <div>
+                  {/* OAuth buttons row */}
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '12px' }}>
+                    {/* Google */}
+                    {hasGoogleOAuth && (
+                      <div style={{ transform: 'scale(1.1)' }}>
+                        <GoogleLogin
+                          onSuccess={handleGoogleSuccess}
+                          onError={() => console.error("Google login failed")}
+                          type="icon"
+                          shape="circle"
+                          size="medium"
+                        />
+                      </div>
+                    )}
+
+                    {/* Facebook */}
+                    {hasFacebookOAuth && (
+                      <FacebookLogin
+                        appId={FACEBOOK_APP_ID}
+                        onSuccess={handleFacebookSuccess}
+                        onFail={(error) => console.error("Facebook login failed", error)}
+                        render={({ onClick }) => (
+                          <button
+                            onClick={onClick}
+                            style={{
+                              width: '40px',
+                              height: '40px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '50%',
+                              border: 'none',
+                              background: '#1877F2',
+                              cursor: 'pointer',
+                              padding: 0
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                          </button>
+                        )}
+                      />
+                    )}
+
+                    {/* Telegram */}
+                    <button
+                      onClick={() => setShowTelegramModal(true)}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      <img
+                        src="/assets/illustrations/Telegram_logo.svg"
+                        alt="Sign in with Telegram"
+                        style={{ width: '36px', height: '36px' }}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Login with email link */}
+                  <button
+                    onClick={() => {
+                      navigate("/login");
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      background: "transparent",
+                      color: "#6b7280",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Login with email
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -569,6 +685,13 @@ export default function FloatingMenu({
           }
         }
       `}</style>
+
+      {/* Telegram QR Login Modal */}
+      <TelegramQRLoginModal
+        isOpen={showTelegramModal}
+        onClose={() => setShowTelegramModal(false)}
+        onLoginSuccess={handleTelegramQRSuccess}
+      />
     </>
   );
 }
