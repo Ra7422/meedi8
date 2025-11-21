@@ -20,6 +20,11 @@ from telethon.errors import (
     FloodWaitError, PeerIdInvalidError, UserNotParticipantError,
     ChannelInvalidError, RPCError
 )
+import asyncio
+import uuid
+import qrcode
+import io
+import base64
 from sqlalchemy.orm import Session
 
 from ..models.telegram import TelegramSession, TelegramDownload, TelegramMessage
@@ -750,3 +755,235 @@ class TelegramService:
             raise
         finally:
             await client.disconnect()
+
+    @staticmethod
+    async def initiate_qr_login() -> Tuple[str, str, TelegramClient]:
+        """
+        Initiate QR code login and return QR URL and login ID.
+
+        Returns:
+            Tuple of (qr_url, login_id, client)
+            - qr_url: URL to encode as QR code (tg://login?token=...)
+            - login_id: Unique ID to track this login attempt
+            - client: TelegramClient with active qr_login object
+        """
+        if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+            raise ValueError("Telegram API credentials not configured")
+
+        # Create client with empty StringSession
+        client = TelegramClient(StringSession(), int(TELEGRAM_API_ID), TELEGRAM_API_HASH)
+
+        try:
+            await client.connect()
+
+            # Generate unique login ID
+            login_id = str(uuid.uuid4())
+
+            # Start QR login - this returns a qr_login object
+            qr_login = await client.qr_login()
+
+            # Get QR URL from token
+            qr_url = qr_login.url
+
+            logger.info(f"QR login initiated, login_id={login_id}")
+
+            return qr_url, login_id, client, qr_login
+
+        except Exception as e:
+            await client.disconnect()
+            logger.error(f"Error initiating QR login: {e}")
+            raise
+
+    @staticmethod
+    def generate_qr_code_base64(qr_url: str) -> str:
+        """
+        Generate QR code image as base64 data URI.
+
+        Args:
+            qr_url: URL to encode as QR code
+
+        Returns:
+            Base64 data URI string for image
+        """
+        # Create QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        return f"data:image/png;base64,{img_base64}"
+
+    @staticmethod
+    async def wait_for_qr_login(
+        client: TelegramClient,
+        qr_login,
+        timeout: float = 30.0
+    ) -> Tuple[str, bool]:
+        """
+        Wait for user to scan QR code and complete login.
+
+        Args:
+            client: TelegramClient with active qr_login
+            qr_login: QR login object from qr_login()
+            timeout: Max seconds to wait
+
+        Returns:
+            Tuple of (status, needs_password)
+            - status: 'success', 'expired', 'waiting', '2fa_required'
+            - needs_password: True if 2FA password is needed
+        """
+        try:
+            # Wait for login with timeout
+            await asyncio.wait_for(qr_login.wait(timeout), timeout=timeout)
+
+            logger.info("QR login successful")
+            return 'success', False
+
+        except asyncio.TimeoutError:
+            logger.info("QR login waiting (timeout)")
+            return 'waiting', False
+
+        except SessionPasswordNeededError:
+            logger.info("QR login requires 2FA password")
+            return '2fa_required', True
+
+        except Exception as e:
+            if "QR_CODE" in str(e).upper() or "expired" in str(e).lower():
+                logger.info("QR code expired")
+                return 'expired', False
+            logger.error(f"Error waiting for QR login: {e}")
+            raise
+
+    @staticmethod
+    async def complete_qr_login_with_password(
+        client: TelegramClient,
+        password: str,
+        db: Session,
+        user_id: int
+    ) -> str:
+        """
+        Complete QR login with 2FA password.
+
+        Args:
+            client: TelegramClient that completed QR scan
+            password: 2FA password
+            db: Database session
+            user_id: User ID to associate session with
+
+        Returns:
+            Encrypted session string
+        """
+        try:
+            # Sign in with password
+            await client.sign_in(password=password)
+
+            # Get session string
+            session_string = client.session.save()
+
+            # Encrypt session
+            encrypted_session = TelegramService.encrypt_session(session_string)
+
+            # Get phone number (might not be available after QR login)
+            me = await client.get_me()
+            phone_number = me.phone if me and me.phone else "QR Login"
+
+            # Store in database
+            existing_session = db.query(TelegramSession).filter(
+                TelegramSession.user_id == user_id
+            ).first()
+
+            if existing_session:
+                existing_session.encrypted_session = encrypted_session
+                existing_session.phone_number = phone_number
+                existing_session.is_active = True
+                existing_session.updated_at = datetime.utcnow()
+                existing_session.last_used_at = datetime.utcnow()
+            else:
+                telegram_session = TelegramSession(
+                    user_id=user_id,
+                    encrypted_session=encrypted_session,
+                    phone_number=phone_number,
+                    is_active=True
+                )
+                db.add(telegram_session)
+
+            db.commit()
+            logger.info(f"QR login session stored for user {user_id}")
+
+            await client.disconnect()
+            return encrypted_session
+
+        except Exception as e:
+            logger.error(f"Error completing QR login with password: {e}")
+            raise ValueError("Invalid 2FA password")
+
+    @staticmethod
+    async def finalize_qr_login(
+        client: TelegramClient,
+        db: Session,
+        user_id: int
+    ) -> str:
+        """
+        Finalize QR login after successful scan (no 2FA needed).
+
+        Args:
+            client: TelegramClient that completed QR scan
+            db: Database session
+            user_id: User ID to associate session with
+
+        Returns:
+            Encrypted session string
+        """
+        try:
+            # Get session string
+            session_string = client.session.save()
+
+            # Encrypt session
+            encrypted_session = TelegramService.encrypt_session(session_string)
+
+            # Get phone number
+            me = await client.get_me()
+            phone_number = me.phone if me and me.phone else "QR Login"
+
+            # Store in database
+            existing_session = db.query(TelegramSession).filter(
+                TelegramSession.user_id == user_id
+            ).first()
+
+            if existing_session:
+                existing_session.encrypted_session = encrypted_session
+                existing_session.phone_number = phone_number
+                existing_session.is_active = True
+                existing_session.updated_at = datetime.utcnow()
+                existing_session.last_used_at = datetime.utcnow()
+            else:
+                telegram_session = TelegramSession(
+                    user_id=user_id,
+                    encrypted_session=encrypted_session,
+                    phone_number=phone_number,
+                    is_active=True
+                )
+                db.add(telegram_session)
+
+            db.commit()
+            logger.info(f"QR login session stored for user {user_id}")
+
+            await client.disconnect()
+            return encrypted_session
+
+        except Exception as e:
+            logger.error(f"Error finalizing QR login: {e}")
+            raise

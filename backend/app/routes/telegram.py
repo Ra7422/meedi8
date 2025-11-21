@@ -25,6 +25,10 @@ router = APIRouter()
 # Key: user_id, Value: (TelegramClient, phone_code_hash)
 pending_clients: Dict[int, Tuple[TelegramClient, str]] = {}
 
+# In-memory storage for pending QR login sessions
+# Key: login_id, Value: (TelegramClient, qr_login, user_id)
+pending_qr_logins: Dict[str, Tuple[TelegramClient, any, int]] = {}
+
 
 # ===== Request/Response Models =====
 
@@ -98,6 +102,28 @@ class DisconnectResponse(BaseModel):
 class SessionStatusResponse(BaseModel):
     is_connected: bool
     phone_number: Optional[str] = None
+
+
+class QRLoginInitiateResponse(BaseModel):
+    success: bool
+    login_id: str
+    qr_code: str  # Base64 data URI
+    message: str
+
+
+class QRLoginStatusResponse(BaseModel):
+    status: str  # 'waiting', 'success', '2fa_required', 'expired', 'error'
+    message: str
+    needs_password: bool = False
+
+
+class QRLogin2FARequest(BaseModel):
+    password: str
+
+
+class QRLogin2FAResponse(BaseModel):
+    success: bool
+    message: str
 
 
 class MessagePreviewItem(BaseModel):
@@ -292,6 +318,253 @@ async def verify_telegram(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to verify code"
+        )
+
+
+# ===== QR Code Login Endpoints =====
+
+@router.post("/qr-login/initiate", response_model=QRLoginInitiateResponse)
+async def initiate_qr_login(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Initiate QR code login for Telegram.
+
+    Returns a QR code image (base64) that user scans with Telegram mobile app.
+    Frontend should poll /qr-login/status/{login_id} to check if user scanned.
+
+    Note: Telegram import is only available on PRO tier.
+    """
+    # Check PRO tier access for Telegram import
+    check_telegram_import_allowed(current_user.id, db)
+
+    try:
+        # Clean up any existing QR login for this user
+        for login_id, (client, _, user_id) in list(pending_qr_logins.items()):
+            if user_id == current_user.id:
+                try:
+                    await client.disconnect()
+                except:
+                    pass
+                del pending_qr_logins[login_id]
+
+        # Initiate QR login
+        qr_url, login_id, client, qr_login = await TelegramService.initiate_qr_login()
+
+        # Store in pending logins
+        pending_qr_logins[login_id] = (client, qr_login, current_user.id)
+
+        # Generate QR code image
+        qr_code = TelegramService.generate_qr_code_base64(qr_url)
+
+        return QRLoginInitiateResponse(
+            success=True,
+            login_id=login_id,
+            qr_code=qr_code,
+            message="Scan QR code with Telegram app"
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /qr-login/initiate: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initiate QR login"
+        )
+
+
+@router.get("/qr-login/status/{login_id}", response_model=QRLoginStatusResponse)
+async def check_qr_login_status(
+    login_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Check status of QR login attempt.
+
+    Poll this endpoint every 2-3 seconds after initiating QR login.
+    Returns status: 'waiting', 'success', '2fa_required', 'expired', 'error'
+    """
+    try:
+        if login_id not in pending_qr_logins:
+            return QRLoginStatusResponse(
+                status='expired',
+                message='QR code expired. Please generate a new one.',
+                needs_password=False
+            )
+
+        client, qr_login, user_id = pending_qr_logins[login_id]
+
+        # Verify this login belongs to current user
+        if user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This QR login does not belong to you"
+            )
+
+        # Check login status with short timeout
+        login_status, needs_password = await TelegramService.wait_for_qr_login(
+            client, qr_login, timeout=2.0
+        )
+
+        if login_status == 'success':
+            # Finalize login and store session
+            await TelegramService.finalize_qr_login(client, db, current_user.id)
+
+            # Clean up
+            del pending_qr_logins[login_id]
+
+            return QRLoginStatusResponse(
+                status='success',
+                message='Connected successfully',
+                needs_password=False
+            )
+
+        elif login_status == '2fa_required':
+            # Keep in pending for 2FA completion
+            return QRLoginStatusResponse(
+                status='2fa_required',
+                message='Two-factor authentication required',
+                needs_password=True
+            )
+
+        elif login_status == 'expired':
+            # Clean up expired login
+            try:
+                await client.disconnect()
+            except:
+                pass
+            del pending_qr_logins[login_id]
+
+            return QRLoginStatusResponse(
+                status='expired',
+                message='QR code expired. Please generate a new one.',
+                needs_password=False
+            )
+
+        else:  # 'waiting'
+            return QRLoginStatusResponse(
+                status='waiting',
+                message='Waiting for QR code scan...',
+                needs_password=False
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /qr-login/status/{login_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to check QR login status"
+        )
+
+
+@router.post("/qr-login/2fa/{login_id}", response_model=QRLogin2FAResponse)
+async def complete_qr_login_2fa(
+    login_id: str,
+    payload: QRLogin2FARequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Complete QR login with 2FA password.
+
+    Call this endpoint after /qr-login/status returns '2fa_required'.
+    """
+    try:
+        if login_id not in pending_qr_logins:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="QR login session not found or expired"
+            )
+
+        client, qr_login, user_id = pending_qr_logins[login_id]
+
+        # Verify this login belongs to current user
+        if user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This QR login does not belong to you"
+            )
+
+        # Complete login with 2FA password
+        await TelegramService.complete_qr_login_with_password(
+            client, payload.password, db, current_user.id
+        )
+
+        # Clean up
+        del pending_qr_logins[login_id]
+
+        return QRLogin2FAResponse(
+            success=True,
+            message='Connected successfully'
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /qr-login/2fa/{login_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to complete 2FA"
+        )
+
+
+@router.delete("/qr-login/{login_id}")
+async def cancel_qr_login(
+    login_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Cancel a pending QR login attempt.
+
+    Call this when user navigates away or wants to start fresh.
+    """
+    try:
+        if login_id in pending_qr_logins:
+            client, _, user_id = pending_qr_logins[login_id]
+
+            # Verify this login belongs to current user
+            if user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="This QR login does not belong to you"
+                )
+
+            # Disconnect and clean up
+            try:
+                await client.disconnect()
+            except:
+                pass
+            del pending_qr_logins[login_id]
+
+        return {"success": True, "message": "QR login cancelled"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /qr-login/{login_id} DELETE: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to cancel QR login"
         )
 
 

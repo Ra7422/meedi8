@@ -16,12 +16,18 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   const { token } = useAuth();
 
   // Step state
-  const [step, setStep] = useState(1); // 1: phone, 2: code, 3: contacts
+  const [step, setStep] = useState(0); // 0: method selection, 1: phone, 1.5: QR, 2: code, 3: contacts
 
   // Form inputs
   const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
+
+  // QR login state
+  const [qrCode, setQrCode] = useState(null);
+  const [qrLoginId, setQrLoginId] = useState(null);
+  const [qrStatus, setQrStatus] = useState(null);
+  const [qr2FAPassword, setQr2FAPassword] = useState("");
 
   // Data state
   const [contacts, setContacts] = useState([]);
@@ -79,6 +85,29 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
       loadContacts();
     }
   }, [selectedFolder, currentLimit]);
+
+  // Poll QR login status
+  useEffect(() => {
+    if (qrLoginId && step === 1.5 && qrStatus !== 'success' && qrStatus !== '2fa_required') {
+      const interval = setInterval(async () => {
+        try {
+          const response = await apiRequest(`/telegram/qr-login/status/${qrLoginId}`, "GET", null, token);
+          setQrStatus(response.status);
+
+          if (response.status === 'success') {
+            setStep(3);
+            loadContacts();
+          } else if (response.status === 'expired') {
+            setError("QR code expired. Click 'Refresh QR' to generate a new one.");
+          }
+        } catch (err) {
+          console.error("Failed to check QR status:", err);
+        }
+      }, 2500);
+
+      return () => clearInterval(interval);
+    }
+  }, [qrLoginId, qrStatus, step, token]);
 
   const checkExistingSession = async () => {
     if (!token) {
@@ -144,6 +173,71 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
       } else {
         setError(err.message || "Invalid code");
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInitiateQRLogin = async () => {
+    setLoading(true);
+    setError("");
+    setQrStatus(null);
+
+    try {
+      const response = await apiRequest("/telegram/qr-login/initiate", "POST", null, token);
+      setQrCode(response.qr_code);
+      setQrLoginId(response.login_id);
+      setStep(1.5);
+    } catch (err) {
+      setError(err.message || "Failed to generate QR code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshQR = async () => {
+    setLoading(true);
+    setError("");
+    setQrStatus(null);
+
+    try {
+      // Cancel old QR login if exists
+      if (qrLoginId) {
+        try {
+          await apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE", null, token);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+
+      const response = await apiRequest("/telegram/qr-login/initiate", "POST", null, token);
+      setQrCode(response.qr_code);
+      setQrLoginId(response.login_id);
+    } catch (err) {
+      setError(err.message || "Failed to refresh QR code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQR2FA = async () => {
+    if (!qr2FAPassword.trim()) {
+      setError("Please enter your 2FA password");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await apiRequest(`/telegram/qr-login/2fa/${qrLoginId}`, "POST", {
+        password: qr2FAPassword
+      }, token);
+
+      setStep(3);
+      loadContacts();
+    } catch (err) {
+      setError(err.message || "Invalid 2FA password");
     } finally {
       setLoading(false);
     }
@@ -324,6 +418,78 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         </div>
       )}
 
+      {/* Step 0: Method Selection */}
+      {step === 0 && (
+        <div>
+          <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
+            Connect Telegram
+          </h3>
+          <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 16px 0" }}>
+            Choose how to connect your Telegram account
+          </p>
+
+          <button
+            onClick={handleInitiateQRLogin}
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "white",
+              background: loading ? "#d1d5db" : "#0088CC",
+              border: "none",
+              borderRadius: "6px",
+              cursor: loading ? "not-allowed" : "pointer",
+              marginBottom: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+          >
+            {loading ? "Loading..." : (
+              <>
+                <span style={{ fontSize: "16px" }}>📱</span>
+                Scan QR Code
+              </>
+            )}
+          </button>
+
+          <div style={{
+            textAlign: "center",
+            fontSize: "11px",
+            color: "#8A8A8F",
+            margin: "10px 0"
+          }}>
+            or
+          </div>
+
+          <button
+            onClick={() => setStep(1)}
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#0088CC",
+              background: "white",
+              border: "1px solid #0088CC",
+              borderRadius: "6px",
+              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>📞</span>
+            Enter Phone Number
+          </button>
+        </div>
+      )}
+
       {/* Step 1: Phone */}
       {step === 1 && (
         <div>
@@ -366,6 +532,168 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
             }}
           >
             {loading ? "Sending..." : "Send Code"}
+          </button>
+          <button
+            onClick={() => setStep(0)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              fontSize: "11px",
+              color: "#6b7280",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "8px"
+            }}
+          >
+            ← Back to options
+          </button>
+        </div>
+      )}
+
+      {/* Step 1.5: QR Code Display */}
+      {step === 1.5 && (
+        <div>
+          <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
+            Scan with Telegram
+          </h3>
+
+          {qrStatus === '2fa_required' ? (
+            // 2FA Password Input
+            <div>
+              <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
+                Two-factor authentication is enabled. Please enter your password.
+              </p>
+              <input
+                type="password"
+                value={qr2FAPassword}
+                onChange={(e) => setQr2FAPassword(e.target.value)}
+                placeholder="2FA Password"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "6px",
+                  marginBottom: "10px",
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleQR2FA()}
+              />
+              <button
+                onClick={handleQR2FA}
+                disabled={loading || !qr2FAPassword.trim()}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "white",
+                  background: loading || !qr2FAPassword.trim() ? "#d1d5db" : "#0088CC",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: loading || !qr2FAPassword.trim() ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading ? "Verifying..." : "Continue"}
+              </button>
+            </div>
+          ) : (
+            // QR Code Display
+            <div>
+              <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
+                Open Telegram on your phone and scan this QR code to connect.
+              </p>
+
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: "12px"
+              }}>
+                {qrCode ? (
+                  <img
+                    src={qrCode}
+                    alt="Telegram QR Code"
+                    style={{
+                      width: "200px",
+                      height: "200px",
+                      borderRadius: "8px",
+                      border: "1px solid #e5e7eb"
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: "200px",
+                    height: "200px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#f3f4f6",
+                    borderRadius: "8px"
+                  }}>
+                    Loading...
+                  </div>
+                )}
+              </div>
+
+              <div style={{
+                textAlign: "center",
+                fontSize: "11px",
+                color: qrStatus === 'waiting' || !qrStatus ? "#6b7280" : "#059669",
+                marginBottom: "12px"
+              }}>
+                {qrStatus === 'waiting' || !qrStatus ? (
+                  <>⏳ Waiting for scan...</>
+                ) : (
+                  <>✓ Scanned!</>
+                )}
+              </div>
+
+              <button
+                onClick={handleRefreshQR}
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "#0088CC",
+                  background: "white",
+                  border: "1px solid #0088CC",
+                  borderRadius: "6px",
+                  cursor: loading ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading ? "Refreshing..." : "🔄 Refresh QR Code"}
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              // Cancel QR login and go back
+              if (qrLoginId) {
+                apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE", null, token).catch(() => {});
+              }
+              setQrCode(null);
+              setQrLoginId(null);
+              setQrStatus(null);
+              setStep(0);
+            }}
+            style={{
+              width: "100%",
+              padding: "8px",
+              fontSize: "11px",
+              color: "#6b7280",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "8px"
+            }}
+          >
+            ← Back to options
           </button>
         </div>
       )}
