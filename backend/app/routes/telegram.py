@@ -115,6 +115,13 @@ class QRLoginStatusResponse(BaseModel):
     status: str  # 'waiting', 'success', '2fa_required', 'expired', 'error'
     message: str
     needs_password: bool = False
+    qr_code: str = None  # New QR code if refreshed
+
+
+class QRLoginRefreshResponse(BaseModel):
+    success: bool
+    qr_code: str  # Base64 data URI
+    message: str
 
 
 class QRLogin2FARequest(BaseModel):
@@ -565,6 +572,57 @@ async def cancel_qr_login(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cancel QR login"
+        )
+
+
+@router.post("/qr-login/refresh/{login_id}", response_model=QRLoginRefreshResponse)
+async def refresh_qr_login(
+    login_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Refresh expired QR code.
+
+    Call this when QR code expires to get a new one without
+    creating a new login session.
+    """
+    try:
+        if login_id not in pending_qr_logins:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="QR login session not found or expired"
+            )
+
+        client, qr_login, user_id = pending_qr_logins[login_id]
+
+        # Verify this login belongs to current user
+        if user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This QR login does not belong to you"
+            )
+
+        # Recreate QR code
+        new_qr_url = await TelegramService.recreate_qr_login(qr_login)
+
+        # Generate new QR code image
+        qr_code = TelegramService.generate_qr_code_base64(new_qr_url)
+
+        return QRLoginRefreshResponse(
+            success=True,
+            qr_code=qr_code,
+            message="QR code refreshed"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /qr-login/refresh/{login_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh QR code"
         )
 
 

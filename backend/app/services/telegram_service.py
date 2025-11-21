@@ -868,6 +868,25 @@ class TelegramService:
             raise
 
     @staticmethod
+    async def recreate_qr_login(qr_login) -> str:
+        """
+        Recreate QR code after expiration.
+
+        Args:
+            qr_login: Existing QR login object
+
+        Returns:
+            New QR URL to encode
+        """
+        try:
+            await qr_login.recreate()
+            logger.info("QR code recreated")
+            return qr_login.url
+        except Exception as e:
+            logger.error(f"Error recreating QR login: {e}")
+            raise
+
+    @staticmethod
     async def complete_qr_login_with_password(
         client: TelegramClient,
         password: str,

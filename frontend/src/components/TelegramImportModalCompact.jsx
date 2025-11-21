@@ -201,15 +201,24 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     setQrStatus(null);
 
     try {
-      // Cancel old QR login if exists
       if (qrLoginId) {
+        // Try to refresh the existing QR code first using recreate()
         try {
-          await apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE", null, token);
+          const response = await apiRequest(`/telegram/qr-login/refresh/${qrLoginId}`, "POST", null, token);
+          setQrCode(response.qr_code);
+          setLoading(false);
+          return;
         } catch (e) {
-          // Ignore cleanup errors
+          // If refresh fails (session expired), fall back to creating new
+          try {
+            await apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE", null, token);
+          } catch (deleteErr) {
+            // Ignore cleanup errors
+          }
         }
       }
 
+      // Create new QR login session
       const response = await apiRequest("/telegram/qr-login/initiate", "POST", null, token);
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
