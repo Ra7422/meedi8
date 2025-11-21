@@ -582,8 +582,8 @@ export default function ScreeningCarousel() {
         sessionStorage.removeItem('screeningReturnTo');
         navigate(returnTo);
       } else {
-        // Default: navigate to CreateRoom page
-        navigate('/create');
+        // Default: navigate to Home page
+        navigate('/');
       }
     } catch (error) {
       console.error('Error submitting screening:', error);

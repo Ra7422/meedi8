@@ -45,6 +45,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import ScreeningGuard from "./components/ScreeningGuard";
 
 function PrivateRoute({ children }) {
   const { token } = useAuth();
@@ -73,6 +74,7 @@ export default function App() {
     <AuthProvider>
       <Router>
         <GlobalMenu />
+        <ScreeningGuard>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/plasmic-host" element={<PlаsmicHost />} />
@@ -120,6 +122,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
+        </ScreeningGuard>
       </Router>
     </AuthProvider>
   );

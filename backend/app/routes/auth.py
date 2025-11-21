@@ -74,6 +74,7 @@ class UserOut(BaseModel):
     name: Optional[str] = None
     profile_picture_url: Optional[str] = None
     has_completed_screening: bool = False
+    is_guest: bool = False
 
 class UpdateUserIn(BaseModel):
     name: Optional[str] = None
@@ -911,7 +912,8 @@ def get_me(current_user: User = Depends(get_current_user)):
         email=current_user.email,
         name=current_user.name,
         profile_picture_url=current_user.profile_picture_url,
-        has_completed_screening=current_user.has_completed_screening
+        has_completed_screening=current_user.has_completed_screening,
+        is_guest=current_user.is_guest
     )
 
 @router.put("/me", response_model=UserOut)
@@ -932,7 +934,8 @@ def update_me(
         email=current_user.email,
         name=current_user.name,
         profile_picture_url=current_user.profile_picture_url,
-        has_completed_screening=current_user.has_completed_screening
+        has_completed_screening=current_user.has_completed_screening,
+        is_guest=current_user.is_guest
     )
 
 @router.get("/me/usage")
@@ -987,7 +990,8 @@ async def upload_profile_picture(
             email=current_user.email,
             name=current_user.name,
             profile_picture_url=current_user.profile_picture_url,
-            has_completed_screening=current_user.has_completed_screening
+            has_completed_screening=current_user.has_completed_screening,
+            is_guest=current_user.is_guest
         )
     except Exception as e:
         raise HTTPException(
