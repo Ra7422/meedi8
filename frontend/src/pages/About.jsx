@@ -126,6 +126,19 @@ export default function About() {
         <section style={styles.section}>
           <h2 style={styles.sectionHeading}>How It Works</h2>
 
+          {/* How It Works Video */}
+          <div style={styles.videoWrapper}>
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              style={styles.video}
+            >
+              <source src="/assets/videos/Meedi8_process.mp4" type="video/mp4" />
+              Your browser does not support video.
+            </video>
+          </div>
+
           {/* Interactive Cards Grid */}
           <div style={{
             ...styles.cardsGrid,
@@ -386,6 +399,7 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
     background: '#000',
+    marginBottom: '32px',
   },
   video: {
     width: '100%',
