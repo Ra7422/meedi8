@@ -121,12 +121,12 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     }
   }, [qrCode, qrCountdown, step]);
 
-  // Auto-initiate QR login when modal opens (if no session)
+  // Auto-initiate QR login when modal opens (if no session or session expired)
   useEffect(() => {
-    if (isOpen && !checkingSession && step === 0 && !qrCode && !sessionExpired && token) {
+    if (isOpen && !checkingSession && step === 0 && !qrCode && token) {
       handleInitiateQRLogin();
     }
-  }, [isOpen, checkingSession, step, qrCode, sessionExpired, token]);
+  }, [isOpen, checkingSession, step, qrCode, token]);
 
   const checkExistingSession = async () => {
     if (!token) {
@@ -141,11 +141,13 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         setStep(3);
         loadContacts();
       }
+      // If not connected, step stays at 0 and QR will auto-initiate
     } catch (err) {
-      // Check if this is a session expired error
-      if (err.message?.includes("expired") || err.message?.includes("not found") || err.status === 404) {
+      // Check if this is a session expired error - show warning but still allow QR
+      if (err.message?.includes("expired") || err.message?.includes("invalid") || err.status === 404) {
         setSessionExpired(true);
       }
+      // Step stays at 0, QR will auto-initiate
       console.error("Session check failed:", err);
     } finally {
       setCheckingSession(false);
