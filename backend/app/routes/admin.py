@@ -13,6 +13,8 @@ import io
 import csv
 import secrets
 import string
+import httpx
+import json
 
 from ..models.user import User
 from ..models.room import Room, Turn
@@ -1068,6 +1070,468 @@ def get_revenue_stats(
             "recent_payments": [],
             "error": str(e)
         }
+
+
+# ========================================
+# ENVIRONMENT VARIABLES MANAGEMENT
+# ========================================
+
+class EnvVarUpdateIn(BaseModel):
+    key: str
+    value: str
+    platform: str  # "vercel" or "railway"
+
+@router.get("/env-vars")
+async def get_env_vars(
+    current_user: User = Depends(get_current_user)
+):
+    """Get environment variables from Vercel and Railway"""
+    check_admin(current_user)
+
+    result = {
+        "vercel": {
+            "configured": bool(settings.VERCEL_TOKEN and settings.VERCEL_PROJECT_ID),
+            "variables": [],
+            "error": None
+        },
+        "railway": {
+            "configured": bool(settings.RAILWAY_TOKEN and settings.RAILWAY_PROJECT_ID),
+            "variables": [],
+            "error": None
+        }
+    }
+
+    # Fetch Vercel env vars
+    if settings.VERCEL_TOKEN and settings.VERCEL_PROJECT_ID:
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bearer {settings.VERCEL_TOKEN}"}
+                url = f"https://api.vercel.com/v9/projects/{settings.VERCEL_PROJECT_ID}/env"
+                if settings.VERCEL_TEAM_ID:
+                    url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.get(url, headers=headers)
+                if response.status_code == 200:
+                    data = response.json()
+                    # Mask sensitive values
+                    for env in data.get("envs", []):
+                        result["vercel"]["variables"].append({
+                            "id": env.get("id"),
+                            "key": env.get("key"),
+                            "value": mask_value(env.get("value", "")),
+                            "target": env.get("target", []),
+                            "type": env.get("type")
+                        })
+                else:
+                    result["vercel"]["error"] = f"API error: {response.status_code}"
+        except Exception as e:
+            result["vercel"]["error"] = str(e)
+
+    # Fetch Railway env vars
+    if settings.RAILWAY_TOKEN and settings.RAILWAY_PROJECT_ID:
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.RAILWAY_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                query = """
+                query($projectId: String!, $environmentId: String!, $serviceId: String!) {
+                    variables(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId)
+                }
+                """
+
+                response = await client.post(
+                    "https://backboard.railway.app/graphql/v2",
+                    headers=headers,
+                    json={
+                        "query": query,
+                        "variables": {
+                            "projectId": settings.RAILWAY_PROJECT_ID,
+                            "environmentId": settings.RAILWAY_ENVIRONMENT_ID,
+                            "serviceId": settings.RAILWAY_SERVICE_ID
+                        }
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if "data" in data and data["data"].get("variables"):
+                        # Railway returns variables as a dict {key: value}
+                        for key, value in data["data"]["variables"].items():
+                            result["railway"]["variables"].append({
+                                "key": key,
+                                "value": mask_value(value or ""),
+                                "id": key  # Railway uses key as ID
+                            })
+                    elif "errors" in data:
+                        result["railway"]["error"] = data["errors"][0].get("message", "Unknown error")
+                else:
+                    result["railway"]["error"] = f"API error: {response.status_code}"
+        except Exception as e:
+            result["railway"]["error"] = str(e)
+
+    return result
+
+
+def mask_value(value: str) -> str:
+    """Mask sensitive values, showing only first/last chars"""
+    if not value or len(value) < 8:
+        return "••••••••"
+    return value[:4] + "••••" + value[-4:]
+
+
+@router.put("/env-vars")
+async def update_env_var(
+    payload: EnvVarUpdateIn,
+    current_user: User = Depends(get_current_user)
+):
+    """Update an environment variable on Vercel or Railway"""
+    check_admin(current_user)
+
+    if payload.platform == "vercel":
+        if not settings.VERCEL_TOKEN or not settings.VERCEL_PROJECT_ID:
+            raise HTTPException(status_code=400, detail="Vercel not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.VERCEL_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                # First, check if variable exists
+                url = f"https://api.vercel.com/v9/projects/{settings.VERCEL_PROJECT_ID}/env"
+                if settings.VERCEL_TEAM_ID:
+                    url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.get(url, headers=headers)
+                existing = None
+                if response.status_code == 200:
+                    for env in response.json().get("envs", []):
+                        if env.get("key") == payload.key:
+                            existing = env
+                            break
+
+                if existing:
+                    # Update existing variable
+                    update_url = f"https://api.vercel.com/v9/projects/{settings.VERCEL_PROJECT_ID}/env/{existing['id']}"
+                    if settings.VERCEL_TEAM_ID:
+                        update_url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                    response = await client.patch(
+                        update_url,
+                        headers=headers,
+                        json={"value": payload.value}
+                    )
+                else:
+                    # Create new variable
+                    create_url = f"https://api.vercel.com/v10/projects/{settings.VERCEL_PROJECT_ID}/env"
+                    if settings.VERCEL_TEAM_ID:
+                        create_url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                    response = await client.post(
+                        create_url,
+                        headers=headers,
+                        json={
+                            "key": payload.key,
+                            "value": payload.value,
+                            "type": "encrypted",
+                            "target": ["production", "preview", "development"]
+                        }
+                    )
+
+                if response.status_code in [200, 201]:
+                    return {"status": "success", "message": f"Updated {payload.key} on Vercel"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Vercel API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    elif payload.platform == "railway":
+        if not settings.RAILWAY_TOKEN or not settings.RAILWAY_PROJECT_ID:
+            raise HTTPException(status_code=400, detail="Railway not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.RAILWAY_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                mutation = """
+                mutation($projectId: String!, $environmentId: String!, $serviceId: String!, $name: String!, $value: String!) {
+                    variableUpsert(input: {
+                        projectId: $projectId,
+                        environmentId: $environmentId,
+                        serviceId: $serviceId,
+                        name: $name,
+                        value: $value
+                    })
+                }
+                """
+
+                response = await client.post(
+                    "https://backboard.railway.app/graphql/v2",
+                    headers=headers,
+                    json={
+                        "query": mutation,
+                        "variables": {
+                            "projectId": settings.RAILWAY_PROJECT_ID,
+                            "environmentId": settings.RAILWAY_ENVIRONMENT_ID,
+                            "serviceId": settings.RAILWAY_SERVICE_ID,
+                            "name": payload.key,
+                            "value": payload.value
+                        }
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if "errors" in data:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=data["errors"][0].get("message", "Unknown error")
+                        )
+                    return {"status": "success", "message": f"Updated {payload.key} on Railway"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Railway API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid platform")
+
+
+@router.delete("/env-vars/{platform}/{key}")
+async def delete_env_var(
+    platform: str,
+    key: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete an environment variable from Vercel or Railway"""
+    check_admin(current_user)
+
+    if platform == "vercel":
+        if not settings.VERCEL_TOKEN or not settings.VERCEL_PROJECT_ID:
+            raise HTTPException(status_code=400, detail="Vercel not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {"Authorization": f"Bearer {settings.VERCEL_TOKEN}"}
+
+                # Find the variable ID
+                url = f"https://api.vercel.com/v9/projects/{settings.VERCEL_PROJECT_ID}/env"
+                if settings.VERCEL_TEAM_ID:
+                    url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.get(url, headers=headers)
+                env_id = None
+                if response.status_code == 200:
+                    for env in response.json().get("envs", []):
+                        if env.get("key") == key:
+                            env_id = env.get("id")
+                            break
+
+                if not env_id:
+                    raise HTTPException(status_code=404, detail="Variable not found")
+
+                # Delete the variable
+                delete_url = f"https://api.vercel.com/v9/projects/{settings.VERCEL_PROJECT_ID}/env/{env_id}"
+                if settings.VERCEL_TEAM_ID:
+                    delete_url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.delete(delete_url, headers=headers)
+
+                if response.status_code in [200, 204]:
+                    return {"status": "success", "message": f"Deleted {key} from Vercel"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Vercel API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    elif platform == "railway":
+        if not settings.RAILWAY_TOKEN or not settings.RAILWAY_PROJECT_ID:
+            raise HTTPException(status_code=400, detail="Railway not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.RAILWAY_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                mutation = """
+                mutation($projectId: String!, $environmentId: String!, $serviceId: String!, $name: String!) {
+                    variableDelete(input: {
+                        projectId: $projectId,
+                        environmentId: $environmentId,
+                        serviceId: $serviceId,
+                        name: $name
+                    })
+                }
+                """
+
+                response = await client.post(
+                    "https://backboard.railway.app/graphql/v2",
+                    headers=headers,
+                    json={
+                        "query": mutation,
+                        "variables": {
+                            "projectId": settings.RAILWAY_PROJECT_ID,
+                            "environmentId": settings.RAILWAY_ENVIRONMENT_ID,
+                            "serviceId": settings.RAILWAY_SERVICE_ID,
+                            "name": key
+                        }
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if "errors" in data:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=data["errors"][0].get("message", "Unknown error")
+                        )
+                    return {"status": "success", "message": f"Deleted {key} from Railway"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Railway API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid platform")
+
+
+@router.post("/env-vars/redeploy/{platform}")
+async def trigger_redeploy(
+    platform: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Trigger a redeployment on Vercel or Railway"""
+    check_admin(current_user)
+
+    if platform == "vercel":
+        if not settings.VERCEL_TOKEN or not settings.VERCEL_PROJECT_ID:
+            raise HTTPException(status_code=400, detail="Vercel not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.VERCEL_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                # Get the latest deployment to redeploy
+                url = f"https://api.vercel.com/v6/deployments?projectId={settings.VERCEL_PROJECT_ID}&limit=1"
+                if settings.VERCEL_TEAM_ID:
+                    url += f"&teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.get(url, headers=headers)
+
+                if response.status_code != 200:
+                    raise HTTPException(status_code=response.status_code, detail="Failed to get deployments")
+
+                deployments = response.json().get("deployments", [])
+                if not deployments:
+                    raise HTTPException(status_code=404, detail="No deployments found")
+
+                # Redeploy the latest
+                redeploy_url = "https://api.vercel.com/v13/deployments"
+                if settings.VERCEL_TEAM_ID:
+                    redeploy_url += f"?teamId={settings.VERCEL_TEAM_ID}"
+
+                response = await client.post(
+                    redeploy_url,
+                    headers=headers,
+                    json={
+                        "name": deployments[0].get("name"),
+                        "deploymentId": deployments[0].get("uid"),
+                        "target": "production"
+                    }
+                )
+
+                if response.status_code in [200, 201]:
+                    return {"status": "success", "message": "Vercel redeployment triggered"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Vercel API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    elif platform == "railway":
+        if not settings.RAILWAY_TOKEN or not settings.RAILWAY_SERVICE_ID:
+            raise HTTPException(status_code=400, detail="Railway not configured")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {settings.RAILWAY_TOKEN}",
+                    "Content-Type": "application/json"
+                }
+
+                mutation = """
+                mutation($serviceId: String!) {
+                    serviceInstanceRedeploy(serviceId: $serviceId)
+                }
+                """
+
+                response = await client.post(
+                    "https://backboard.railway.app/graphql/v2",
+                    headers=headers,
+                    json={
+                        "query": mutation,
+                        "variables": {
+                            "serviceId": settings.RAILWAY_SERVICE_ID
+                        }
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    if "errors" in data:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=data["errors"][0].get("message", "Unknown error")
+                        )
+                    return {"status": "success", "message": "Railway redeployment triggered"}
+                else:
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=f"Railway API error: {response.text}"
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid platform")
 
 
 # ========================================

@@ -22,6 +22,26 @@ class Settings(BaseSettings):
     # Cloudflare Turnstile
     TURNSTILE_SECRET_KEY: str = ""
 
+    # Vercel/Railway API tokens for env var management
+    VERCEL_TOKEN: str = ""
+    VERCEL_PROJECT_ID: str = ""
+    VERCEL_TEAM_ID: str = ""  # Optional, for team projects
+    RAILWAY_TOKEN: str = ""
+    RAILWAY_PROJECT_ID: str = ""
+    RAILWAY_ENVIRONMENT_ID: str = ""
+    RAILWAY_SERVICE_ID: str = ""
+
+    # Gemini
+    GEMINI_API_KEY: str = ""
+
+    # SendGrid
+    SENDGRID_API_KEY: str = ""
+
+    # AWS
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_S3_BUCKET: str = ""
+
     # Stripe Price IDs (Test Mode)
     STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST4GSIFSfYvttlAuK48AVkK"
     STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST4HPIFSfYvttlA7wcumfd8"
