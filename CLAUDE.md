@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **[cli/README.md](cli/README.md)** - Documentation index and quick reference
 - **[cli/STATUS.md](cli/STATUS.md)** - Current project status and recent updates
 - **[cli/TODO.md](cli/TODO.md)** - Active tasks, blockers, and priorities
+- **[cli/ADMIN_DASHBOARD_TODO.md](cli/ADMIN_DASHBOARD_TODO.md)** - Admin dashboard enhancement tasks
 
 ### Development Guides
 - **[cli/DEVELOPMENT.md](cli/DEVELOPMENT.md)** - Local setup, commands, and workflows
