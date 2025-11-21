@@ -143,6 +143,7 @@ export default function About() {
           <div style={{
             ...styles.cardsGrid,
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+            alignItems: 'start',
           }}>
             {howItWorksSteps.map((step, index) => {
               const isActive = activeStep === index;
@@ -151,8 +152,14 @@ export default function About() {
                   key={index}
                   style={{
                     ...styles.interactiveCard,
-                    ...(isActive && styles.interactiveCardActive),
+                    backgroundColor: isActive ? 'rgba(125, 211, 192, 0.08)' : 'white',
                     transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
+                    boxShadow: isActive
+                      ? '0 8px 24px rgba(125, 211, 192, 0.25)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.06)',
+                    border: isActive
+                      ? '1px solid rgba(125, 211, 192, 0.4)'
+                      : '1px solid transparent',
                   }}
                   onMouseEnter={() => !isMobile && setActiveStep(index)}
                   onMouseLeave={() => !isMobile && setActiveStep(null)}
@@ -168,10 +175,11 @@ export default function About() {
                   {/* Expandable Description */}
                   <div style={{
                     ...styles.cardDescription,
-                    maxHeight: isActive ? '200px' : '0',
+                    maxHeight: isActive ? '300px' : '0',
                     opacity: isActive ? 1 : 0,
                     marginTop: isActive ? '12px' : '0',
                     paddingTop: isActive ? '12px' : '0',
+                    borderTop: isActive ? '1px solid #E5E7EB' : 'none',
                   }}>
                     <p style={styles.descriptionText}>{step.description}</p>
                   </div>
@@ -427,10 +435,6 @@ const styles = {
     position: 'relative',
     overflow: 'hidden',
   },
-  interactiveCardActive: {
-    boxShadow: '0 8px 24px rgba(125, 211, 192, 0.2)',
-    border: '1px solid rgba(125, 211, 192, 0.3)',
-  },
   cardHeader: {
     display: 'flex',
     flexDirection: 'column',
@@ -465,7 +469,6 @@ const styles = {
   cardDescription: {
     overflow: 'hidden',
     transition: 'all 0.3s ease',
-    borderTop: '1px solid #E5E7EB',
   },
   descriptionText: {
     fontSize: 'clamp(11px, 2vw, 13px)',
