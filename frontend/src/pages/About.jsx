@@ -225,7 +225,10 @@ export default function About() {
             principles guide everything we do:
           </p>
 
-          <div style={styles.principlesList}>
+          <div style={{
+            ...styles.principlesList,
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          }}>
             {ethicalPrinciples.map((principle, index) => (
               <div key={index} style={styles.principleCard}>
                 <h3 style={styles.principleTitle}>{principle.title}</h3>
@@ -482,29 +485,29 @@ const styles = {
   // Ethical Principles
   principlesList: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '24px',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '16px',
     marginTop: '32px',
   },
   principleCard: {
     backgroundColor: 'white',
-    padding: '24px',
+    padding: '16px',
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     transition: 'transform 0.2s, box-shadow 0.2s',
   },
   principleTitle: {
-    fontSize: 'clamp(20px, 4vw, 24px)',
+    fontSize: 'clamp(14px, 3vw, 16px)',
     fontWeight: '700',
     color: '#B8A7E5',
     lineHeight: '1.3',
-    margin: '0 0 12px 0',
+    margin: '0 0 8px 0',
   },
   principleDescription: {
-    fontSize: 'clamp(14px, 3vw, 16px)',
+    fontSize: 'clamp(11px, 2vw, 13px)',
     fontWeight: '400',
     color: '#6B7280',
-    lineHeight: '1.6',
+    lineHeight: '1.5',
     margin: 0,
   },
 
