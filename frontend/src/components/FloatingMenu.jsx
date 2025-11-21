@@ -231,14 +231,24 @@ export default function FloatingMenu({
               padding: "20px",
               borderBottom: "1px solid #e5e7eb"
             }}>
-              <p style={{
-                margin: 0,
-                fontSize: "14px",
-                color: "#6b7280",
-                fontWeight: "500"
-              }}>
-                {user?.name || user?.email}
-              </p>
+              {user ? (
+                <p style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  color: "#6b7280",
+                  fontWeight: "500"
+                }}>
+                  {user.name || user.email}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <img
+                    src="/assets/logo/meedi8-logo.png"
+                    alt="Meedi8"
+                    style={{ height: '40px', width: 'auto' }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Menu Items */}
