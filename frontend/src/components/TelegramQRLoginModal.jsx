@@ -13,12 +13,7 @@ import { apiRequest } from "../api/client";
  */
 export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }) {
   // Step state
-  const [step, setStep] = useState(0); // 0: QR+phone, 2: code
-
-  // Form inputs
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
+  const [step, setStep] = useState(0); // 0: QR code
 
   // QR login state
   const [qrCode, setQrCode] = useState(null);
@@ -30,22 +25,17 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [needsPassword, setNeedsPassword] = useState(false);
 
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep(0);
-      setPhoneNumber("");
-      setCode("");
-      setPassword("");
       setQrCode(null);
       setQrLoginId(null);
       setQrStatus(null);
       setQr2FAPassword("");
       setQrCountdown(30);
       setError("");
-      setNeedsPassword(false);
       // Auto-initiate QR login
       handleInitiateQRLogin();
     }
@@ -56,7 +46,7 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
     if (qrLoginId && step === 0 && qrStatus !== 'success' && qrStatus !== '2fa_required') {
       const interval = setInterval(async () => {
         try {
-          const response = await apiRequest(`/telegram/qr-login/status/${qrLoginId}`, "GET");
+          const response = await apiRequest(`/auth/telegram-qr/status/${qrLoginId}`, "GET");
           setQrStatus(response.status);
 
           if (response.status === 'success') {
@@ -90,7 +80,7 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
     setQrStatus(null);
 
     try {
-      const response = await apiRequest("/telegram/qr-login/initiate", "POST");
+      const response = await apiRequest("/auth/telegram-qr/initiate", "POST");
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
       setQrCountdown(30);
@@ -111,23 +101,19 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
       if (qrLoginId) {
         // Try to refresh the existing QR code first
         try {
-          const response = await apiRequest(`/telegram/qr-login/refresh/${qrLoginId}`, "POST");
+          const response = await apiRequest(`/auth/telegram-qr/refresh/${qrLoginId}`, "POST");
           setQrCode(response.qr_code);
+          setQrLoginId(response.login_id);
           setQrCountdown(30);
           setLoading(false);
           return;
         } catch (e) {
           // If refresh fails, fall back to creating new
-          try {
-            await apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE");
-          } catch (deleteErr) {
-            // Ignore cleanup errors
-          }
         }
       }
 
       // Create new QR login session
-      const response = await apiRequest("/telegram/qr-login/initiate", "POST");
+      const response = await apiRequest("/auth/telegram-qr/initiate", "POST");
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
       setQrCountdown(30);
@@ -148,7 +134,7 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
     setError("");
 
     try {
-      await apiRequest(`/telegram/qr-login/2fa/${qrLoginId}`, "POST", {
+      await apiRequest(`/auth/telegram-qr/2fa/${qrLoginId}`, "POST", {
         password: qr2FAPassword
       });
 
@@ -156,55 +142,6 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
       handleFinalizeLogin();
     } catch (err) {
       setError(err.message || "Invalid 2FA password");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendCode = async () => {
-    if (!phoneNumber.trim()) {
-      setError("Please enter phone number");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await apiRequest("/telegram/connect", "POST", { phone_number: phoneNumber });
-      setStep(2);
-    } catch (err) {
-      setError(err.message || "Failed to send code");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!code.trim()) {
-      setError("Please enter code");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await apiRequest("/telegram/verify", "POST", {
-        phone_number: phoneNumber,
-        code: code,
-        password: needsPassword ? password : undefined
-      });
-
-      // Verification complete, finalize login
-      handleFinalizeLogin();
-    } catch (err) {
-      if (err.message?.includes("Password required")) {
-        setNeedsPassword(true);
-        setError("2FA enabled. Enter password");
-      } else {
-        setError(err.message || "Invalid code");
-      }
     } finally {
       setLoading(false);
     }
@@ -481,126 +418,8 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
                     </div>
                   )}
 
-                  {/* Divider */}
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    margin: "12px 0",
-                    gap: "8px"
-                  }}>
-                    <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-                    <span style={{ fontSize: "10px", color: "#8A8A8F" }}>or use phone number</span>
-                    <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-                  </div>
-
-                  {/* Phone Number Input */}
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+44 7123456789"
-                    disabled={loading}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      fontSize: "13px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      marginBottom: "10px",
-                      outline: "none",
-                      boxSizing: "border-box"
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = "#0088CC"}
-                    onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
-                  />
-                  <button
-                    onClick={handleSendCode}
-                    disabled={loading || !phoneNumber.trim()}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      color: "white",
-                      background: loading || !phoneNumber.trim() ? "#d1d5db" : "#0088CC",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: loading || !phoneNumber.trim() ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    {loading ? "Sending..." : "Send Code"}
-                  </button>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Step 2: Verification Code */}
-          {step === 2 && (
-            <div>
-              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
-                Enter Verification Code
-              </h3>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="12345"
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  fontSize: "13px",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  marginBottom: "10px",
-                  outline: "none",
-                  boxSizing: "border-box"
-                }}
-                onFocus={(e) => e.target.style.borderColor = "#0088CC"}
-                onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-                onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
-              />
-              {needsPassword && (
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="2FA Password"
-                  disabled={loading}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    fontSize: "13px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    marginBottom: "10px",
-                    outline: "none",
-                    boxSizing: "border-box"
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#0088CC"}
-                  onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-                  onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
-                />
-              )}
-              <button
-                onClick={handleVerifyCode}
-                disabled={loading || !code.trim() || (needsPassword && !password.trim())}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color: "white",
-                  background: loading || !code.trim() ? "#d1d5db" : "#0088CC",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: loading || !code.trim() ? "not-allowed" : "pointer"
-                }}
-              >
-                {loading ? "Verifying..." : "Verify"}
-              </button>
             </div>
           )}
         </div>

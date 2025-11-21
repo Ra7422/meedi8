@@ -445,6 +445,257 @@ async def telegram_login(payload: TelegramAuthIn, db: Session = Depends(get_db))
     token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return TokenOut(access_token=token)
 
+# ===== Unauthenticated QR Login Endpoints for Auth Flow =====
+# These endpoints don't require a logged-in user - used on the login page
+
+# In-memory storage for pending QR logins (keyed by login_id)
+import asyncio
+pending_auth_qr_logins = {}  # {login_id: (client, qr_login, status)}
+
+class QRAuthInitiateResponse(BaseModel):
+    success: bool
+    login_id: str
+    qr_code: str
+    message: str
+
+class QRAuthStatusResponse(BaseModel):
+    status: str  # 'waiting', 'success', '2fa_required', 'expired'
+    message: str
+    needs_password: bool = False
+
+class QRAuth2FARequest(BaseModel):
+    password: str
+
+class QRAuth2FAResponse(BaseModel):
+    success: bool
+    message: str
+
+async def auth_qr_login_waiter(login_id: str, client, qr_login):
+    """Background task to wait for QR scan and update status"""
+    from telethon.errors import SessionPasswordNeededError
+    try:
+        await asyncio.wait_for(qr_login.wait(), timeout=300)
+        if login_id in pending_auth_qr_logins:
+            client, qr, status = pending_auth_qr_logins[login_id]
+            pending_auth_qr_logins[login_id] = (client, qr, 'success')
+    except asyncio.TimeoutError:
+        if login_id in pending_auth_qr_logins:
+            del pending_auth_qr_logins[login_id]
+    except SessionPasswordNeededError:
+        if login_id in pending_auth_qr_logins:
+            client, qr, status = pending_auth_qr_logins[login_id]
+            pending_auth_qr_logins[login_id] = (client, qr, '2fa_required')
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in auth_qr_login_waiter: {e}")
+        if login_id in pending_auth_qr_logins:
+            del pending_auth_qr_logins[login_id]
+
+@router.post("/telegram-qr/initiate", response_model=QRAuthInitiateResponse)
+async def initiate_auth_qr_login():
+    """
+    Initiate QR code login for authentication (no auth required).
+    Used on the login page before user has an account.
+    """
+    from ..services.telegram_service import TelegramService
+
+    try:
+        # Initiate QR login
+        qr_url, login_id, client, qr_login = await TelegramService.initiate_qr_login()
+
+        # Store in pending logins with 'waiting' status
+        pending_auth_qr_logins[login_id] = (client, qr_login, 'waiting')
+
+        # Start background task to wait for login completion
+        asyncio.create_task(auth_qr_login_waiter(login_id, client, qr_login))
+
+        # Generate QR code image
+        qr_code = TelegramService.generate_qr_code_base64(qr_url)
+
+        return QRAuthInitiateResponse(
+            success=True,
+            login_id=login_id,
+            qr_code=qr_code,
+            message="Scan QR code with Telegram app"
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-qr/initiate: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initiate QR login"
+        )
+
+@router.get("/telegram-qr/status/{login_id}", response_model=QRAuthStatusResponse)
+async def check_auth_qr_status(login_id: str, db: Session = Depends(get_db)):
+    """
+    Check status of QR login attempt (no auth required).
+    Poll this endpoint every 2-3 seconds.
+    """
+    from ..services.telegram_service import TelegramService
+    from ..models.telegram import TelegramSession
+
+    try:
+        if login_id not in pending_auth_qr_logins:
+            return QRAuthStatusResponse(
+                status='expired',
+                message='QR code expired. Please generate a new one.',
+                needs_password=False
+            )
+
+        client, qr_login, login_status = pending_auth_qr_logins[login_id]
+
+        if login_status == 'success':
+            # Finalize login - save session without user_id (will be linked later)
+            session_string = client.session.save()
+            encrypted_session = TelegramService.encrypt_session(session_string)
+
+            # Get phone number
+            me = await client.get_me()
+            phone_number = me.phone or "QR Login"
+
+            # Create TelegramSession without user_id
+            telegram_session = TelegramSession(
+                user_id=None,  # Will be set when /telegram-qr is called
+                encrypted_session=encrypted_session,
+                phone_number=phone_number,
+                is_active=True
+            )
+            db.add(telegram_session)
+            db.commit()
+
+            await client.disconnect()
+            del pending_auth_qr_logins[login_id]
+
+            return QRAuthStatusResponse(
+                status='success',
+                message='Connected successfully',
+                needs_password=False
+            )
+
+        elif login_status == '2fa_required':
+            return QRAuthStatusResponse(
+                status='2fa_required',
+                message='Two-factor authentication required',
+                needs_password=True
+            )
+
+        else:  # 'waiting'
+            return QRAuthStatusResponse(
+                status='waiting',
+                message='Waiting for QR code scan...',
+                needs_password=False
+            )
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-qr/status/{login_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to check QR login status"
+        )
+
+@router.post("/telegram-qr/2fa/{login_id}", response_model=QRAuth2FAResponse)
+async def complete_auth_qr_2fa(login_id: str, payload: QRAuth2FARequest, db: Session = Depends(get_db)):
+    """
+    Complete QR login with 2FA password (no auth required).
+    """
+    from ..services.telegram_service import TelegramService
+    from ..models.telegram import TelegramSession
+
+    try:
+        if login_id not in pending_auth_qr_logins:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="QR login session not found or expired"
+            )
+
+        client, qr_login, _ = pending_auth_qr_logins[login_id]
+
+        # Sign in with 2FA password
+        await client.sign_in(password=payload.password)
+
+        # Save session
+        session_string = client.session.save()
+        encrypted_session = TelegramService.encrypt_session(session_string)
+
+        # Get phone number
+        me = await client.get_me()
+        phone_number = me.phone or "QR Login"
+
+        # Create TelegramSession without user_id
+        telegram_session = TelegramSession(
+            user_id=None,
+            encrypted_session=encrypted_session,
+            phone_number=phone_number,
+            is_active=True
+        )
+        db.add(telegram_session)
+        db.commit()
+
+        await client.disconnect()
+        del pending_auth_qr_logins[login_id]
+
+        return QRAuth2FAResponse(
+            success=True,
+            message='Connected successfully'
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-qr/2fa/{login_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid 2FA password"
+        )
+
+@router.post("/telegram-qr/refresh/{login_id}", response_model=QRAuthInitiateResponse)
+async def refresh_auth_qr(login_id: str):
+    """
+    Refresh an expired QR code (no auth required).
+    """
+    from ..services.telegram_service import TelegramService
+
+    try:
+        # Clean up old session if exists
+        if login_id in pending_auth_qr_logins:
+            client, _, _ = pending_auth_qr_logins[login_id]
+            try:
+                await client.disconnect()
+            except:
+                pass
+            del pending_auth_qr_logins[login_id]
+
+        # Create new QR login
+        qr_url, new_login_id, client, qr_login = await TelegramService.initiate_qr_login()
+
+        pending_auth_qr_logins[new_login_id] = (client, qr_login, 'waiting')
+        asyncio.create_task(auth_qr_login_waiter(new_login_id, client, qr_login))
+
+        qr_code = TelegramService.generate_qr_code_base64(qr_url)
+
+        return QRAuthInitiateResponse(
+            success=True,
+            login_id=new_login_id,
+            qr_code=qr_code,
+            message="Scan QR code with Telegram app"
+        )
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-qr/refresh: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh QR code"
+        )
+
 @router.post("/telegram-qr", response_model=TokenOut)
 async def telegram_qr_login(db: Session = Depends(get_db)):
     """
