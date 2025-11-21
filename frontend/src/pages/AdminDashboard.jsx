@@ -42,6 +42,12 @@ export default function AdminDashboard() {
   const [aiCosts, setAiCosts] = useState(null);
   const [aiCostDetails, setAiCostDetails] = useState([]);
 
+  // Error logs
+  const [errorLogs, setErrorLogs] = useState([]);
+  const [errorLogsUnresolved, setErrorLogsUnresolved] = useState(0);
+  const [errorLogsFilter, setErrorLogsFilter] = useState("all"); // all, unresolved, resolved
+  const [expandedErrorId, setExpandedErrorId] = useState(null);
+
   // Date range for analytics
   const [dateRangePreset, setDateRangePreset] = useState("30d");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -160,8 +166,8 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
-      // Fetch email templates, system health, and AI costs
-      const [templatesRes, healthRes, aiCostsRes] = await Promise.all([
+      // Fetch email templates, system health, AI costs, and error logs
+      const [templatesRes, healthRes, aiCostsRes, errorLogsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -171,11 +177,15 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/ai-costs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/error-logs`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
       const healthData = healthRes.ok ? await healthRes.json() : null;
       const aiCostsData = aiCostsRes.ok ? await aiCostsRes.json() : null;
+      const errorLogsData = errorLogsRes.ok ? await errorLogsRes.json() : { logs: [], unresolved_count: 0 };
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -188,11 +198,45 @@ export default function AdminDashboard() {
       setEmailTemplates(templatesData.templates || {});
       setSystemHealth(healthData);
       setAiCosts(aiCostsData);
+      setErrorLogs(errorLogsData.logs || []);
+      setErrorLogsUnresolved(errorLogsData.unresolved_count || 0);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResolveError = async (errorId) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/error-logs/${errorId}/resolve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setErrorLogs(prev =>
+          prev.map(log =>
+            log.id === errorId ? { ...log, resolved: true } : log
+          )
+        );
+        setErrorLogsUnresolved(data.unresolved_count);
+      } else {
+        throw new Error("Failed to resolve error");
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const getFilteredErrorLogs = () => {
+    if (errorLogsFilter === "unresolved") {
+      return errorLogs.filter(log => !log.resolved);
+    } else if (errorLogsFilter === "resolved") {
+      return errorLogs.filter(log => log.resolved);
+    }
+    return errorLogs;
   };
 
   const handleSearch = async () => {
@@ -579,6 +623,13 @@ export default function AdminDashboard() {
             active={activeTab === "ai-costs"}
             onClick={() => setActiveTab("ai-costs")}
           />
+          <SidebarItemWithBadge
+            icon="⚠"
+            label="Error Logs"
+            active={activeTab === "errors"}
+            onClick={() => setActiveTab("errors")}
+            badge={errorLogsUnresolved}
+          />
           <SidebarItem
             icon="⚑"
             label="Feature Flags"
@@ -646,6 +697,7 @@ export default function AdminDashboard() {
             {activeTab === "activity" && "Activity Logs"}
             {activeTab === "revenue" && "Revenue Reporting"}
             {activeTab === "ai-costs" && "AI Cost Tracking"}
+            {activeTab === "errors" && "Error Logs"}
             {activeTab === "flags" && "Feature Flags"}
             {activeTab === "webhooks" && "Webhook Logs"}
             {activeTab === "emails" && "Email Templates"}
@@ -1753,6 +1805,224 @@ export default function AdminDashboard() {
             </>
           )}
 
+          {/* Error Logs Tab */}
+          {activeTab === "errors" && (
+            <>
+              {/* Stats Row */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+                marginBottom: "24px",
+              }}>
+                <StatCard
+                  title="Unresolved Errors"
+                  value={errorLogsUnresolved}
+                  color="#EF4444"
+                  icon="⚠"
+                />
+                <StatCard
+                  title="Total Errors"
+                  value={errorLogs.length}
+                  color="#6B7280"
+                  icon="◇"
+                />
+              </div>
+
+              {/* Filter Bar */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                marginBottom: "24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>Filter:</span>
+                {[
+                  { value: "all", label: "All" },
+                  { value: "unresolved", label: "Unresolved" },
+                  { value: "resolved", label: "Resolved" },
+                ].map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() => setErrorLogsFilter(filter.value)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: errorLogsFilter === filter.value ? "#EF4444" : "#f3f4f6",
+                      color: errorLogsFilter === filter.value ? "white" : "#4B5563",
+                      fontSize: "13px",
+                      fontWeight: errorLogsFilter === filter.value ? "600" : "400",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {filter.label}
+                    {filter.value === "unresolved" && errorLogsUnresolved > 0 && (
+                      <span style={{
+                        marginLeft: "6px",
+                        background: errorLogsFilter === filter.value ? "rgba(255,255,255,0.3)" : "#EF4444",
+                        color: "white",
+                        padding: "2px 6px",
+                        borderRadius: "10px",
+                        fontSize: "11px",
+                      }}>
+                        {errorLogsUnresolved}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Error Logs Table */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}>
+                <div style={{ overflowX: "auto", maxHeight: "600px", overflowY: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead style={{ position: "sticky", top: 0, background: "white" }}>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={thStyle}>Time</th>
+                        <th style={thStyle}>Type</th>
+                        <th style={thStyle}>Message</th>
+                        <th style={thStyle}>Endpoint</th>
+                        <th style={thStyle}>User</th>
+                        <th style={thStyle}>Status</th>
+                        <th style={thStyle}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getFilteredErrorLogs().map((log) => (
+                        <React.Fragment key={log.id}>
+                          <tr
+                            style={{
+                              borderBottom: expandedErrorId === log.id ? "none" : "1px solid #e5e7eb",
+                              background: log.severity === "warning" ? "#FEF3C720" : (log.resolved ? "#f9fafb" : "#FEE2E210"),
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setExpandedErrorId(expandedErrorId === log.id ? null : log.id)}
+                          >
+                            <td style={tdStyle}>
+                              <span style={{ fontSize: "12px", color: "#6B7280" }}>
+                                {new Date(log.timestamp).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{
+                                padding: "2px 8px",
+                                borderRadius: "4px",
+                                background: log.severity === "error" ? "#FEE2E2" : "#FEF3C7",
+                                color: log.severity === "error" ? "#EF4444" : "#F59E0B",
+                                fontSize: "11px",
+                                fontWeight: "600",
+                              }}>
+                                {log.error_type}
+                              </span>
+                            </td>
+                            <td style={{ ...tdStyle, maxWidth: "300px" }}>
+                              <div style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}>
+                                {log.message}
+                              </div>
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                                {log.method} {log.endpoint}
+                              </span>
+                            </td>
+                            <td style={tdStyle}>
+                              {log.user_id || "-"}
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{
+                                padding: "2px 8px",
+                                borderRadius: "12px",
+                                background: log.resolved ? "#DCFCE7" : "#FEE2E2",
+                                color: log.resolved ? "#166534" : "#EF4444",
+                                fontSize: "11px",
+                              }}>
+                                {log.resolved ? "Resolved" : "Unresolved"}
+                              </span>
+                            </td>
+                            <td style={tdStyle}>
+                              {!log.resolved && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleResolveError(log.id);
+                                  }}
+                                  style={{
+                                    background: "#10B981",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    fontSize: "11px",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  Mark Resolved
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                          {/* Expanded Stack Trace Row */}
+                          {expandedErrorId === log.id && (
+                            <tr style={{ background: "#f9fafb" }}>
+                              <td colSpan="7" style={{ padding: "16px" }}>
+                                <div style={{ marginBottom: "12px" }}>
+                                  <strong style={{ color: "#4B5563", fontSize: "13px" }}>Request ID:</strong>
+                                  <span style={{ marginLeft: "8px", fontFamily: "monospace", fontSize: "12px", color: "#6B7280" }}>
+                                    {log.request_id}
+                                  </span>
+                                </div>
+                                <div>
+                                  <strong style={{ color: "#4B5563", fontSize: "13px" }}>Stack Trace:</strong>
+                                  <pre style={{
+                                    background: "#1a1a1a",
+                                    color: "#f0f0f0",
+                                    padding: "12px",
+                                    borderRadius: "8px",
+                                    fontSize: "11px",
+                                    fontFamily: "monospace",
+                                    overflow: "auto",
+                                    maxHeight: "300px",
+                                    marginTop: "8px",
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                  }}>
+                                    {log.stack_trace}
+                                  </pre>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                      {getFilteredErrorLogs().length === 0 && (
+                        <tr>
+                          <td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "#6B7280" }}>
+                            No error logs found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Feature Flags Tab */}
           {activeTab === "flags" && (
             <div style={{
@@ -2421,6 +2691,48 @@ function SidebarItem({ icon, label, active, onClick }) {
     >
       <span>{icon}</span>
       <span>{label}</span>
+    </button>
+  );
+}
+
+function SidebarItemWithBadge({ icon, label, active, onClick, badge }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "12px 20px",
+        background: active ? "#333" : "transparent",
+        color: active ? "white" : "#9ca3af",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "14px",
+        textAlign: "left",
+        borderLeft: active ? "3px solid #EF4444" : "3px solid transparent",
+        position: "relative",
+      }}
+    >
+      <span style={{ color: badge > 0 ? "#EF4444" : "inherit" }}>{icon}</span>
+      <span>{label}</span>
+      {badge > 0 && (
+        <span style={{
+          position: "absolute",
+          right: "12px",
+          background: "#EF4444",
+          color: "white",
+          fontSize: "10px",
+          fontWeight: "700",
+          padding: "2px 6px",
+          borderRadius: "10px",
+          minWidth: "18px",
+          textAlign: "center",
+        }}>
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </button>
   );
 }

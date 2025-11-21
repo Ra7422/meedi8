@@ -1792,6 +1792,10 @@ def get_system_health(
     """Get system health metrics"""
     check_admin(current_user)
 
+    # Import error log store for unresolved count in system health
+    from ..main import error_log_store
+    unresolved_errors = error_log_store.get_unresolved_count()
+
     import sys
 
     # Try to import psutil, but gracefully handle if not available
@@ -1857,4 +1861,72 @@ def get_system_health(
         "status": "ok" if settings.ANTHROPIC_API_KEY else "not_configured"
     }
 
+    # Add unresolved errors count
+    health["unresolved_errors"] = unresolved_errors
+
     return health
+
+
+# ========================================
+# ERROR LOGS
+# ========================================
+
+@router.get("/error-logs")
+def get_error_logs(
+    current_user: User = Depends(get_current_user),
+    severity: Optional[str] = None,
+    resolved: Optional[bool] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get error logs with optional filtering"""
+    check_admin(current_user)
+
+    from ..main import error_log_store
+
+    logs = error_log_store.get_logs(
+        severity=severity,
+        resolved=resolved,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    return {
+        "logs": logs,
+        "total": len(logs),
+        "unresolved_count": error_log_store.get_unresolved_count()
+    }
+
+
+@router.post("/error-logs/{error_id}/resolve")
+def resolve_error_log(
+    error_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark an error as resolved"""
+    check_admin(current_user)
+
+    from ..main import error_log_store
+
+    if error_log_store.resolve_error(error_id):
+        return {
+            "status": "success",
+            "error_id": error_id,
+            "unresolved_count": error_log_store.get_unresolved_count()
+        }
+    else:
+        raise HTTPException(status_code=404, detail="Error log not found")
+
+
+@router.get("/error-logs/count")
+def get_error_logs_count(
+    current_user: User = Depends(get_current_user)
+):
+    """Get count of unresolved errors (for badge display)"""
+    check_admin(current_user)
+
+    from ..main import error_log_store
+
+    return {
+        "unresolved_count": error_log_store.get_unresolved_count()
+    }
