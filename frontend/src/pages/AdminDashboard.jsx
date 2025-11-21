@@ -56,28 +56,28 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const [usersRes, settingsRes, roomsRes, analyticsRes, activityRes, revenueRes, flagsRes, webhooksRes] = await Promise.all([
-        fetch(`${API_URL}/admin/users/`, {
+        fetch(`${API_URL}/admin/users`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/settings/`, {
+        fetch(`${API_URL}/admin/settings`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/rooms/`, {
+        fetch(`${API_URL}/admin/rooms`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/analytics/`, {
+        fetch(`${API_URL}/admin/analytics`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/activity-logs/`, {
+        fetch(`${API_URL}/admin/activity-logs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/revenue/`, {
+        fetch(`${API_URL}/admin/revenue`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/feature-flags/`, {
+        fetch(`${API_URL}/admin/feature-flags`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/webhook-logs/`, {
+        fetch(`${API_URL}/admin/webhook-logs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);
@@ -102,13 +102,13 @@ export default function AdminDashboard() {
 
       // Fetch email templates, system health, and AI costs
       const [templatesRes, healthRes, aiCostsRes] = await Promise.all([
-        fetch(`${API_URL}/admin/email-templates/`, {
+        fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/system-health/`, {
+        fetch(`${API_URL}/admin/system-health`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/ai-costs/`, {
+        fetch(`${API_URL}/admin/ai-costs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
       ]);
