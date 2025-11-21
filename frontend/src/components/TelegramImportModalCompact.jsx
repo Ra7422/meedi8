@@ -302,7 +302,15 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
 
       setHasMoreContacts((response.contacts || []).length >= currentLimit);
     } catch (err) {
-      setError(err.message || "Failed to load contacts");
+      const errorMsg = err.message || "Failed to load contacts";
+      // Check if session expired
+      if (errorMsg.includes("expired") || errorMsg.includes("invalid") || err.status === 404) {
+        setSessionExpired(true);
+        setStep(0); // Go back to QR code step
+        setError("");
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
