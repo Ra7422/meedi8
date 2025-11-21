@@ -56,9 +56,10 @@ function PrivateRoute({ children }) {
 function GlobalMenu() {
   const location = useLocation();
 
-  // Hide FloatingMenu on login, signup, email verification, onboarding, chat pages, waiting room, and demo pages
+  // Hide FloatingMenu on login, signup, email verification, onboarding, chat pages, waiting room, demo pages, and admin pages
   const hideMenu = ['/login', '/signup', '/verify-email', '/onboarding'].includes(location.pathname) ||
                    location.pathname.startsWith('/join/') ||
+                   location.pathname.startsWith('/admin') ||
                    location.pathname.includes('/coaching/') ||
                    location.pathname.includes('/solo/') ||
                    location.pathname.includes('/main-room/') ||
