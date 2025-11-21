@@ -391,7 +391,11 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   }
 
   return (
-    <ModalWrapper onClose={onClose}>
+    <ModalWrapper
+      onClose={onClose}
+      onRefresh={handleRefreshQR}
+      showRefresh={step === 0 && !qrLoading}
+    >
       {/* Fixed Download Progress Indicator */}
       {downloadId && (
         <div style={{
@@ -929,7 +933,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
 }
 
 // Modal Wrapper Component
-function ModalWrapper({ children, onClose }) {
+function ModalWrapper({ children, onClose, onRefresh, showRefresh }) {
   return (
     <div style={{
       position: "fixed",
@@ -954,6 +958,48 @@ function ModalWrapper({ children, onClose }) {
         position: "relative",
         boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
       }}>
+        {/* Refresh button */}
+        {showRefresh && onRefresh && (
+          <button
+            onClick={onRefresh}
+            title="Refresh QR Code"
+            style={{
+              position: "absolute",
+              top: "8px",
+              right: "44px",
+              background: "white",
+              border: "1px solid #e5e7eb",
+              borderRadius: "50%",
+              width: "28px",
+              height: "28px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "14px",
+              cursor: "pointer",
+              color: "#8A8A8F",
+              zIndex: 10,
+              transition: "all 0.2s",
+              fontWeight: "400",
+              lineHeight: 1,
+              padding: 0,
+              fontFamily: "monospace"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "#3b82f6";
+              e.target.style.borderColor = "#3b82f6";
+              e.target.style.color = "white";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "white";
+              e.target.style.borderColor = "#e5e7eb";
+              e.target.style.color = "#8A8A8F";
+            }}
+          >
+            &#8635;
+          </button>
+        )}
+
         {/* Close button */}
         <button
           onClick={onClose}
