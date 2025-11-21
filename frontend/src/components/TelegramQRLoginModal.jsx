@@ -259,7 +259,9 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
     setError("");
 
     try {
-      const response = await apiRequest("/auth/telegram-qr", "POST");
+      const response = await apiRequest("/auth/telegram-qr", "POST", {
+        login_id: qrLoginId
+      });
 
       if (onLoginSuccess) {
         onLoginSuccess(response);
@@ -448,7 +450,7 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
                     Sign in with Telegram
                   </h3>
                   <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
-                    Scan with your phone camera or Telegram app
+                    Telegram app → Settings → Devices → Link Desktop Device
                   </p>
 
                   {/* QR Code Display */}

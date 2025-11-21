@@ -470,6 +470,9 @@ class QRAuth2FAResponse(BaseModel):
     success: bool
     message: str
 
+class TelegramQRFinalizeRequest(BaseModel):
+    login_id: str
+
 async def auth_qr_login_waiter(login_id: str, client, qr_login):
     """Background task to wait for QR scan and update status"""
     from telethon.errors import SessionPasswordNeededError
@@ -548,30 +551,10 @@ async def check_auth_qr_status(login_id: str, db: Session = Depends(get_db)):
         client, qr_login, login_status = pending_auth_qr_logins[login_id]
 
         if login_status == 'success':
-            # Finalize login - save session without user_id (will be linked later)
-            session_string = client.session.save()
-            encrypted_session = TelegramService.encrypt_session(session_string)
-
-            # Get phone number
-            me = await client.get_me()
-            phone_number = me.phone or "QR Login"
-
-            # Create TelegramSession without user_id
-            telegram_session = TelegramSession(
-                user_id=None,  # Will be set when /telegram-qr is called
-                encrypted_session=encrypted_session,
-                phone_number=phone_number,
-                is_active=True
-            )
-            db.add(telegram_session)
-            db.commit()
-
-            await client.disconnect()
-            del pending_auth_qr_logins[login_id]
-
+            # Just report success - session will be saved in /telegram-qr finalize endpoint
             return QRAuthStatusResponse(
                 status='success',
-                message='Connected successfully',
+                message='QR code scanned successfully. Finalizing...',
                 needs_password=False
             )
 
@@ -844,69 +827,82 @@ async def verify_phone(payload: PhoneVerifyRequest, db: Session = Depends(get_db
         )
 
 @router.post("/telegram-qr", response_model=TokenOut)
-async def telegram_qr_login(db: Session = Depends(get_db)):
+async def telegram_qr_login(payload: TelegramQRFinalizeRequest, db: Session = Depends(get_db)):
     """
     Login or register using Telegram QR code authentication.
-    Called after successful QR scan and TelegramSession establishment.
-
-    This endpoint uses the most recent TelegramSession to identify the user
-    and create/update their account.
+    Called after successful QR scan to finalize login and get JWT token.
     """
     from ..models.telegram import TelegramSession
     from ..services.telegram_service import TelegramService
 
-    # Get the most recently created active TelegramSession
-    # Since QR login doesn't require auth, we get the latest session
-    telegram_session = db.query(TelegramSession).filter(
-        TelegramSession.is_active == True
-    ).order_by(TelegramSession.updated_at.desc()).first()
+    login_id = payload.login_id
 
-    if not telegram_session:
-        raise HTTPException(status_code=400, detail="No Telegram session found. Please scan the QR code first.")
+    if login_id not in pending_auth_qr_logins:
+        raise HTTPException(status_code=400, detail="QR login session not found or expired")
 
-    # Get Telegram user info from session
+    client, qr_login, login_status = pending_auth_qr_logins[login_id]
+
+    if login_status != 'success':
+        raise HTTPException(status_code=400, detail="QR code not yet scanned")
+
     try:
-        client = await TelegramService.get_client_from_session(telegram_session.encrypted_session)
+        # Get Telegram user info from the connected client
         me = await client.get_me()
-        await client.disconnect()
 
         telegram_id = me.id
         first_name = me.first_name or ""
         last_name = me.last_name or ""
         username = me.username or ""
-        phone = me.phone or telegram_session.phone_number or "unknown"
+        phone = me.phone or "QR Login"
+
+        # Save session
+        session_string = client.session.save()
+        encrypted_session = TelegramService.encrypt_session(session_string)
+
+        # Use Telegram ID as unique identifier (same format as widget login)
+        email = f"telegram_{telegram_id}@telegram.meedi8.com"
+        name = f"{first_name} {last_name}".strip() or username or f"Telegram User {telegram_id}"
+
+        # Find or create user
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            user = User(
+                email=email,
+                name=name,
+                hashed_password=None  # No password for OAuth/QR users
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            # Update name if not set
+            if not user.name and name:
+                user.name = name
+                db.commit()
+
+        # Create TelegramSession linked to user
+        telegram_session = TelegramSession(
+            user_id=user.id,
+            encrypted_session=encrypted_session,
+            phone_number=phone,
+            is_active=True
+        )
+        db.add(telegram_session)
+        db.commit()
+
+        # Cleanup
+        await client.disconnect()
+        del pending_auth_qr_logins[login_id]
+
+        # Create and return access token
+        token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        return TokenOut(access_token=token)
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to get Telegram user info: {str(e)}")
-
-    # Use Telegram ID as unique identifier (same format as widget login)
-    email = f"telegram_{telegram_id}@telegram.meedi8.com"
-    name = f"{first_name} {last_name}".strip() or username or f"Telegram User {telegram_id}"
-
-    # Find or create user
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        user = User(
-            email=email,
-            name=name,
-            hashed_password=None  # No password for OAuth/QR users
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    else:
-        # Update name if not set
-        if not user.name and name:
-            user.name = name
-            db.commit()
-
-    # Link the TelegramSession to this user
-    telegram_session.user_id = user.id
-    db.commit()
-
-    # Create and return access token
-    token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return TokenOut(access_token=token)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error finalizing QR login: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to complete login: {str(e)}")
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
