@@ -41,9 +41,6 @@ export default function AdminDashboard() {
   const [testEmailAddress, setTestEmailAddress] = useState("");
   const [aiCosts, setAiCosts] = useState(null);
   const [aiCostDetails, setAiCostDetails] = useState([]);
-  const [envVars, setEnvVars] = useState(null);
-  const [editingEnvVar, setEditingEnvVar] = useState(null);
-  const [newEnvVar, setNewEnvVar] = useState({ key: "", value: "", platform: "railway" });
 
   const adminToken = localStorage.getItem("admin_token");
 
@@ -103,8 +100,8 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
-      // Fetch email templates, system health, AI costs, and env vars
-      const [templatesRes, healthRes, aiCostsRes, envVarsRes] = await Promise.all([
+      // Fetch email templates, system health, and AI costs
+      const [templatesRes, healthRes, aiCostsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates/`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -114,15 +111,11 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/ai-costs/`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/env-vars/`, {
-          headers: { Authorization: `Bearer ${adminToken}` },
-        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
       const healthData = healthRes.ok ? await healthRes.json() : null;
       const aiCostsData = aiCostsRes.ok ? await aiCostsRes.json() : null;
-      const envVarsData = envVarsRes.ok ? await envVarsRes.json() : null;
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -135,7 +128,6 @@ export default function AdminDashboard() {
       setEmailTemplates(templatesData.templates || {});
       setSystemHealth(healthData);
       setAiCosts(aiCostsData);
-      setEnvVars(envVarsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -496,12 +488,6 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("ai-costs")}
           />
           <SidebarItem
-            icon="⚿"
-            label="Env Vars"
-            active={activeTab === "env-vars"}
-            onClick={() => setActiveTab("env-vars")}
-          />
-          <SidebarItem
             icon="⚑"
             label="Feature Flags"
             active={activeTab === "flags"}
@@ -568,7 +554,6 @@ export default function AdminDashboard() {
             {activeTab === "activity" && "Activity Logs"}
             {activeTab === "revenue" && "Revenue Reporting"}
             {activeTab === "ai-costs" && "AI Cost Tracking"}
-            {activeTab === "env-vars" && "Environment Variables"}
             {activeTab === "flags" && "Feature Flags"}
             {activeTab === "webhooks" && "Webhook Logs"}
             {activeTab === "emails" && "Email Templates"}
@@ -1561,344 +1546,6 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               </div>
-            </>
-          )}
-
-          {/* Environment Variables Tab */}
-          {activeTab === "env-vars" && (
-            <>
-              <p style={{ color: "#6B7280", marginBottom: "24px" }}>
-                Manage environment variables for Vercel (frontend) and Railway (backend).
-                Changes require a redeploy to take effect.
-              </p>
-
-              {/* Railway Section */}
-              <div style={{ marginBottom: "32px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0, color: "#4B5563" }}>Railway (Backend)</h3>
-                  <button
-                    onClick={async () => {
-                      if (confirm("Trigger Railway redeployment?")) {
-                        const res = await fetch(`${API_URL}/admin/env-vars/redeploy/railway`, {
-                          method: "POST",
-                          headers: { Authorization: `Bearer ${adminToken}` },
-                        });
-                        if (res.ok) {
-                          alert("Railway redeployment triggered!");
-                        } else {
-                          alert("Failed to trigger redeployment");
-                        }
-                      }
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#7DD3C0",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Redeploy Railway
-                  </button>
-                </div>
-
-                {envVars?.railway?.configured ? (
-                  envVars.railway.error ? (
-                    <p style={{ color: "#EF4444" }}>Error: {envVars.railway.error}</p>
-                  ) : (
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          <th style={thStyle}>Key</th>
-                          <th style={thStyle}>Value (masked)</th>
-                          <th style={thStyle}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {envVars.railway.variables.map((v) => (
-                          <tr key={v.key}>
-                            <td style={tdStyle}><code>{v.key}</code></td>
-                            <td style={tdStyle}><code style={{ color: "#6B7280" }}>{v.value}</code></td>
-                            <td style={tdStyle}>
-                              <button
-                                onClick={() => setEditingEnvVar({ ...v, platform: "railway" })}
-                                style={{
-                                  padding: "4px 8px",
-                                  background: "#f3f4f6",
-                                  border: "1px solid #d1d5db",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  marginRight: "8px",
-                                }}
-                              >
-                                Edit
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )
-                ) : (
-                  <p style={{ color: "#6B7280" }}>Railway not configured. Set RAILWAY_TOKEN and RAILWAY_PROJECT_ID.</p>
-                )}
-              </div>
-
-              {/* Vercel Section */}
-              <div style={{ marginBottom: "32px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0, color: "#4B5563" }}>Vercel (Frontend)</h3>
-                  <button
-                    onClick={async () => {
-                      if (confirm("Trigger Vercel redeployment?")) {
-                        const res = await fetch(`${API_URL}/admin/env-vars/redeploy/vercel`, {
-                          method: "POST",
-                          headers: { Authorization: `Bearer ${adminToken}` },
-                        });
-                        if (res.ok) {
-                          alert("Vercel redeployment triggered!");
-                        } else {
-                          alert("Failed to trigger redeployment");
-                        }
-                      }
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#000",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Redeploy Vercel
-                  </button>
-                </div>
-
-                {envVars?.vercel?.configured ? (
-                  envVars.vercel.error ? (
-                    <p style={{ color: "#EF4444" }}>Error: {envVars.vercel.error}</p>
-                  ) : (
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          <th style={thStyle}>Key</th>
-                          <th style={thStyle}>Value (masked)</th>
-                          <th style={thStyle}>Target</th>
-                          <th style={thStyle}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {envVars.vercel.variables.map((v) => (
-                          <tr key={v.id}>
-                            <td style={tdStyle}><code>{v.key}</code></td>
-                            <td style={tdStyle}><code style={{ color: "#6B7280" }}>{v.value}</code></td>
-                            <td style={tdStyle}>{v.target?.join(", ")}</td>
-                            <td style={tdStyle}>
-                              <button
-                                onClick={() => setEditingEnvVar({ ...v, platform: "vercel" })}
-                                style={{
-                                  padding: "4px 8px",
-                                  background: "#f3f4f6",
-                                  border: "1px solid #d1d5db",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  marginRight: "8px",
-                                }}
-                              >
-                                Edit
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )
-                ) : (
-                  <p style={{ color: "#6B7280" }}>Vercel not configured. Set VERCEL_TOKEN and VERCEL_PROJECT_ID.</p>
-                )}
-              </div>
-
-              {/* Add New Variable */}
-              <div style={{ background: "#f9fafb", padding: "16px", borderRadius: "8px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 600, marginTop: 0, marginBottom: "12px", color: "#4B5563" }}>Add New Variable</h3>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                  <select
-                    value={newEnvVar.platform}
-                    onChange={(e) => setNewEnvVar({ ...newEnvVar, platform: e.target.value })}
-                    style={{
-                      padding: "8px 12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    <option value="railway">Railway</option>
-                    <option value="vercel">Vercel</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="KEY_NAME"
-                    value={newEnvVar.key}
-                    onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
-                    style={{
-                      padding: "8px 12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      flex: 1,
-                      minWidth: "150px",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="value"
-                    value={newEnvVar.value}
-                    onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
-                    style={{
-                      padding: "8px 12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      flex: 2,
-                      minWidth: "200px",
-                    }}
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!newEnvVar.key || !newEnvVar.value) {
-                        alert("Please fill in both key and value");
-                        return;
-                      }
-                      const res = await fetch(`${API_URL}/admin/env-vars`, {
-                        method: "PUT",
-                        headers: {
-                          Authorization: `Bearer ${adminToken}`,
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(newEnvVar),
-                      });
-                      if (res.ok) {
-                        alert(`Added ${newEnvVar.key} to ${newEnvVar.platform}`);
-                        setNewEnvVar({ key: "", value: "", platform: newEnvVar.platform });
-                        fetchData();
-                      } else {
-                        const err = await res.json();
-                        alert(`Error: ${err.detail || "Failed to add variable"}`);
-                      }
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      background: "#10B981",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Add Variable
-                  </button>
-                </div>
-              </div>
-
-              {/* Edit Modal */}
-              {editingEnvVar && (
-                <div style={{
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: "rgba(0,0,0,0.5)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1000,
-                }}>
-                  <div style={{
-                    background: "white",
-                    padding: "24px",
-                    borderRadius: "12px",
-                    width: "90%",
-                    maxWidth: "500px",
-                  }}>
-                    <h3 style={{ marginTop: 0, color: "#4B5563" }}>Edit {editingEnvVar.key}</h3>
-                    <p style={{ color: "#6B7280", fontSize: "14px" }}>
-                      Platform: {editingEnvVar.platform === "railway" ? "Railway" : "Vercel"}
-                    </p>
-                    <input
-                      type="text"
-                      placeholder="New value"
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        marginBottom: "16px",
-                        boxSizing: "border-box",
-                      }}
-                      onChange={(e) => setEditingEnvVar({ ...editingEnvVar, newValue: e.target.value })}
-                    />
-                    <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                      <button
-                        onClick={() => setEditingEnvVar(null)}
-                        style={{
-                          padding: "8px 16px",
-                          background: "#f3f4f6",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!editingEnvVar.newValue) {
-                            alert("Please enter a new value");
-                            return;
-                          }
-                          const res = await fetch(`${API_URL}/admin/env-vars`, {
-                            method: "PUT",
-                            headers: {
-                              Authorization: `Bearer ${adminToken}`,
-                              "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                              key: editingEnvVar.key,
-                              value: editingEnvVar.newValue,
-                              platform: editingEnvVar.platform,
-                            }),
-                          });
-                          if (res.ok) {
-                            alert(`Updated ${editingEnvVar.key}`);
-                            setEditingEnvVar(null);
-                            fetchData();
-                          } else {
-                            const err = await res.json();
-                            alert(`Error: ${err.detail || "Failed to update"}`);
-                          }
-                        }}
-                        style={{
-                          padding: "8px 16px",
-                          background: "#7DD3C0",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
