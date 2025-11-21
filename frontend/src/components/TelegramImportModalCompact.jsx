@@ -402,7 +402,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     <ModalWrapper
       onClose={onClose}
       onRefresh={handleRefreshQR}
-      showRefresh={(step === 0 && !qrLoading) || sessionExpired}
+      showRefresh={(step === 0 && !loading) || sessionExpired}
     >
       {/* Fixed Download Progress Indicator */}
       {downloadId && (
