@@ -696,6 +696,153 @@ async def refresh_auth_qr(login_id: str):
             detail="Failed to refresh QR code"
         )
 
+# ===== Phone Number Verification Endpoints for Auth Flow =====
+
+class PhoneConnectRequest(BaseModel):
+    phone_number: str
+
+class PhoneConnectResponse(BaseModel):
+    success: bool
+    message: str
+    phone_code_hash: str
+
+class PhoneVerifyRequest(BaseModel):
+    phone_number: str
+    code: str
+    phone_code_hash: str
+    password: Optional[str] = None
+
+class PhoneVerifyResponse(BaseModel):
+    success: bool
+    message: str
+    needs_password: bool = False
+
+# In-memory storage for pending phone logins
+pending_phone_logins = {}  # {phone_number: (client, phone_code_hash)}
+
+@router.post("/telegram-phone/connect", response_model=PhoneConnectResponse)
+async def connect_phone(payload: PhoneConnectRequest):
+    """
+    Send verification code to phone number (no auth required).
+    Used on the login page before user has an account.
+    """
+    from ..services.telegram_service import TelegramService
+    from telethon import TelegramClient
+    from telethon.sessions import StringSession
+    import os
+
+    try:
+        # Clean up any existing client for this phone
+        if payload.phone_number in pending_phone_logins:
+            old_client, _ = pending_phone_logins[payload.phone_number]
+            try:
+                await old_client.disconnect()
+            except:
+                pass
+            del pending_phone_logins[payload.phone_number]
+
+        # Create new client
+        api_id = int(os.getenv("TELEGRAM_API_ID", "0"))
+        api_hash = os.getenv("TELEGRAM_API_HASH", "")
+
+        client = TelegramClient(StringSession(), api_id, api_hash)
+        await client.connect()
+
+        # Send code
+        result = await client.send_code_request(payload.phone_number)
+        phone_code_hash = result.phone_code_hash
+
+        # Store client for verification
+        pending_phone_logins[payload.phone_number] = (client, phone_code_hash)
+
+        return PhoneConnectResponse(
+            success=True,
+            message="Verification code sent",
+            phone_code_hash=phone_code_hash
+        )
+
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-phone/connect: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.post("/telegram-phone/verify", response_model=PhoneVerifyResponse)
+async def verify_phone(payload: PhoneVerifyRequest, db: Session = Depends(get_db)):
+    """
+    Verify phone code and complete login (no auth required).
+    """
+    from ..services.telegram_service import TelegramService
+    from ..models.telegram import TelegramSession
+    from telethon.errors import SessionPasswordNeededError
+
+    try:
+        if payload.phone_number not in pending_phone_logins:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No pending verification for this phone number"
+            )
+
+        client, stored_hash = pending_phone_logins[payload.phone_number]
+
+        try:
+            # Try to sign in with code
+            await client.sign_in(
+                phone=payload.phone_number,
+                code=payload.code,
+                phone_code_hash=payload.phone_code_hash
+            )
+        except SessionPasswordNeededError:
+            # 2FA required
+            if not payload.password:
+                return PhoneVerifyResponse(
+                    success=False,
+                    message="Two-factor authentication required",
+                    needs_password=True
+                )
+            # Sign in with password
+            await client.sign_in(password=payload.password)
+
+        # Save session
+        session_string = client.session.save()
+        encrypted_session = TelegramService.encrypt_session(session_string)
+
+        # Get phone number
+        me = await client.get_me()
+        phone_number = me.phone or payload.phone_number
+
+        # Create TelegramSession without user_id
+        telegram_session = TelegramSession(
+            user_id=None,
+            encrypted_session=encrypted_session,
+            phone_number=phone_number,
+            is_active=True
+        )
+        db.add(telegram_session)
+        db.commit()
+
+        await client.disconnect()
+        del pending_phone_logins[payload.phone_number]
+
+        return PhoneVerifyResponse(
+            success=True,
+            message="Verified successfully"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in /telegram-phone/verify: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 @router.post("/telegram-qr", response_model=TokenOut)
 async def telegram_qr_login(db: Session = Depends(get_db)):
     """

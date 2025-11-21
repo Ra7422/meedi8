@@ -1,6 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest } from "../api/client";
 
+// Common country codes
+const COUNTRY_CODES = [
+  { code: "+1", country: "US/CA" },
+  { code: "+44", country: "UK" },
+  { code: "+91", country: "IN" },
+  { code: "+61", country: "AU" },
+  { code: "+49", country: "DE" },
+  { code: "+33", country: "FR" },
+  { code: "+39", country: "IT" },
+  { code: "+34", country: "ES" },
+  { code: "+31", country: "NL" },
+  { code: "+46", country: "SE" },
+  { code: "+47", country: "NO" },
+  { code: "+45", country: "DK" },
+  { code: "+358", country: "FI" },
+  { code: "+48", country: "PL" },
+  { code: "+7", country: "RU" },
+  { code: "+86", country: "CN" },
+  { code: "+81", country: "JP" },
+  { code: "+82", country: "KR" },
+  { code: "+65", country: "SG" },
+  { code: "+60", country: "MY" },
+  { code: "+66", country: "TH" },
+  { code: "+84", country: "VN" },
+  { code: "+62", country: "ID" },
+  { code: "+63", country: "PH" },
+  { code: "+55", country: "BR" },
+  { code: "+52", country: "MX" },
+  { code: "+54", country: "AR" },
+  { code: "+27", country: "ZA" },
+  { code: "+971", country: "UAE" },
+  { code: "+972", country: "IL" },
+];
+
 /**
  * Telegram QR Login Modal - For authentication on login/signup page
  *
@@ -8,12 +42,12 @@ import { apiRequest } from "../api/client";
  * - QR code display for Telegram app scanning
  * - Auto-polling for scan status
  * - 2FA password support
- * - Phone number fallback option
+ * - Phone number fallback with country code selector
  * - Auto-refresh expired QR codes
  */
 export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }) {
-  // Step state
-  const [step, setStep] = useState(0); // 0: QR code
+  // Step state: 0 = QR code, 1 = phone verification code
+  const [step, setStep] = useState(0);
 
   // QR login state
   const [qrCode, setQrCode] = useState(null);
@@ -21,6 +55,14 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
   const [qrStatus, setQrStatus] = useState(null);
   const [qr2FAPassword, setQr2FAPassword] = useState("");
   const [qrCountdown, setQrCountdown] = useState(30);
+
+  // Phone login state
+  const [countryCode, setCountryCode] = useState("+44");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [phoneCodeHash, setPhoneCodeHash] = useState("");
+  const [phone2FAPassword, setPhone2FAPassword] = useState("");
+  const [needsPhone2FA, setNeedsPhone2FA] = useState(false);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -35,6 +77,11 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
       setQrStatus(null);
       setQr2FAPassword("");
       setQrCountdown(30);
+      setPhoneNumber("");
+      setVerificationCode("");
+      setPhoneCodeHash("");
+      setPhone2FAPassword("");
+      setNeedsPhone2FA(false);
       setError("");
       // Auto-initiate QR login
       handleInitiateQRLogin();
@@ -99,7 +146,6 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
 
     try {
       if (qrLoginId) {
-        // Try to refresh the existing QR code first
         try {
           const response = await apiRequest(`/auth/telegram-qr/refresh/${qrLoginId}`, "POST");
           setQrCode(response.qr_code);
@@ -112,7 +158,6 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
         }
       }
 
-      // Create new QR login session
       const response = await apiRequest("/auth/telegram-qr/initiate", "POST");
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
@@ -138,10 +183,72 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
         password: qr2FAPassword
       });
 
-      // 2FA complete, finalize login
       handleFinalizeLogin();
     } catch (err) {
       setError(err.message || "Invalid 2FA password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    if (!phoneNumber.trim()) {
+      setError("Please enter your phone number");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const fullPhone = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+      const response = await apiRequest("/auth/telegram-phone/connect", "POST", {
+        phone_number: fullPhone
+      });
+
+      setPhoneCodeHash(response.phone_code_hash);
+      setStep(1);
+    } catch (err) {
+      setError(err.message || "Failed to send verification code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setError("Please enter the verification code");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const fullPhone = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+      const response = await apiRequest("/auth/telegram-phone/verify", "POST", {
+        phone_number: fullPhone,
+        code: verificationCode,
+        phone_code_hash: phoneCodeHash,
+        password: needsPhone2FA ? phone2FAPassword : undefined
+      });
+
+      if (!response.success && response.needs_password) {
+        setNeedsPhone2FA(true);
+        setError("Two-factor authentication required");
+        setLoading(false);
+        return;
+      }
+
+      // Verification complete, finalize login
+      handleFinalizeLogin();
+    } catch (err) {
+      if (err.message?.includes("2FA") || err.message?.includes("password")) {
+        setNeedsPhone2FA(true);
+        setError("Two-factor authentication required");
+      } else {
+        setError(err.message || "Invalid verification code");
+      }
     } finally {
       setLoading(false);
     }
@@ -152,10 +259,8 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
     setError("");
 
     try {
-      // Call the new auth endpoint to get JWT token
       const response = await apiRequest("/auth/telegram-qr", "POST");
 
-      // Pass the access token back to parent
       if (onLoginSuccess) {
         onLoginSuccess(response);
       }
@@ -418,8 +523,175 @@ export default function TelegramQRLoginModal({ isOpen, onClose, onLoginSuccess }
                     </div>
                   )}
 
+                  {/* Divider */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    margin: "12px 0",
+                    gap: "8px"
+                  }}>
+                    <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                    <span style={{ fontSize: "10px", color: "#8A8A8F" }}>or use phone number</span>
+                    <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                  </div>
+
+                  {/* Phone Number Input with Country Code */}
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      disabled={loading}
+                      style={{
+                        padding: "10px 8px",
+                        fontSize: "13px",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "6px",
+                        outline: "none",
+                        background: "white",
+                        cursor: "pointer",
+                        minWidth: "90px"
+                      }}
+                    >
+                      {COUNTRY_CODES.map(({ code, country }) => (
+                        <option key={code} value={code}>
+                          {code} {country}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="Phone number"
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: "10px",
+                        fontSize: "13px",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "6px",
+                        outline: "none",
+                        boxSizing: "border-box"
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = "#0088CC"}
+                      onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSendCode}
+                    disabled={loading || !phoneNumber.trim()}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "white",
+                      background: loading || !phoneNumber.trim() ? "#d1d5db" : "#0088CC",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: loading || !phoneNumber.trim() ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    {loading ? "Sending..." : "Send Code"}
+                  </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Step 1: Verification Code */}
+          {step === 1 && (
+            <div>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
+                Enter Verification Code
+              </h3>
+              <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
+                We sent a code to {countryCode}{phoneNumber}
+              </p>
+              <input
+                type="text"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                placeholder="Enter code"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "6px",
+                  marginBottom: "10px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  textAlign: "center",
+                  letterSpacing: "4px"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#0088CC"}
+                onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
+              />
+              {needsPhone2FA && (
+                <input
+                  type="password"
+                  value={phone2FAPassword}
+                  onChange={(e) => setPhone2FAPassword(e.target.value)}
+                  placeholder="2FA Password"
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    fontSize: "13px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    marginBottom: "10px",
+                    outline: "none",
+                    boxSizing: "border-box"
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = "#0088CC"}
+                  onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+                  onKeyDown={(e) => e.key === "Enter" && handleVerifyCode()}
+                />
+              )}
+              <button
+                onClick={handleVerifyCode}
+                disabled={loading || !verificationCode.trim() || (needsPhone2FA && !phone2FAPassword.trim())}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "white",
+                  background: loading || !verificationCode.trim() ? "#d1d5db" : "#0088CC",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: loading || !verificationCode.trim() ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading ? "Verifying..." : "Verify"}
+              </button>
+              <button
+                onClick={() => {
+                  setStep(0);
+                  setVerificationCode("");
+                  setNeedsPhone2FA(false);
+                  setPhone2FAPassword("");
+                  setError("");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  marginTop: "8px"
+                }}
+              >
+                Back to QR code
+              </button>
             </div>
           )}
         </div>
