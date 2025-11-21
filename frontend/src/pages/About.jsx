@@ -310,7 +310,7 @@ export default function About() {
           </p>
           <button
             style={styles.ctaButton}
-            onClick={() => window.location.href = '/create'}
+            onClick={() => window.location.href = '/'}
           >
             Start Mediation
           </button>
