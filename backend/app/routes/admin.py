@@ -16,7 +16,7 @@ import string
 
 from ..models.user import User
 from ..models.room import Room, Turn
-from ..models.subscription import Subscription, SubscriptionTier, SubscriptionStatus
+from ..models.subscription import Subscription, SubscriptionTier, SubscriptionStatus, ApiCost
 from ..security import hash_password, verify_password, create_access_token
 from ..db import get_db
 from ..config import settings
@@ -684,6 +684,227 @@ def get_analytics(
         "rooms_by_phase": [{"phase": r[0], "count": r[1]} for r in rooms_by_phase],
         "avg_turns_per_room": round(float(avg_turns), 1),
     }
+
+
+# ========================================
+# AI COST TRACKING
+# ========================================
+
+@router.get("/ai-costs")
+def get_ai_costs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    days: int = 30
+):
+    """Get AI API cost analytics"""
+    check_admin(current_user)
+
+    cutoff = datetime.utcnow() - timedelta(days=days)
+
+    # Total costs by service type
+    costs_by_service = db.execute(text("""
+        SELECT service_type,
+               SUM(cost_usd) as total_cost,
+               SUM(input_tokens) as total_input_tokens,
+               SUM(output_tokens) as total_output_tokens,
+               COUNT(*) as call_count
+        FROM api_costs
+        WHERE created_at >= :cutoff
+        GROUP BY service_type
+        ORDER BY total_cost DESC
+    """), {"cutoff": cutoff}).fetchall()
+
+    # Daily costs over time
+    daily_costs = db.execute(text("""
+        SELECT DATE(created_at) as date,
+               service_type,
+               SUM(cost_usd) as total_cost
+        FROM api_costs
+        WHERE created_at >= :cutoff
+        GROUP BY DATE(created_at), service_type
+        ORDER BY date
+    """), {"cutoff": cutoff}).fetchall()
+
+    # Top users by cost
+    top_users = db.execute(text("""
+        SELECT ac.user_id, u.email, u.name,
+               SUM(ac.cost_usd) as total_cost,
+               COUNT(*) as call_count
+        FROM api_costs ac
+        JOIN users u ON ac.user_id = u.id
+        WHERE ac.created_at >= :cutoff
+        GROUP BY ac.user_id, u.email, u.name
+        ORDER BY total_cost DESC
+        LIMIT 10
+    """), {"cutoff": cutoff}).fetchall()
+
+    # Costs by model
+    costs_by_model = db.execute(text("""
+        SELECT model,
+               SUM(cost_usd) as total_cost,
+               COUNT(*) as call_count
+        FROM api_costs
+        WHERE created_at >= :cutoff AND model IS NOT NULL
+        GROUP BY model
+        ORDER BY total_cost DESC
+    """), {"cutoff": cutoff}).fetchall()
+
+    # Total cost
+    total_cost = db.execute(text("""
+        SELECT SUM(cost_usd) as total
+        FROM api_costs
+        WHERE created_at >= :cutoff
+    """), {"cutoff": cutoff}).scalar() or 0
+
+    # Today's cost
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_cost = db.execute(text("""
+        SELECT SUM(cost_usd) as total
+        FROM api_costs
+        WHERE created_at >= :today
+    """), {"today": today_start}).scalar() or 0
+
+    # This month's cost
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_cost = db.execute(text("""
+        SELECT SUM(cost_usd) as total
+        FROM api_costs
+        WHERE created_at >= :month_start
+    """), {"month_start": month_start}).scalar() or 0
+
+    # Format daily costs for charts
+    daily_costs_formatted = {}
+    for row in daily_costs:
+        date_str = str(row[0])
+        if date_str not in daily_costs_formatted:
+            daily_costs_formatted[date_str] = {}
+        daily_costs_formatted[date_str][row[1]] = float(row[2])
+
+    return {
+        "total_cost": round(float(total_cost), 4),
+        "today_cost": round(float(today_cost), 4),
+        "month_cost": round(float(month_cost), 4),
+        "costs_by_service": [
+            {
+                "service": row[0],
+                "cost": round(float(row[1]), 4),
+                "input_tokens": int(row[2] or 0),
+                "output_tokens": int(row[3] or 0),
+                "calls": int(row[4])
+            }
+            for row in costs_by_service
+        ],
+        "daily_costs": [
+            {"date": date, "costs": costs}
+            for date, costs in sorted(daily_costs_formatted.items())
+        ],
+        "top_users": [
+            {
+                "user_id": row[0],
+                "email": row[1],
+                "name": row[2],
+                "cost": round(float(row[3]), 4),
+                "calls": int(row[4])
+            }
+            for row in top_users
+        ],
+        "costs_by_model": [
+            {
+                "model": row[0],
+                "cost": round(float(row[1]), 4),
+                "calls": int(row[2])
+            }
+            for row in costs_by_model
+        ]
+    }
+
+
+@router.get("/ai-costs/details")
+def get_ai_cost_details(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    service_type: Optional[str] = None,
+    user_id: Optional[int] = None
+):
+    """Get detailed AI cost records"""
+    check_admin(current_user)
+
+    query = db.query(ApiCost)
+
+    if service_type:
+        query = query.filter(ApiCost.service_type == service_type)
+    if user_id:
+        query = query.filter(ApiCost.user_id == user_id)
+
+    total = query.count()
+    costs = query.order_by(ApiCost.created_at.desc()).offset(skip).limit(limit).all()
+
+    result = []
+    for cost in costs:
+        user = db.query(User).filter(User.id == cost.user_id).first()
+        result.append({
+            "id": cost.id,
+            "user_id": cost.user_id,
+            "user_email": user.email if user else "Unknown",
+            "room_id": cost.room_id,
+            "service_type": cost.service_type,
+            "model": cost.model,
+            "input_tokens": cost.input_tokens,
+            "output_tokens": cost.output_tokens,
+            "audio_seconds": float(cost.audio_seconds) if cost.audio_seconds else 0,
+            "cost_usd": round(float(cost.cost_usd), 6),
+            "created_at": str(cost.created_at) if cost.created_at else None,
+        })
+
+    return {"costs": result, "total": total, "skip": skip, "limit": limit}
+
+
+@router.get("/ai-costs/export")
+def export_ai_costs_csv(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    days: int = 30
+):
+    """Export AI costs to CSV"""
+    check_admin(current_user)
+
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    costs = db.query(ApiCost).filter(ApiCost.created_at >= cutoff).order_by(ApiCost.created_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow([
+        "ID", "User ID", "User Email", "Room ID", "Service Type", "Model",
+        "Input Tokens", "Output Tokens", "Audio Seconds", "Cost USD", "Created At"
+    ])
+
+    for cost in costs:
+        user = db.query(User).filter(User.id == cost.user_id).first()
+        writer.writerow([
+            cost.id,
+            cost.user_id,
+            user.email if user else "",
+            cost.room_id or "",
+            cost.service_type,
+            cost.model or "",
+            cost.input_tokens,
+            cost.output_tokens,
+            float(cost.audio_seconds) if cost.audio_seconds else 0,
+            round(float(cost.cost_usd), 6),
+            str(cost.created_at) if cost.created_at else "",
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=ai_costs_export_{days}d.csv"}
+    )
 
 
 # ========================================

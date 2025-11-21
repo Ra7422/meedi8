@@ -2,12 +2,46 @@
 Cost tracking for all API usage
 Pricing as of Nov 2024:
 - Claude Sonnet 4: Input $3/M tokens, Output $15/M tokens
+- Claude Sonnet 4.5: Input $3/M tokens, Output $15/M tokens
+- Gemini 1.5 Flash: Input $0.075/M tokens, Output $0.30/M tokens (under 128k)
+- Gemini 1.5 Pro: Input $1.25/M tokens, Output $5.00/M tokens (under 128k)
 - OpenAI Whisper: $0.006 per minute
 - OpenAI TTS: $15 per million characters
+- OpenAI GPT-4o: Input $2.50/M tokens, Output $10.00/M tokens
 """
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from app.models.subscription import ApiCost
+
+
+def calculate_gemini_cost(input_tokens: int, output_tokens: int, model: str = "gemini-1.5-flash") -> float:
+    """Calculate cost in USD for Gemini API call"""
+    if "pro" in model.lower():
+        INPUT_COST_PER_MILLION = 1.25
+        OUTPUT_COST_PER_MILLION = 5.00
+    else:  # flash model
+        INPUT_COST_PER_MILLION = 0.075
+        OUTPUT_COST_PER_MILLION = 0.30
+
+    input_cost = (input_tokens / 1_000_000) * INPUT_COST_PER_MILLION
+    output_cost = (output_tokens / 1_000_000) * OUTPUT_COST_PER_MILLION
+
+    return input_cost + output_cost
+
+
+def calculate_openai_cost(input_tokens: int, output_tokens: int, model: str = "gpt-4o") -> float:
+    """Calculate cost in USD for OpenAI API call (non-Whisper/TTS)"""
+    if "gpt-4o-mini" in model.lower():
+        INPUT_COST_PER_MILLION = 0.15
+        OUTPUT_COST_PER_MILLION = 0.60
+    else:  # gpt-4o
+        INPUT_COST_PER_MILLION = 2.50
+        OUTPUT_COST_PER_MILLION = 10.00
+
+    input_cost = (input_tokens / 1_000_000) * INPUT_COST_PER_MILLION
+    output_cost = (output_tokens / 1_000_000) * OUTPUT_COST_PER_MILLION
+
+    return input_cost + output_cost
 
 
 def calculate_anthropic_cost(input_tokens: int, output_tokens: int, model: str = "claude-sonnet-4-20250514") -> float:

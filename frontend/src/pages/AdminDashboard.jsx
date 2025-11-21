@@ -38,6 +38,8 @@ export default function AdminDashboard() {
   const [emailTemplates, setEmailTemplates] = useState({});
   const [systemHealth, setSystemHealth] = useState(null);
   const [testEmailAddress, setTestEmailAddress] = useState("");
+  const [aiCosts, setAiCosts] = useState(null);
+  const [aiCostDetails, setAiCostDetails] = useState([]);
 
   const adminToken = localStorage.getItem("admin_token");
 
@@ -97,18 +99,22 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
-      // Fetch email templates and system health
-      const [templatesRes, healthRes] = await Promise.all([
+      // Fetch email templates, system health, and AI costs
+      const [templatesRes, healthRes, aiCostsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
         fetch(`${API_URL}/admin/system-health`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/ai-costs`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
       const healthData = healthRes.ok ? await healthRes.json() : null;
+      const aiCostsData = aiCostsRes.ok ? await aiCostsRes.json() : null;
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -120,6 +126,7 @@ export default function AdminDashboard() {
       setWebhookLogs(webhooksData.events || []);
       setEmailTemplates(templatesData.templates || {});
       setSystemHealth(healthData);
+      setAiCosts(aiCostsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -469,6 +476,12 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("revenue")}
           />
           <SidebarItem
+            icon="🤖"
+            label="AI Costs"
+            active={activeTab === "ai-costs"}
+            onClick={() => setActiveTab("ai-costs")}
+          />
+          <SidebarItem
             icon="🚩"
             label="Feature Flags"
             active={activeTab === "flags"}
@@ -533,6 +546,7 @@ export default function AdminDashboard() {
             {activeTab === "settings" && "Platform Settings"}
             {activeTab === "activity" && "Activity Logs"}
             {activeTab === "revenue" && "Revenue Reporting"}
+            {activeTab === "ai-costs" && "AI Cost Tracking"}
             {activeTab === "flags" && "Feature Flags"}
             {activeTab === "webhooks" && "Webhook Logs"}
             {activeTab === "emails" && "Email Templates"}
@@ -1368,6 +1382,155 @@ export default function AdminDashboard() {
                           <td style={tdStyle}>
                             <span style={{ fontSize: "12px", color: "#6b7280" }}>
                               {new Date(payment.created_at).toLocaleString()}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* AI Costs Tab */}
+          {activeTab === "ai-costs" && (
+            <>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "20px",
+                marginBottom: "24px",
+              }}>
+                <StatCard title="Today's Cost" value={aiCosts ? `$${aiCosts.today_cost.toFixed(4)}` : "$0"} color="#f97316" icon="📅" />
+                <StatCard title="This Month" value={aiCosts ? `$${aiCosts.month_cost.toFixed(4)}` : "$0"} color="#6750A4" icon="📊" />
+                <StatCard title="Last 30 Days" value={aiCosts ? `$${aiCosts.total_cost.toFixed(4)}` : "$0"} color="#3b82f6" icon="💰" />
+              </div>
+
+              {/* Costs by Service */}
+              <div style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                marginBottom: "24px",
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  Costs by Service (Last 30 Days)
+                </h3>
+                <div style={{ display: "grid", gap: "12px" }}>
+                  {(aiCosts?.costs_by_service || []).map((service) => (
+                    <div key={service.service} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "16px",
+                      background: "#f9fafb",
+                      borderRadius: "16px",
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                          {service.service === "anthropic" ? "Claude (Anthropic)" :
+                           service.service === "openai_whisper" ? "Whisper (OpenAI)" :
+                           service.service === "openai_tts" ? "TTS (OpenAI)" :
+                           service.service === "gemini" ? "Gemini (Google)" :
+                           service.service}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                          {service.calls} calls | {(service.input_tokens + service.output_tokens).toLocaleString()} tokens
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: "18px",
+                        fontWeight: "700",
+                        color: "#22c55e",
+                      }}>
+                        ${service.cost.toFixed(4)}
+                      </div>
+                    </div>
+                  ))}
+                  {(aiCosts?.costs_by_service || []).length === 0 && (
+                    <div style={{ color: "#6b7280", fontSize: "14px", textAlign: "center", padding: "20px" }}>
+                      No cost data yet
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Costs by Model */}
+              <div style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                marginBottom: "24px",
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  Costs by Model
+                </h3>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={thStyle}>Model</th>
+                        <th style={thStyle}>Calls</th>
+                        <th style={thStyle}>Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(aiCosts?.costs_by_model || []).map((model) => (
+                        <tr key={model.model} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                          <td style={tdStyle}>
+                            <span style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                              {model.model}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>{model.calls}</td>
+                          <td style={tdStyle}>
+                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                              ${model.cost.toFixed(4)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Top Users by Cost */}
+              <div style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "24px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  Top Users by Cost
+                </h3>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={thStyle}>User</th>
+                        <th style={thStyle}>Email</th>
+                        <th style={thStyle}>API Calls</th>
+                        <th style={thStyle}>Total Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(aiCosts?.top_users || []).map((user) => (
+                        <tr key={user.user_id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                          <td style={tdStyle}>{user.name || "Unknown"}</td>
+                          <td style={tdStyle}>
+                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                              {user.email}
+                            </span>
+                          </td>
+                          <td style={tdStyle}>{user.calls}</td>
+                          <td style={tdStyle}>
+                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                              ${user.cost.toFixed(4)}
                             </span>
                           </td>
                         </tr>
