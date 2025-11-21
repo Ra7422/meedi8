@@ -555,7 +555,7 @@ export default function FloatingMenu({
                   <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '12px' }}>
                     {/* Google */}
                     {hasGoogleOAuth && (
-                      <div style={{ transform: 'scale(1.1)' }}>
+                      <div style={{ transform: 'scale(1.25)' }}>
                         <GoogleLogin
                           onSuccess={handleGoogleSuccess}
                           onError={() => console.error("Google login failed")}
