@@ -416,10 +416,8 @@ async def check_qr_login_status(
                 detail="This QR login does not belong to you"
             )
 
-        # Check login status with short timeout
-        login_status, needs_password = await TelegramService.wait_for_qr_login(
-            client, qr_login, timeout=2.0
-        )
+        # Check login status by checking if client is authorized
+        login_status, needs_password = await TelegramService.check_qr_login_status(client)
 
         if login_status == 'success':
             # Finalize login and store session
@@ -440,20 +438,6 @@ async def check_qr_login_status(
                 status='2fa_required',
                 message='Two-factor authentication required',
                 needs_password=True
-            )
-
-        elif login_status == 'expired':
-            # Clean up expired login
-            try:
-                await client.disconnect()
-            except:
-                pass
-            del pending_qr_logins[login_id]
-
-            return QRLoginStatusResponse(
-                status='expired',
-                message='QR code expired. Please generate a new one.',
-                needs_password=False
             )
 
         else:  # 'waiting'

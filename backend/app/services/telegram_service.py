@@ -827,33 +827,24 @@ class TelegramService:
         return f"data:image/png;base64,{img_base64}"
 
     @staticmethod
-    async def wait_for_qr_login(
-        client: TelegramClient,
-        qr_login,
-        timeout: float = 30.0
-    ) -> Tuple[str, bool]:
+    async def check_qr_login_status(client: TelegramClient) -> Tuple[str, bool]:
         """
-        Wait for user to scan QR code and complete login.
+        Check if QR login has completed by checking authorization status.
 
         Args:
             client: TelegramClient with active qr_login
-            qr_login: QR login object from qr_login()
-            timeout: Max seconds to wait
 
         Returns:
             Tuple of (status, needs_password)
-            - status: 'success', 'expired', 'waiting', '2fa_required'
+            - status: 'success', 'waiting'
             - needs_password: True if 2FA password is needed
         """
         try:
-            # Wait for login with timeout
-            await asyncio.wait_for(qr_login.wait(timeout), timeout=timeout)
+            # Check if client is now authorized
+            if await client.is_user_authorized():
+                logger.info("QR login successful - client is authorized")
+                return 'success', False
 
-            logger.info("QR login successful")
-            return 'success', False
-
-        except asyncio.TimeoutError:
-            logger.info("QR login waiting (timeout)")
             return 'waiting', False
 
         except SessionPasswordNeededError:
@@ -861,11 +852,8 @@ class TelegramService:
             return '2fa_required', True
 
         except Exception as e:
-            if "QR_CODE" in str(e).upper() or "expired" in str(e).lower():
-                logger.info("QR code expired")
-                return 'expired', False
-            logger.error(f"Error waiting for QR login: {e}")
-            raise
+            logger.error(f"Error checking QR login status: {e}")
+            return 'waiting', False
 
     @staticmethod
     async def recreate_qr_login(qr_login) -> str:
