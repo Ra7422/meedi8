@@ -306,12 +306,24 @@ export default function LoginNew() {
 
       </div>
 
-      {/* Mascot with speech bubble - bottom right */}
-      <div style={styles.mascotContainer} onClick={() => navigate('/signup')}>
+      {/* Mascot with speech bubble - bottom right (hidden on small mobile) */}
+      <div style={{
+        ...styles.mascotContainer,
+        // On mobile, make it smaller and lower z-index so it doesn't block buttons
+        ...(isMobile ? {
+          zIndex: 0,
+          maxWidth: '150px',
+          opacity: 0.7,
+          pointerEvents: 'none'
+        } : {})
+      }} onClick={() => !isMobile && navigate('/signup')}>
         <img
           src="/assets/illustrations/Login_meedi.svg"
           alt="Character with speech bubble - Click to sign up"
-          style={styles.mascot}
+          style={{
+            ...styles.mascot,
+            ...(isMobile ? { maxWidth: '150px' } : {})
+          }}
         />
       </div>
 
