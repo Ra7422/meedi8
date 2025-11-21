@@ -5,7 +5,7 @@ import { Logo } from "../components/ui";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 import FloatingMenu from "../components/FloatingMenu";
-import TelegramLoginButton from '../components/TelegramLoginButton';
+import TelegramQRLoginModal from '../components/TelegramQRLoginModal';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 /**
@@ -20,7 +20,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
  * - Placeholder text inside inputs
  */
 export default function LoginNew() {
-  const { login, googleLogin, facebookLogin, telegramLogin } = useAuth();
+  const { login, googleLogin, facebookLogin, telegramQRLogin } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +28,7 @@ export default function LoginNew() {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef(null);
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
 
   // Turnstile site key from environment
   const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
@@ -108,11 +109,12 @@ export default function LoginNew() {
     setError("Facebook login failed. Please try again.");
   }
 
-  async function handleTelegramResponse(response) {
+  async function handleTelegramQRSuccess(tokenData) {
     setError("");
     setLoading(true);
     try {
-      await telegramLogin(response);
+      await telegramQRLogin(tokenData);
+      setShowTelegramModal(false);
       handlePostLoginRedirect();
     } catch (e) {
       setError(e.message || "Telegram login failed.");
@@ -127,12 +129,10 @@ export default function LoginNew() {
   // Environment variables for OAuth
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
-  const TELEGRAM_BOT_NAME = import.meta.env.VITE_TELEGRAM_BOT_NAME;
 
   // Check if OAuth is properly configured (must have valid credentials AND be in browser context)
   const hasGoogleOAuth = typeof window !== 'undefined' && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 20 && !GOOGLE_CLIENT_ID.includes('YOUR_');
   const hasFacebookOAuth = typeof window !== 'undefined' && FACEBOOK_APP_ID && FACEBOOK_APP_ID.length > 10 && !FACEBOOK_APP_ID.includes('YOUR_');
-  const hasTelegramOAuth = typeof window !== 'undefined' && TELEGRAM_BOT_NAME && !TELEGRAM_BOT_NAME.includes('YOUR_');
 
   return (
     <div style={styles.container}>
@@ -249,52 +249,58 @@ export default function LoginNew() {
               </div>
             )}
 
+            {/* Facebook Login */}
+            {hasFacebookOAuth && (
+              <FacebookLogin
+                appId={FACEBOOK_APP_ID}
+                onSuccess={handleFacebookSuccess}
+                onFail={handleFacebookError}
+                render={({ onClick }) => (
+                  <button
+                    onClick={onClick}
+                    style={{
+                      width: '58px',
+                      height: '58px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: '#1877F2',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </button>
+                )}
+              />
+            )}
+
             {/* Telegram Login */}
-            <div style={{
-              width: '58px',
-              height: '58px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              borderRadius: '50%',
-              position: 'relative'
-            }}>
-              {/* Telegram widget in background - clickable */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 0,
-                opacity: 0.01  // Nearly invisible but still renders
-              }}>
-                <TelegramLoginButton
-                  botName="meedi8_bot"
-                  dataOnauth={handleTelegramResponse}
-                  buttonSize="large"
-                  cornerRadius={20}
-                  requestAccess={true}
-                  usePic={false}
-                />
-              </div>
-              {/* Custom icon overlay - visible but non-interactive */}
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}>
-                <img
-                  src="/assets/illustrations/Telegram_logo.svg"
-                  alt="Telegram"
-                  style={{ width: '48px', height: '48px' }}
-                />
-              </div>
-            </div>
+            <button
+              onClick={() => setShowTelegramModal(true)}
+              style={{
+                width: '58px',
+                height: '58px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <img
+                src="/assets/illustrations/Telegram_logo.svg"
+                alt="Sign in with Telegram"
+                style={{ width: '48px', height: '48px' }}
+              />
+            </button>
           </div>
         </form>
 
@@ -318,6 +324,13 @@ export default function LoginNew() {
           border-radius: 12px !important;
         }
       `}</style>
+
+      {/* Telegram QR Login Modal */}
+      <TelegramQRLoginModal
+        isOpen={showTelegramModal}
+        onClose={() => setShowTelegramModal(false)}
+        onLoginSuccess={handleTelegramQRSuccess}
+      />
     </div>
   );
 }

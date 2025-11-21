@@ -89,6 +89,12 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function telegramQRLogin(tokenData) {
+    // Called after successful QR scan - tokenData contains access_token
+    setToken(tokenData.access_token);
+    return tokenData;
+  }
+
   function logout() {
     setToken(null);
     setUser(null);
@@ -106,6 +112,7 @@ export function AuthProvider({ children }) {
       facebookLogin,
       twitterLogin,
       telegramLogin,
+      telegramQRLogin,
       logout
     }}>
       {children}
