@@ -394,7 +394,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     <ModalWrapper
       onClose={onClose}
       onRefresh={handleRefreshQR}
-      showRefresh={step === 0 && !qrLoading}
+      showRefresh={(step === 0 && !qrLoading) || sessionExpired}
     >
       {/* Fixed Download Progress Indicator */}
       {downloadId && (
