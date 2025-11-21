@@ -48,6 +48,14 @@ export default function AdminDashboard() {
   const [errorLogsFilter, setErrorLogsFilter] = useState("all"); // all, unresolved, resolved
   const [expandedErrorId, setExpandedErrorId] = useState(null);
 
+  // Audit logs
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditActionTypes, setAuditActionTypes] = useState([]);
+  const [auditFilterAction, setAuditFilterAction] = useState("");
+  const [auditFilterStartDate, setAuditFilterStartDate] = useState("");
+  const [auditFilterEndDate, setAuditFilterEndDate] = useState("");
+  const [expandedAuditId, setExpandedAuditId] = useState(null);
+
   // Date range for analytics
   const [dateRangePreset, setDateRangePreset] = useState("30d");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -166,8 +174,8 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
-      // Fetch email templates, system health, AI costs, and error logs
-      const [templatesRes, healthRes, aiCostsRes, errorLogsRes] = await Promise.all([
+      // Fetch email templates, system health, AI costs, error logs, and audit logs
+      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -180,12 +188,16 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/error-logs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/audit-logs`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
       const healthData = healthRes.ok ? await healthRes.json() : null;
       const aiCostsData = aiCostsRes.ok ? await aiCostsRes.json() : null;
       const errorLogsData = errorLogsRes.ok ? await errorLogsRes.json() : { logs: [], unresolved_count: 0 };
+      const auditLogsData = auditLogsRes.ok ? await auditLogsRes.json() : { logs: [], action_types: [] };
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -200,11 +212,54 @@ export default function AdminDashboard() {
       setAiCosts(aiCostsData);
       setErrorLogs(errorLogsData.logs || []);
       setErrorLogsUnresolved(errorLogsData.unresolved_count || 0);
+      setAuditLogs(auditLogsData.logs || []);
+      setAuditActionTypes(auditLogsData.action_types || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (auditFilterAction) params.append("action", auditFilterAction);
+      if (auditFilterStartDate) params.append("start_date", auditFilterStartDate);
+      if (auditFilterEndDate) params.append("end_date", auditFilterEndDate);
+
+      const res = await fetch(`${API_URL}/admin/audit-logs?${params}`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data.logs || []);
+        setAuditActionTypes(data.action_types || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch audit logs:", err);
+    }
+  };
+
+  const getActionColor = (action) => {
+    const colors = {
+      user_created: { bg: "#DCFCE7", text: "#166534" },
+      user_updated: { bg: "#DBEAFE", text: "#1e40af" },
+      user_deleted: { bg: "#FEE2E2", text: "#EF4444" },
+      subscription_changed: { bg: "#E0E7FF", text: "#3730a3" },
+      password_reset: { bg: "#FEF3C7", text: "#92400e" },
+      user_impersonated: { bg: "#FCE7F3", text: "#be185d" },
+      feature_flag_toggled: { bg: "#F3E8FF", text: "#7c3aed" },
+      bulk_subscription_change: { bg: "#E0E7FF", text: "#3730a3" },
+      bulk_delete: { bg: "#FEE2E2", text: "#EF4444" },
+      error_resolved: { bg: "#DCFCE7", text: "#166534" },
+    };
+    return colors[action] || { bg: "#f3f4f6", text: "#4B5563" };
+  };
+
+  const formatActionLabel = (action) => {
+    return action.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const handleResolveError = async (errorId) => {
@@ -631,6 +686,12 @@ export default function AdminDashboard() {
             badge={errorLogsUnresolved}
           />
           <SidebarItem
+            icon="☷"
+            label="Audit Trail"
+            active={activeTab === "audit"}
+            onClick={() => setActiveTab("audit")}
+          />
+          <SidebarItem
             icon="⚑"
             label="Feature Flags"
             active={activeTab === "flags"}
@@ -698,6 +759,7 @@ export default function AdminDashboard() {
             {activeTab === "revenue" && "Revenue Reporting"}
             {activeTab === "ai-costs" && "AI Cost Tracking"}
             {activeTab === "errors" && "Error Logs"}
+            {activeTab === "audit" && "Audit Trail"}
             {activeTab === "flags" && "Feature Flags"}
             {activeTab === "webhooks" && "Webhook Logs"}
             {activeTab === "emails" && "Email Templates"}
@@ -2013,6 +2075,238 @@ export default function AdminDashboard() {
                         <tr>
                           <td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "#6B7280" }}>
                             No error logs found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Audit Trail Tab */}
+          {activeTab === "audit" && (
+            <>
+              {/* Filter Bar */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                marginBottom: "24px",
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  flexWrap: "wrap",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>Action:</span>
+                    <select
+                      value={auditFilterAction}
+                      onChange={(e) => setAuditFilterAction(e.target.value)}
+                      style={{
+                        padding: "6px 12px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "13px",
+                        minWidth: "180px",
+                      }}
+                    >
+                      <option value="">All Actions</option>
+                      {auditActionTypes.map((action) => (
+                        <option key={action} value={action}>
+                          {formatActionLabel(action)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>From:</span>
+                    <input
+                      type="date"
+                      value={auditFilterStartDate}
+                      onChange={(e) => setAuditFilterStartDate(e.target.value)}
+                      style={{
+                        padding: "6px 10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "13px",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>To:</span>
+                    <input
+                      type="date"
+                      value={auditFilterEndDate}
+                      onChange={(e) => setAuditFilterEndDate(e.target.value)}
+                      style={{
+                        padding: "6px 10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "13px",
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={fetchAuditLogs}
+                    style={{
+                      padding: "6px 16px",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: "#B8A7E5",
+                      color: "white",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Apply Filters
+                  </button>
+
+                  {(auditFilterAction || auditFilterStartDate || auditFilterEndDate) && (
+                    <button
+                      onClick={() => {
+                        setAuditFilterAction("");
+                        setAuditFilterStartDate("");
+                        setAuditFilterEndDate("");
+                        fetchAuditLogs();
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d1d5db",
+                        background: "white",
+                        color: "#4B5563",
+                        fontSize: "13px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Audit Logs Table */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}>
+                <div style={{ overflowX: "auto", maxHeight: "600px", overflowY: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                    <thead style={{ position: "sticky", top: 0, background: "white" }}>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={thStyle}>Time</th>
+                        <th style={thStyle}>Admin</th>
+                        <th style={thStyle}>Action</th>
+                        <th style={thStyle}>Target</th>
+                        <th style={thStyle}>Details</th>
+                        <th style={thStyle}>IP Address</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log) => (
+                        <React.Fragment key={log.id}>
+                          <tr
+                            style={{
+                              borderBottom: expandedAuditId === log.id ? "none" : "1px solid #e5e7eb",
+                              cursor: Object.keys(log.details || {}).length > 0 ? "pointer" : "default",
+                            }}
+                            onClick={() => {
+                              if (Object.keys(log.details || {}).length > 0) {
+                                setExpandedAuditId(expandedAuditId === log.id ? null : log.id);
+                              }
+                            }}
+                          >
+                            <td style={tdStyle}>
+                              <span style={{ fontSize: "12px", color: "#6B7280" }}>
+                                {new Date(log.timestamp).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{ fontSize: "13px" }}>{log.admin_email}</span>
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{
+                                padding: "3px 10px",
+                                borderRadius: "12px",
+                                background: getActionColor(log.action).bg,
+                                color: getActionColor(log.action).text,
+                                fontSize: "11px",
+                                fontWeight: "600",
+                              }}>
+                                {formatActionLabel(log.action)}
+                              </span>
+                            </td>
+                            <td style={tdStyle}>
+                              <div style={{ fontSize: "12px", color: "#4B5563" }}>
+                                {log.target_type}
+                                {log.target_id && (
+                                  <span style={{ fontFamily: "monospace", marginLeft: "4px" }}>
+                                    #{log.target_id}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td style={tdStyle}>
+                              {Object.keys(log.details || {}).length > 0 ? (
+                                <span style={{
+                                  fontSize: "11px",
+                                  color: "#B8A7E5",
+                                  fontWeight: "600",
+                                }}>
+                                  {expandedAuditId === log.id ? "Hide details" : "View details"}
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: "11px", color: "#9ca3af" }}>-</span>
+                              )}
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{ fontSize: "11px", fontFamily: "monospace", color: "#6B7280" }}>
+                                {log.ip_address || "-"}
+                              </span>
+                            </td>
+                          </tr>
+                          {/* Expanded Details Row */}
+                          {expandedAuditId === log.id && Object.keys(log.details || {}).length > 0 && (
+                            <tr style={{ background: "#f9fafb" }}>
+                              <td colSpan="6" style={{ padding: "16px" }}>
+                                <div style={{ marginBottom: "8px" }}>
+                                  <strong style={{ color: "#4B5563", fontSize: "13px" }}>Details:</strong>
+                                </div>
+                                <pre style={{
+                                  background: "#1a1a1a",
+                                  color: "#f0f0f0",
+                                  padding: "12px",
+                                  borderRadius: "8px",
+                                  fontSize: "11px",
+                                  fontFamily: "monospace",
+                                  overflow: "auto",
+                                  maxHeight: "200px",
+                                  marginTop: "8px",
+                                  whiteSpace: "pre-wrap",
+                                  wordBreak: "break-word",
+                                }}>
+                                  {JSON.stringify(log.details, null, 2)}
+                                </pre>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                      {auditLogs.length === 0 && (
+                        <tr>
+                          <td colSpan="6" style={{ padding: "40px", textAlign: "center", color: "#6B7280" }}>
+                            No audit logs found
                           </td>
                         </tr>
                       )}

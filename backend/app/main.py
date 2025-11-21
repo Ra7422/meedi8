@@ -93,6 +93,75 @@ class ErrorLogStore:
 # Global error log store instance
 error_log_store = ErrorLogStore()
 
+
+# ========================================
+# AUDIT LOG STORE (In-Memory)
+# ========================================
+
+class AuditLogStore:
+    """In-memory store for audit logs with max 1000 entries"""
+
+    def __init__(self, max_size: int = 1000):
+        self._logs = deque(maxlen=max_size)
+        self._counter = 0
+
+    def add_log(
+        self,
+        admin_email: str,
+        action: str,
+        target_type: str,
+        target_id: Optional[str] = None,
+        details: Optional[dict] = None,
+        ip_address: Optional[str] = None
+    ) -> dict:
+        """Add an audit log entry and return it"""
+        self._counter += 1
+        log_entry = {
+            "id": self._counter,
+            "timestamp": datetime.utcnow().isoformat(),
+            "admin_email": admin_email,
+            "action": action,
+            "target_type": target_type,
+            "target_id": target_id,
+            "details": details or {},
+            "ip_address": ip_address
+        }
+        self._logs.append(log_entry)
+        return log_entry
+
+    def get_logs(
+        self,
+        action: Optional[str] = None,
+        admin_email: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ) -> list:
+        """Get logs with optional filtering"""
+        logs = list(self._logs)
+
+        if action:
+            logs = [l for l in logs if l["action"] == action]
+
+        if admin_email:
+            logs = [l for l in logs if l["admin_email"] == admin_email]
+
+        if start_date:
+            logs = [l for l in logs if l["timestamp"] >= start_date]
+
+        if end_date:
+            logs = [l for l in logs if l["timestamp"] <= end_date]
+
+        # Return newest first
+        return sorted(logs, key=lambda x: x["timestamp"], reverse=True)
+
+    def get_action_types(self) -> list:
+        """Get list of unique action types"""
+        return list(set(l["action"] for l in self._logs))
+
+
+# Global audit log store instance
+audit_log_store = AuditLogStore()
+
 app = FastAPI(title="Clean Air API", version="0.4.0")
 
 # DEPLOYMENT MARKER - FIX v4 BUILD

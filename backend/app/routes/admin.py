@@ -3,7 +3,7 @@ Admin Dashboard API Routes
 Provides administrative control over users, subscriptions, and settings.
 """
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -84,6 +84,36 @@ def check_admin(user: User):
         )
 
 
+def log_audit(
+    admin_email: str,
+    action: str,
+    target_type: str,
+    target_id: Optional[str] = None,
+    details: Optional[dict] = None,
+    request: Optional[Request] = None
+):
+    """Log an admin action to the audit trail"""
+    from ..main import audit_log_store
+
+    ip_address = None
+    if request:
+        # Get IP from X-Forwarded-For header (for proxied requests) or client host
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            ip_address = forwarded_for.split(",")[0].strip()
+        else:
+            ip_address = request.client.host if request.client else None
+
+    audit_log_store.add_log(
+        admin_email=admin_email,
+        action=action,
+        target_type=target_type,
+        target_id=str(target_id) if target_id else None,
+        details=details,
+        ip_address=ip_address
+    )
+
+
 # ========================================
 # AUTHENTICATION
 # ========================================
@@ -149,6 +179,7 @@ def list_users(
 def update_user(
     user_id: int,
     payload: UserUpdateIn,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -159,23 +190,38 @@ def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    changes = {}
     if payload.name is not None:
+        changes["name"] = {"from": user.name, "to": payload.name}
         user.name = payload.name
     if payload.email is not None:
         existing = db.query(User).filter(User.email == payload.email, User.id != user_id).first()
         if existing:
             raise HTTPException(status_code=409, detail="Email already in use")
+        changes["email"] = {"from": user.email, "to": payload.email}
         user.email = payload.email
     if payload.is_admin is not None:
+        changes["is_admin"] = {"from": bool(user.is_admin), "to": payload.is_admin}
         user.is_admin = 1 if payload.is_admin else 0
 
     db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="user_updated",
+        target_type="user",
+        target_id=user_id,
+        details={"user_email": user.email, "changes": changes},
+        request=request
+    )
+
     return {"status": "success", "user_id": user_id}
 
 
 @router.delete("/users/{user_id}")
 def delete_user(
     user_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -189,12 +235,23 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    user_email = user.email
+
     from sqlalchemy import text
     db.execute(text(f"DELETE FROM turns WHERE user_id = {user_id}"))
     db.execute(text(f"DELETE FROM room_participants WHERE user_id = {user_id}"))
     db.execute(text(f"DELETE FROM subscriptions WHERE user_id = {user_id}"))
     db.delete(user)
     db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="user_deleted",
+        target_type="user",
+        target_id=user_id,
+        details={"user_email": user_email},
+        request=request
+    )
 
     return {"status": "success", "deleted_user_id": user_id}
 
@@ -207,6 +264,7 @@ def delete_user(
 def update_subscription(
     user_id: int,
     payload: SubscriptionUpdateIn,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -218,6 +276,10 @@ def update_subscription(
         raise HTTPException(status_code=404, detail="User not found")
 
     subscription = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+
+    old_tier = subscription.tier.value if subscription and subscription.tier else "none"
+    old_status = subscription.status.value if subscription and subscription.status else "none"
+
     if not subscription:
         subscription = Subscription(user_id=user_id)
         db.add(subscription)
@@ -242,6 +304,19 @@ def update_subscription(
 
     subscription.updated_at = datetime.utcnow()
     db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="subscription_changed",
+        target_type="user",
+        target_id=user_id,
+        details={
+            "user_email": user.email,
+            "tier": {"from": old_tier, "to": subscription.tier.value},
+            "status": {"from": old_status, "to": subscription.status.value}
+        },
+        request=request
+    )
 
     return {"status": "success", "user_id": user_id, "subscription": {"tier": subscription.tier.value, "status": subscription.status.value}}
 
@@ -550,6 +625,7 @@ def reset_user_password(
 @router.post("/users/{user_id}/generate-password")
 def generate_temp_password(
     user_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -566,6 +642,15 @@ def generate_temp_password(
 
     user.hashed_password = hash_password(temp_password)
     db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="password_reset",
+        target_type="user",
+        target_id=user_id,
+        details={"user_email": user.email},
+        request=request
+    )
 
     return {"status": "success", "user_id": user_id, "temp_password": temp_password}
 
@@ -941,6 +1026,7 @@ def bulk_update_subscriptions(
     user_ids: List[int],
     tier: str,
     status: str,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -976,12 +1062,22 @@ def bulk_update_subscriptions(
 
     db.commit()
 
+    log_audit(
+        admin_email=current_user.email,
+        action="bulk_subscription_change",
+        target_type="users",
+        target_id=None,
+        details={"user_ids": user_ids, "tier": tier, "status": status, "updated_count": updated},
+        request=request
+    )
+
     return {"status": "success", "updated_count": updated}
 
 
 @router.post("/users/bulk/delete")
 def bulk_delete_users(
     user_ids: List[int],
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -993,9 +1089,11 @@ def bulk_delete_users(
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
 
     deleted = 0
+    deleted_emails = []
     for user_id in user_ids:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
+            deleted_emails.append(user.email)
             db.execute(text(f"DELETE FROM turns WHERE user_id = {user_id}"))
             db.execute(text(f"DELETE FROM room_participants WHERE user_id = {user_id}"))
             db.execute(text(f"DELETE FROM subscriptions WHERE user_id = {user_id}"))
@@ -1003,6 +1101,15 @@ def bulk_delete_users(
             deleted += 1
 
     db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="bulk_delete",
+        target_type="users",
+        target_id=None,
+        details={"user_ids": user_ids, "deleted_emails": deleted_emails, "deleted_count": deleted},
+        request=request
+    )
 
     return {"status": "success", "deleted_count": deleted}
 
@@ -1584,6 +1691,7 @@ def get_feature_flags(
 def update_feature_flag(
     flag_name: str,
     enabled: bool,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -1593,7 +1701,18 @@ def update_feature_flag(
     if flag_name not in FEATURE_FLAGS:
         raise HTTPException(status_code=404, detail="Feature flag not found")
 
+    old_value = FEATURE_FLAGS[flag_name]
     FEATURE_FLAGS[flag_name] = enabled
+
+    log_audit(
+        admin_email=current_user.email,
+        action="feature_flag_toggled",
+        target_type="feature_flag",
+        target_id=flag_name,
+        details={"from": old_value, "to": enabled},
+        request=request
+    )
+
     return {"status": "success", "flag": flag_name, "enabled": enabled}
 
 
@@ -1636,6 +1755,7 @@ def get_webhook_logs(
 @router.post("/impersonate/{user_id}")
 def impersonate_user(
     user_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -1648,6 +1768,15 @@ def impersonate_user(
 
     # Generate token for the target user
     token = create_access_token({"sub": str(user.id)}, settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    log_audit(
+        admin_email=current_user.email,
+        action="user_impersonated",
+        target_type="user",
+        target_id=user_id,
+        details={"user_email": user.email},
+        request=request
+    )
 
     return {
         "status": "success",
@@ -1901,6 +2030,7 @@ def get_error_logs(
 @router.post("/error-logs/{error_id}/resolve")
 def resolve_error_log(
     error_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """Mark an error as resolved"""
@@ -1909,6 +2039,15 @@ def resolve_error_log(
     from ..main import error_log_store
 
     if error_log_store.resolve_error(error_id):
+        log_audit(
+            admin_email=current_user.email,
+            action="error_resolved",
+            target_type="error_log",
+            target_id=error_id,
+            details={},
+            request=request
+        )
+
         return {
             "status": "success",
             "error_id": error_id,
@@ -1929,4 +2068,37 @@ def get_error_logs_count(
 
     return {
         "unresolved_count": error_log_store.get_unresolved_count()
+    }
+
+
+# ========================================
+# AUDIT LOGS
+# ========================================
+
+@router.get("/audit-logs")
+def get_audit_logs(
+    current_user: User = Depends(get_current_user),
+    action: Optional[str] = None,
+    admin_email: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get audit logs with optional filtering"""
+    check_admin(current_user)
+
+    from ..main import audit_log_store
+
+    logs = audit_log_store.get_logs(
+        action=action,
+        admin_email=admin_email,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    action_types = audit_log_store.get_action_types()
+
+    return {
+        "logs": logs,
+        "total": len(logs),
+        "action_types": action_types
     }
