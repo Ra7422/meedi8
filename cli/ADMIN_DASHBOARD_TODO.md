@@ -19,30 +19,25 @@ This file tracks planned enhancements for the Meedi8 admin dashboard at `/admin/
 
 **Commit:** `d323aaf` - Add AI Cost Tracking to admin dashboard
 
+### Environment Variables Management
+- [x] Research Vercel REST API for env var management
+- [x] Research Railway GraphQL API for env var management
+- [x] Add Vercel/Railway tokens to config.py
+- [x] Create GET /admin/env-vars endpoint (list from both platforms)
+- [x] Create PUT /admin/env-vars endpoint (create/update)
+- [x] Create DELETE /admin/env-vars/{platform}/{key} endpoint
+- [x] Create POST /admin/env-vars/redeploy/{platform} endpoint
+- [x] Add "Env Vars" tab to AdminDashboard.jsx
+- [x] Show masked values for security
+- [x] Add edit modal for individual variables
+- [x] Add "Add New Variable" form
+- [x] Add Redeploy buttons for Vercel/Railway
+
+**Commit:** `e7ec9e9` - Add Environment Variables Management to admin dashboard
+
 ## Pending Features
 
-### 1. Environment Variables Management
-**Priority:** High
-**Purpose:** Edit API keys in dashboard that sync to Vercel/Railway
-
-**Tasks:**
-- [ ] Research Vercel REST API for env var management
-- [ ] Research Railway GraphQL API for env var management
-- [ ] Create backend endpoints for env var CRUD
-- [ ] Add "Environment Variables" tab to dashboard
-- [ ] Show masked values with reveal option
-- [ ] Add sync buttons for Vercel/Railway
-- [ ] Trigger redeployments after updates
-
-**API References:**
-- Vercel: `POST /v10/projects/{projectId}/env`
-- Railway: GraphQL mutations for variables
-
-**Files to modify:**
-- `backend/app/routes/admin.py`
-- `frontend/src/pages/AdminDashboard.jsx`
-
-### 2. Enhanced Audit Logs
+### 1. Enhanced Audit Logs
 **Priority:** Medium
 **Purpose:** Better tracking of admin actions
 
