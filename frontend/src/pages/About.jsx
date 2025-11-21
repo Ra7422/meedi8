@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import describeImg from '../assets/icons/Describe.png';
 import confirmImg from '../assets/icons/Confirm.png';
 import inviteImg from '../assets/icons/Invite.png';
@@ -9,18 +9,28 @@ import meediHead from '../assets/icons/Meedi_head.svg';
 /**
  * About / Our Story Page
  *
- * Design from: "Screenshot 2025-11-06 at 03.23.16.png"
- *
  * Features:
+ * - "What is Meedi8?" section with promo video
+ * - "How It Works" section with compact interactive cards
  * - "Our Story" section with origin narrative
  * - "Our Mission" section
- * - "Ethical Stance" section with 4 principles:
- *   - No Judgment
- *   - Human Oversight
- *   - AI as a Tool, Not a Decision-Maker
- *   - Privacy First
+ * - "Ethical Stance" section with 4 principles
  */
 export default function About() {
+  const [activeStep, setActiveStep] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const videoRef = useRef(null);
+
+  // SSR safety check for mobile detection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
+
   const howItWorksSteps = [
     {
       number: "1",
@@ -73,6 +83,13 @@ export default function About() {
     }
   ];
 
+  // Handle card interaction (hover on desktop, tap on mobile)
+  const handleCardInteraction = (index) => {
+    if (isMobile) {
+      setActiveStep(activeStep === index ? null : index);
+    }
+  };
+
   return (
     <div style={styles.container}>
       {/* Top ellipse for depth */}
@@ -83,44 +100,80 @@ export default function About() {
 
       {/* Main content */}
       <div style={styles.content}>
-        {/* How It Works Section */}
+
+        {/* NEW: What is Meedi8? Section */}
         <section style={styles.section}>
-          <h2 style={styles.howItWorksHeading}>How It Works</h2>
-          {/* First Row - 2 Cards */}
-          <div style={styles.stepsGridRow}>
-            {howItWorksSteps.slice(0, 2).map((step, index) => (
-              <div key={index} style={styles.stepCard}>
-                <img src={step.image} alt={step.title} style={styles.stepImage} />
-                <div style={styles.stepContent}>
-                  <h3 style={styles.stepTitle}>{step.title}</h3>
-                  <p style={styles.stepDescription}>{step.description}</p>
-                </div>
-              </div>
-            ))}
+          <h1 style={styles.mainHeading}>What is Meedi8?</h1>
+          <p style={styles.bodyText}>
+            AI-powered mediation that transforms conflict into understanding
+          </p>
+
+          <div style={styles.videoWrapper}>
+            <video
+              ref={videoRef}
+              controls
+              playsInline
+              preload="metadata"
+              style={styles.video}
+            >
+              <source src="/assets/videos/Meedi_promo.mp4" type="video/mp4" />
+              Your browser does not support video.
+            </video>
           </div>
-          {/* Second Row - 2 Cards */}
-          <div style={styles.stepsGridRow}>
-            {howItWorksSteps.slice(2, 4).map((step, index) => (
-              <div key={index + 2} style={styles.stepCard}>
-                <img src={step.image} alt={step.title} style={styles.stepImage} />
-                <div style={styles.stepContent}>
-                  <h3 style={styles.stepTitle}>{step.title}</h3>
-                  <p style={styles.stepDescription}>{step.description}</p>
+        </section>
+
+        {/* REDESIGNED: How It Works Section */}
+        <section style={styles.section}>
+          <h2 style={styles.sectionHeading}>How It Works</h2>
+
+          {/* Interactive Cards Grid */}
+          <div style={{
+            ...styles.cardsGrid,
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+          }}>
+            {howItWorksSteps.map((step, index) => {
+              const isActive = activeStep === index;
+              return (
+                <div
+                  key={index}
+                  style={{
+                    ...styles.interactiveCard,
+                    ...(isActive && styles.interactiveCardActive),
+                    transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
+                  }}
+                  onMouseEnter={() => !isMobile && setActiveStep(index)}
+                  onMouseLeave={() => !isMobile && setActiveStep(null)}
+                  onClick={() => handleCardInteraction(index)}
+                >
+                  {/* Card Content */}
+                  <div style={styles.cardHeader}>
+                    <span style={styles.stepBadge}>{step.number}</span>
+                    <img src={step.image} alt={step.title} style={styles.cardIcon} />
+                    <h3 style={styles.cardTitle}>{step.title}</h3>
+                  </div>
+
+                  {/* Expandable Description */}
+                  <div style={{
+                    ...styles.cardDescription,
+                    maxHeight: isActive ? '200px' : '0',
+                    opacity: isActive ? 1 : 0,
+                    marginTop: isActive ? '12px' : '0',
+                    paddingTop: isActive ? '12px' : '0',
+                  }}>
+                    <p style={styles.descriptionText}>{step.description}</p>
+                  </div>
+
+                  {/* Mobile tap indicator */}
+                  {isMobile && !isActive && (
+                    <div style={styles.tapIndicator}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#9CA3AF">
+                        <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                      </svg>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-          {/* Third Row - 1 Card Centered */}
-          <div style={styles.stepsGridSingle}>
-            {howItWorksSteps.slice(4).map((step, index) => (
-              <div key={index + 4} style={styles.stepCard}>
-                <img src={step.image} alt={step.title} style={styles.stepImage} />
-                <div style={styles.stepContent}>
-                  <h3 style={styles.stepTitle}>{step.title}</h3>
-                  <p style={styles.stepDescription}>{step.description}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -268,7 +321,7 @@ const styles = {
   meediHead: {
     position: 'absolute',
     right: '-80px',
-    top: '1400px',
+    top: '1800px',
     width: '400px',
     height: 'auto',
     opacity: 0.4,
@@ -293,7 +346,7 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     padding: '40px 20px 80px',
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto',
   },
   section: {
@@ -324,6 +377,95 @@ const styles = {
     margin: '0 0 20px 0',
     textAlign: 'left',
   },
+
+  // Video Section
+  videoWrapper: {
+    position: 'relative',
+    width: '100%',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+    background: '#000',
+  },
+  video: {
+    width: '100%',
+    height: 'auto',
+    display: 'block',
+  },
+
+  // Interactive Cards
+  cardsGrid: {
+    display: 'grid',
+    gap: '16px',
+    width: '100%',
+  },
+  interactiveCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px 16px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    cursor: 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    border: '1px solid transparent',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  interactiveCardActive: {
+    boxShadow: '0 8px 24px rgba(125, 211, 192, 0.2)',
+    border: '1px solid rgba(125, 211, 192, 0.3)',
+  },
+  cardHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  stepBadge: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    backgroundColor: '#7DD3C0',
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '14px',
+    fontWeight: '700',
+  },
+  cardIcon: {
+    width: '80px',
+    height: '80px',
+    objectFit: 'contain',
+  },
+  cardTitle: {
+    fontSize: 'clamp(12px, 2.5vw, 14px)',
+    fontWeight: '600',
+    color: '#6750A4',
+    margin: 0,
+    textAlign: 'center',
+    lineHeight: '1.3',
+  },
+  cardDescription: {
+    overflow: 'hidden',
+    transition: 'all 0.3s ease',
+    borderTop: '1px solid #E5E7EB',
+  },
+  descriptionText: {
+    fontSize: 'clamp(11px, 2vw, 13px)',
+    color: '#6B7280',
+    lineHeight: '1.6',
+    margin: 0,
+    textAlign: 'center',
+  },
+  tapIndicator: {
+    position: 'absolute',
+    bottom: '8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    opacity: 0.5,
+  },
+
+  // Ethical Principles
   principlesList: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -351,6 +493,49 @@ const styles = {
     lineHeight: '1.6',
     margin: 0,
   },
+
+  // Modality Table
+  modalitySection: {
+    width: '100%',
+    marginBottom: '64px',
+  },
+  tableContainer: {
+    overflowX: 'auto',
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    padding: '16px',
+    WebkitOverflowScrolling: 'touch',
+  },
+  table: {
+    width: '100%',
+    minWidth: '600px',
+    borderCollapse: 'collapse',
+    fontSize: '13px',
+  },
+  tableHeader: {
+    backgroundColor: '#7DD3C0',
+    color: 'white',
+    padding: '12px 8px',
+    textAlign: 'left',
+    fontWeight: '700',
+    fontSize: '14px',
+    borderBottom: '2px solid #6BC5B8',
+  },
+  tableRow: {
+    backgroundColor: 'white',
+  },
+  tableRowAlt: {
+    backgroundColor: '#F9FAFB',
+  },
+  tableCell: {
+    padding: '10px 8px',
+    borderBottom: '1px solid #E5E7EB',
+    color: '#4B5563',
+    lineHeight: '1.5',
+  },
+
+  // CTA Section
   ctaSection: {
     width: '100%',
     textAlign: 'center',
@@ -385,121 +570,5 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     fontFamily: "'Nunito', sans-serif",
-  },
-  howItWorksHeading: {
-    fontSize: 'clamp(40px, 8vw, 64px)',
-    fontWeight: '300',
-    color: '#7DD3C0',
-    lineHeight: '1.2',
-    margin: '0 0 48px 0',
-    textAlign: 'left',
-  },
-  stepsGridRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '24px',
-    marginBottom: '24px',
-    '@media (min-width: 768px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '32px',
-      marginBottom: '32px',
-    },
-  },
-  stepsGridSingle: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '24px',
-    margin: '0 auto',
-    '@media (min-width: 768px)': {
-      maxWidth: 'calc(50% - 16px)',
-      gap: '32px',
-    },
-  },
-  stepCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: '32px 24px',
-    borderRadius: '16px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-  },
-  stepImage: {
-    width: '200px',
-    height: '200px',
-    objectFit: 'contain',
-    marginBottom: '24px',
-  },
-  stepContent: {
-    textAlign: 'center',
-    width: '100%',
-  },
-  stepTitle: {
-    fontSize: 'clamp(20px, 4vw, 26px)',
-    fontWeight: '700',
-    color: '#6750A4',
-    lineHeight: '1.3',
-    margin: '0 0 16px 0',
-  },
-  stepDescription: {
-    fontSize: 'clamp(14px, 3vw, 16px)',
-    fontWeight: '400',
-    color: '#6B7280',
-    lineHeight: '1.6',
-    margin: 0,
-  },
-  modalitySection: {
-    width: '100%',
-    marginBottom: '64px',
-  },
-  tableContainer: {
-    overflowX: 'auto',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    padding: '16px',
-    WebkitOverflowScrolling: 'touch',
-    '@media (min-width: 768px)': {
-      padding: '24px',
-    },
-  },
-  table: {
-    width: '100%',
-    minWidth: '600px',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-    '@media (min-width: 768px)': {
-      fontSize: '15px',
-      minWidth: 'auto',
-    },
-  },
-  tableHeader: {
-    backgroundColor: '#7DD3C0',
-    color: 'white',
-    padding: '12px 8px',
-    textAlign: 'left',
-    fontWeight: '700',
-    fontSize: '14px',
-    borderBottom: '2px solid #6BC5B8',
-    '@media (min-width: 768px)': {
-      padding: '16px 12px',
-      fontSize: '16px',
-    },
-  },
-  tableRow: {
-    backgroundColor: 'white',
-  },
-  tableRowAlt: {
-    backgroundColor: '#F9FAFB',
-  },
-  tableCell: {
-    padding: '10px 8px',
-    borderBottom: '1px solid #E5E7EB',
-    color: '#4B5563',
-    lineHeight: '1.5',
-    '@media (min-width: 768px)': {
-      padding: '14px 12px',
-    },
   },
 };
