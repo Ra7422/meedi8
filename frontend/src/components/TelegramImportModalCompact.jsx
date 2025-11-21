@@ -16,7 +16,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   const { token } = useAuth();
 
   // Step state
-  const [step, setStep] = useState(0); // 0: method selection, 1: phone, 1.5: QR, 2: code, 3: contacts
+  const [step, setStep] = useState(0); // 0: QR+phone, 1: phone entry, 2: code, 3: contacts
 
   // Form inputs
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -28,6 +28,8 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
   const [qrLoginId, setQrLoginId] = useState(null);
   const [qrStatus, setQrStatus] = useState(null);
   const [qr2FAPassword, setQr2FAPassword] = useState("");
+  const [qrCountdown, setQrCountdown] = useState(30);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Data state
   const [contacts, setContacts] = useState([]);
@@ -88,7 +90,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
 
   // Poll QR login status
   useEffect(() => {
-    if (qrLoginId && step === 1.5 && qrStatus !== 'success' && qrStatus !== '2fa_required') {
+    if (qrLoginId && step === 0 && qrStatus !== 'success' && qrStatus !== '2fa_required') {
       const interval = setInterval(async () => {
         try {
           const response = await apiRequest(`/telegram/qr-login/status/${qrLoginId}`, "GET", null, token);
@@ -98,7 +100,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
             setStep(3);
             loadContacts();
           } else if (response.status === 'expired') {
-            setError("QR code expired. Click 'Refresh QR' to generate a new one.");
+            setQrCountdown(0);
           }
         } catch (err) {
           console.error("Failed to check QR status:", err);
@@ -108,6 +110,23 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
       return () => clearInterval(interval);
     }
   }, [qrLoginId, qrStatus, step, token]);
+
+  // Countdown timer for QR code
+  useEffect(() => {
+    if (qrCode && qrCountdown > 0 && step === 0) {
+      const timer = setTimeout(() => {
+        setQrCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [qrCode, qrCountdown, step]);
+
+  // Auto-initiate QR login when modal opens (if no session)
+  useEffect(() => {
+    if (isOpen && !checkingSession && step === 0 && !qrCode && !sessionExpired && token) {
+      handleInitiateQRLogin();
+    }
+  }, [isOpen, checkingSession, step, qrCode, sessionExpired, token]);
 
   const checkExistingSession = async () => {
     if (!token) {
@@ -123,6 +142,10 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         loadContacts();
       }
     } catch (err) {
+      // Check if this is a session expired error
+      if (err.message?.includes("expired") || err.message?.includes("not found") || err.status === 404) {
+        setSessionExpired(true);
+      }
       console.error("Session check failed:", err);
     } finally {
       setCheckingSession(false);
@@ -182,12 +205,14 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     setLoading(true);
     setError("");
     setQrStatus(null);
+    setSessionExpired(false);
 
     try {
       const response = await apiRequest("/telegram/qr-login/initiate", "POST", null, token);
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
-      setStep(1.5);
+      setQrCountdown(30);
+      setStep(0);
     } catch (err) {
       setError(err.message || "Failed to generate QR code");
     } finally {
@@ -206,6 +231,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         try {
           const response = await apiRequest(`/telegram/qr-login/refresh/${qrLoginId}`, "POST", null, token);
           setQrCode(response.qr_code);
+          setQrCountdown(30);
           setLoading(false);
           return;
         } catch (e) {
@@ -222,6 +248,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
       const response = await apiRequest("/telegram/qr-login/initiate", "POST", null, token);
       setQrCode(response.qr_code);
       setQrLoginId(response.login_id);
+      setQrCountdown(30);
     } catch (err) {
       setError(err.message || "Failed to refresh QR code");
     } finally {
@@ -352,7 +379,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
     return (
       <ModalWrapper onClose={onClose}>
         <div style={{ textAlign: "center", padding: "20px" }}>
-          <div style={{ fontSize: "20px" }}>⏳</div>
+          <div style={{ fontSize: "20px", fontFamily: "monospace" }}>&#9201;</div>
           <p style={{ fontSize: "12px", color: "#8A8A8F", margin: "8px 0 0 0" }}>
             Checking connection...
           </p>
@@ -383,11 +410,11 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
               </div>
               <div style={{ color: "#6b7280" }}>
                 {downloadStatus?.status === "completed" ? (
-                  `✓ ${downloadStatus.message_count} messages`
+                  <><span style={{ fontFamily: "monospace" }}>&#10003;</span> {downloadStatus.message_count} messages</>
                 ) : downloadStatus?.status === "failed" ? (
-                  "✗ Failed"
+                  <><span style={{ fontFamily: "monospace" }}>&#10007;</span> Failed</>
                 ) : (
-                  `⏳ ${downloadStatus?.message_count || 0} messages...`
+                  <><span style={{ fontFamily: "monospace" }}>&#9201;</span> {downloadStatus?.message_count || 0} messages...</>
                 )}
               </div>
             </div>
@@ -427,151 +454,33 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
         </div>
       )}
 
-      {/* Step 0: Method Selection */}
+      {/* Step 0: QR Code + Phone Input */}
       {step === 0 && (
         <div>
-          <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
-            Connect Telegram
-          </h3>
-          <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 16px 0" }}>
-            Choose how to connect your Telegram account
-          </p>
-
-          <button
-            onClick={handleInitiateQRLogin}
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "13px",
-              fontWeight: "600",
-              color: "white",
-              background: loading ? "#d1d5db" : "#0088CC",
-              border: "none",
+          {/* Session Expired Warning */}
+          {sessionExpired && (
+            <div style={{
+              background: "#fef3c7",
+              border: "1px solid #f59e0b",
               borderRadius: "6px",
-              cursor: loading ? "not-allowed" : "pointer",
-              marginBottom: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px"
-            }}
-          >
-            {loading ? "Loading..." : (
-              <>
-                <span style={{ fontSize: "16px" }}>📱</span>
-                Scan QR Code
-              </>
-            )}
-          </button>
-
-          <div style={{
-            textAlign: "center",
-            fontSize: "11px",
-            color: "#8A8A8F",
-            margin: "10px 0"
-          }}>
-            or
-          </div>
-
-          <button
-            onClick={() => setStep(1)}
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "13px",
-              fontWeight: "600",
-              color: "#0088CC",
-              background: "white",
-              border: "1px solid #0088CC",
-              borderRadius: "6px",
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px"
-            }}
-          >
-            <span style={{ fontSize: "16px" }}>📞</span>
-            Enter Phone Number
-          </button>
-        </div>
-      )}
-
-      {/* Step 1: Phone */}
-      {step === 1 && (
-        <div>
-          <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
-            Enter Phone Number
-          </h3>
-          <input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+44 7123456789"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "10px",
-              fontSize: "13px",
-              border: "1px solid #e5e7eb",
-              borderRadius: "6px",
-              marginBottom: "10px",
-              outline: "none",
-              boxSizing: "border-box"
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#0088CC"}
-            onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-            onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
-          />
-          <button
-            onClick={handleSendCode}
-            disabled={loading || !phoneNumber.trim()}
-            style={{
-              width: "100%",
-              padding: "10px",
-              fontSize: "13px",
-              fontWeight: "600",
-              color: "white",
-              background: loading || !phoneNumber.trim() ? "#d1d5db" : "#0088CC",
-              border: "none",
-              borderRadius: "6px",
-              cursor: loading || !phoneNumber.trim() ? "not-allowed" : "pointer"
-            }}
-          >
-            {loading ? "Sending..." : "Send Code"}
-          </button>
-          <button
-            onClick={() => setStep(0)}
-            style={{
-              width: "100%",
-              padding: "8px",
+              padding: "8px 10px",
+              marginBottom: "12px",
               fontSize: "11px",
-              color: "#6b7280",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              marginTop: "8px"
-            }}
-          >
-            ← Back to options
-          </button>
-        </div>
-      )}
+              color: "#92400e"
+            }}>
+              <span style={{ marginRight: "6px" }}>&#9888;</span>
+              Your Telegram session has expired. Please reconnect.
+            </div>
+          )}
 
-      {/* Step 1.5: QR Code Display */}
-      {step === 1.5 && (
-        <div>
-          <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
-            Scan with Telegram
-          </h3>
-
+          {/* 2FA Password Input for QR login */}
           {qrStatus === '2fa_required' ? (
-            // 2FA Password Input
             <div>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 12px 0" }}>
+                Two-Factor Authentication
+              </h3>
               <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
-                Two-factor authentication is enabled. Please enter your password.
+                Please enter your 2FA password to complete login.
               </p>
               <input
                 type="password"
@@ -610,102 +519,141 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
               </button>
             </div>
           ) : (
-            // QR Code Display
             <div>
+              <h3 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 8px 0" }}>
+                Connect Telegram
+              </h3>
               <p style={{ fontSize: "11px", color: "#6b7280", margin: "0 0 12px 0" }}>
-                Open Telegram on your phone and scan this QR code to connect.
+                Scan with your phone camera or Telegram app
               </p>
 
+              {/* QR Code Display */}
               <div style={{
                 display: "flex",
                 justifyContent: "center",
-                marginBottom: "12px"
+                marginBottom: "8px"
               }}>
                 {qrCode ? (
-                  <img
-                    src={qrCode}
-                    alt="Telegram QR Code"
-                    style={{
-                      width: "200px",
-                      height: "200px",
-                      borderRadius: "8px",
-                      border: "1px solid #e5e7eb"
-                    }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <img
+                      src={qrCode}
+                      alt="Telegram QR Code"
+                      style={{
+                        width: "180px",
+                        height: "180px",
+                        borderRadius: "8px",
+                        border: "1px solid #e5e7eb",
+                        opacity: qrCountdown === 0 ? 0.3 : 1
+                      }}
+                    />
+                    {qrCountdown === 0 && (
+                      <div style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        background: "rgba(0,0,0,0.8)",
+                        color: "white",
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                        cursor: "pointer"
+                      }} onClick={handleRefreshQR}>
+                        Expired - tap to refresh
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div style={{
-                    width: "200px",
-                    height: "200px",
+                    width: "180px",
+                    height: "180px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     background: "#f3f4f6",
-                    borderRadius: "8px"
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    color: "#6b7280"
                   }}>
-                    Loading...
+                    {loading ? "Generating..." : "Loading..."}
                   </div>
                 )}
               </div>
 
+              {/* Countdown Timer */}
+              {qrCode && qrCountdown > 0 && (
+                <div style={{
+                  textAlign: "center",
+                  fontSize: "11px",
+                  color: qrCountdown <= 10 ? "#ef4444" : "#6b7280",
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "4px"
+                }}>
+                  <span style={{ fontFamily: "monospace" }}>&#9201;</span>
+                  {qrCountdown}s remaining
+                </div>
+              )}
+
+              {/* Divider */}
               <div style={{
-                textAlign: "center",
-                fontSize: "11px",
-                color: qrStatus === 'waiting' || !qrStatus ? "#6b7280" : "#059669",
-                marginBottom: "12px"
+                display: "flex",
+                alignItems: "center",
+                margin: "12px 0",
+                gap: "8px"
               }}>
-                {qrStatus === 'waiting' || !qrStatus ? (
-                  <>⏳ Waiting for scan...</>
-                ) : (
-                  <>✓ Scanned!</>
-                )}
+                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                <span style={{ fontSize: "10px", color: "#8A8A8F" }}>or use phone number</span>
+                <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
               </div>
 
-              <button
-                onClick={handleRefreshQR}
+              {/* Phone Number Input */}
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+44 7123456789"
                 disabled={loading}
                 style={{
                   width: "100%",
                   padding: "10px",
                   fontSize: "13px",
-                  fontWeight: "600",
-                  color: "#0088CC",
-                  background: "white",
-                  border: "1px solid #0088CC",
+                  border: "1px solid #e5e7eb",
                   borderRadius: "6px",
-                  cursor: loading ? "not-allowed" : "pointer"
+                  marginBottom: "10px",
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#0088CC"}
+                onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+                onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
+              />
+              <button
+                onClick={handleSendCode}
+                disabled={loading || !phoneNumber.trim()}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "white",
+                  background: loading || !phoneNumber.trim() ? "#d1d5db" : "#0088CC",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: loading || !phoneNumber.trim() ? "not-allowed" : "pointer"
                 }}
               >
-                {loading ? "Refreshing..." : "🔄 Refresh QR Code"}
+                {loading ? "Sending..." : "Send Code"}
               </button>
             </div>
           )}
-
-          <button
-            onClick={() => {
-              // Cancel QR login and go back
-              if (qrLoginId) {
-                apiRequest(`/telegram/qr-login/${qrLoginId}`, "DELETE", null, token).catch(() => {});
-              }
-              setQrCode(null);
-              setQrLoginId(null);
-              setQrStatus(null);
-              setStep(0);
-            }}
-            style={{
-              width: "100%",
-              padding: "8px",
-              fontSize: "11px",
-              color: "#6b7280",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              marginTop: "8px"
-            }}
-          >
-            ← Back to options
-          </button>
         </div>
       )}
+
 
       {/* Step 2: Verification Code */}
       {step === 2 && (
@@ -823,7 +771,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
                     marginRight: "6px"
                   }}
                 >
-                  📁 {folder.name}
+                  <span style={{ fontFamily: "monospace" }}>&#128193;</span> {folder.name}
                 </button>
               ))}
             </div>
@@ -865,7 +813,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
                       </div>
                       {contact.folder_name && (
                         <div style={{ fontSize: "10px", color: "#6b7280" }}>
-                          📁 {contact.folder_name}
+                          <span style={{ fontFamily: "monospace" }}>&#128193;</span> {contact.folder_name}
                         </div>
                       )}
                     </div>
@@ -886,7 +834,7 @@ export default function TelegramImportModalCompact({ isOpen, onClose, onImportCo
                       }}
                       title="Preview messages"
                     >
-                      {loadingPreview && previewChatId === contact.id ? "⏳" : "👁"}
+                      {loadingPreview && previewChatId === contact.id ? <span style={{ fontFamily: "monospace" }}>&#9201;</span> : <span style={{ fontFamily: "monospace" }}>&#9673;</span>}
                     </button>
                   </div>
 
@@ -1076,7 +1024,7 @@ function SimpleDateRangePicker({ chatId, chatName, onStartDownload, token }) {
   return (
     <div>
       <h4 style={{ fontSize: "12px", fontWeight: "600", margin: "0 0 8px 0" }}>
-        📅 Select Date Range
+        <span style={{ fontFamily: "monospace" }}>&#128197;</span> Select Date Range
       </h4>
 
       <div style={{ marginBottom: "8px" }}>
@@ -1134,7 +1082,7 @@ function SimpleDateRangePicker({ chatId, chatName, onStartDownload, token }) {
           cursor: (!startDate || !endDate) ? "not-allowed" : "pointer"
         }}
       >
-        📥 Download Messages
+        <span style={{ fontFamily: "monospace" }}>&#8595;</span> Download Messages
       </button>
     </div>
   );
