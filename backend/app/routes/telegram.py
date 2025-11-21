@@ -26,8 +26,50 @@ router = APIRouter()
 pending_clients: Dict[int, Tuple[TelegramClient, str]] = {}
 
 # In-memory storage for pending QR login sessions
-# Key: login_id, Value: (TelegramClient, qr_login, user_id)
-pending_qr_logins: Dict[str, Tuple[TelegramClient, any, int]] = {}
+# Key: login_id, Value: (TelegramClient, qr_login, user_id, status)
+# status is one of: 'waiting', 'success', '2fa_required', 'error'
+pending_qr_logins: Dict[str, Tuple[TelegramClient, any, int, str]] = {}
+
+import asyncio
+
+async def qr_login_waiter(login_id: str, client: TelegramClient, qr_login):
+    """Background task that waits for QR login completion."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Wait up to 5 minutes for user to scan
+        await asyncio.wait_for(qr_login.wait(), timeout=300)
+
+        if login_id in pending_qr_logins:
+            client, qr, user_id, _ = pending_qr_logins[login_id]
+            pending_qr_logins[login_id] = (client, qr, user_id, 'success')
+            logger.info(f"QR login {login_id} completed successfully")
+    except asyncio.TimeoutError:
+        logger.info(f"QR login {login_id} timed out after 5 minutes")
+        if login_id in pending_qr_logins:
+            try:
+                client, _, _, _ = pending_qr_logins[login_id]
+                await client.disconnect()
+            except:
+                pass
+            del pending_qr_logins[login_id]
+    except Exception as e:
+        from telethon.errors import SessionPasswordNeededError
+        if isinstance(e, SessionPasswordNeededError):
+            if login_id in pending_qr_logins:
+                client, qr, user_id, _ = pending_qr_logins[login_id]
+                pending_qr_logins[login_id] = (client, qr, user_id, '2fa_required')
+                logger.info(f"QR login {login_id} requires 2FA")
+        else:
+            logger.error(f"QR login {login_id} failed: {e}")
+            if login_id in pending_qr_logins:
+                try:
+                    client, _, _, _ = pending_qr_logins[login_id]
+                    await client.disconnect()
+                except:
+                    pass
+                del pending_qr_logins[login_id]
 
 
 # ===== Request/Response Models =====
@@ -348,19 +390,22 @@ async def initiate_qr_login(
 
     try:
         # Clean up any existing QR login for this user
-        for login_id, (client, _, user_id) in list(pending_qr_logins.items()):
+        for lid, (client, _, user_id, _) in list(pending_qr_logins.items()):
             if user_id == current_user.id:
                 try:
                     await client.disconnect()
                 except:
                     pass
-                del pending_qr_logins[login_id]
+                del pending_qr_logins[lid]
 
         # Initiate QR login
         qr_url, login_id, client, qr_login = await TelegramService.initiate_qr_login()
 
-        # Store in pending logins
-        pending_qr_logins[login_id] = (client, qr_login, current_user.id)
+        # Store in pending logins with 'waiting' status
+        pending_qr_logins[login_id] = (client, qr_login, current_user.id, 'waiting')
+
+        # Start background task to wait for login completion
+        asyncio.create_task(qr_login_waiter(login_id, client, qr_login))
 
         # Generate QR code image
         qr_code = TelegramService.generate_qr_code_base64(qr_url)
@@ -407,7 +452,7 @@ async def check_qr_login_status(
                 needs_password=False
             )
 
-        client, qr_login, user_id = pending_qr_logins[login_id]
+        client, qr_login, user_id, login_status = pending_qr_logins[login_id]
 
         # Verify this login belongs to current user
         if user_id != current_user.id:
@@ -416,9 +461,7 @@ async def check_qr_login_status(
                 detail="This QR login does not belong to you"
             )
 
-        # Check login status by checking if client is authorized
-        login_status, needs_password = await TelegramService.check_qr_login_status(client)
-
+        # Check the stored status from background waiter
         if login_status == 'success':
             # Finalize login and store session
             await TelegramService.finalize_qr_login(client, db, current_user.id)
@@ -478,7 +521,7 @@ async def complete_qr_login_2fa(
                 detail="QR login session not found or expired"
             )
 
-        client, qr_login, user_id = pending_qr_logins[login_id]
+        client, qr_login, user_id, _ = pending_qr_logins[login_id]
 
         # Verify this login belongs to current user
         if user_id != current_user.id:
@@ -529,7 +572,7 @@ async def cancel_qr_login(
     """
     try:
         if login_id in pending_qr_logins:
-            client, _, user_id = pending_qr_logins[login_id]
+            client, _, user_id, _ = pending_qr_logins[login_id]
 
             # Verify this login belongs to current user
             if user_id != current_user.id:
@@ -577,7 +620,7 @@ async def refresh_qr_login(
                 detail="QR login session not found or expired"
             )
 
-        client, qr_login, user_id = pending_qr_logins[login_id]
+        client, qr_login, user_id, _ = pending_qr_logins[login_id]
 
         # Verify this login belongs to current user
         if user_id != current_user.id:
@@ -588,6 +631,10 @@ async def refresh_qr_login(
 
         # Recreate QR code
         new_qr_url = await TelegramService.recreate_qr_login(qr_login)
+
+        # Reset status to waiting and restart the waiter task
+        pending_qr_logins[login_id] = (client, qr_login, user_id, 'waiting')
+        asyncio.create_task(qr_login_waiter(login_id, client, qr_login))
 
         # Generate new QR code image
         qr_code = TelegramService.generate_qr_code_base64(new_qr_url)
