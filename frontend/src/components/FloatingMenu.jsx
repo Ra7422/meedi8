@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import SimpleBreathing from "./SimpleBreathing";
@@ -19,8 +19,22 @@ export default function FloatingMenu({
   const [showBreathingSection, setShowBreathingSection] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef(null);
   const { user, logout, googleLogin, facebookLogin, telegramQRLogin } = useAuth();
   const navigate = useNavigate();
+
+  // Control video playback based on menu state
+  useEffect(() => {
+    if (isOpen && videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.log('Autoplay prevented:', err);
+      });
+    } else if (!isOpen && videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [isOpen]);
 
   // Environment variables for OAuth
   const GOOGLE_CLIENT_ID = typeof window !== 'undefined' ? import.meta.env.VITE_GOOGLE_CLIENT_ID : null;
@@ -535,6 +549,83 @@ export default function FloatingMenu({
                   </button>
                 );
               })}
+
+              {/* Video Section */}
+              <div style={{
+                padding: "16px 20px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                borderTop: "1px solid #e5e7eb",
+                marginTop: "8px"
+              }}>
+                <div style={{
+                  position: "relative",
+                  width: "120px",
+                  height: "120px"
+                }}>
+                  {/* Circular video container */}
+                  <div style={{
+                    width: "120px",
+                    height: "120px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
+                  }}>
+                    <video
+                      ref={videoRef}
+                      src="/assets/videos/meedi_intro_round.mp4"
+                      muted={isMuted}
+                      loop
+                      playsInline
+                      preload={isOpen ? "auto" : "metadata"}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover"
+                      }}
+                    />
+                  </div>
+
+                  {/* Mute/Unmute toggle button */}
+                  <button
+                    onClick={() => setIsMuted(!isMuted)}
+                    style={{
+                      position: "absolute",
+                      bottom: "4px",
+                      right: "4px",
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      border: "none",
+                      background: "rgba(0, 0, 0, 0.6)",
+                      color: "white",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      transition: "background 0.2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.8)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0, 0, 0, 0.6)"}
+                    aria-label={isMuted ? "Unmute video" : "Mute video"}
+                  >
+                    {isMuted ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <line x1="23" y1="9" x2="17" y2="15"/>
+                        <line x1="17" y1="9" x2="23" y2="15"/>
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
             </nav>
 
             {/* Menu Footer */}
