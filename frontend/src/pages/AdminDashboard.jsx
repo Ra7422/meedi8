@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import meedi8Logo from '../assets/logo/meedi8_logo.png';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -412,14 +413,14 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Nunito', sans-serif" }}>
+      <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Nunito', sans-serif", background: "linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%)", minHeight: "100vh" }}>
         Loading...
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f5f5", fontFamily: "'Nunito', sans-serif", display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%)", fontFamily: "'Nunito', sans-serif", display: "flex" }}>
       {/* Sidebar */}
       <div style={{
         width: "240px",
@@ -429,92 +430,97 @@ export default function AdminDashboard() {
         flexShrink: 0,
       }}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #333" }}>
-          <h1 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#7DD3C0" }}>
-            Meedi8 Admin
-          </h1>
+          <img
+            src={meedi8Logo}
+            alt="Meedi8"
+            style={{
+              height: "32px",
+              filter: "brightness(0) invert(1)",
+            }}
+          />
         </div>
 
         <nav style={{ marginTop: "20px" }}>
           <SidebarItem
-            icon="📊"
+            icon="☰"
             label="Dashboard"
             active={activeTab === "dashboard"}
             onClick={() => setActiveTab("dashboard")}
           />
           <SidebarItem
-            icon="📈"
+            icon="⊞"
             label="Analytics"
             active={activeTab === "analytics"}
             onClick={() => setActiveTab("analytics")}
           />
           <SidebarItem
-            icon="👥"
+            icon="⚇"
             label="Users"
             active={activeTab === "users"}
             onClick={() => setActiveTab("users")}
           />
           <SidebarItem
-            icon="💬"
+            icon="◱"
             label="Rooms"
             active={activeTab === "rooms"}
             onClick={() => setActiveTab("rooms")}
           />
           <SidebarItem
-            icon="💳"
+            icon="⬡"
             label="Subscriptions"
             active={activeTab === "subscriptions"}
             onClick={() => setActiveTab("subscriptions")}
           />
           <SidebarItem
-            icon="🔧"
+            icon="⚙"
             label="Settings"
             active={activeTab === "settings"}
             onClick={() => setActiveTab("settings")}
           />
           <SidebarItem
-            icon="📋"
+            icon="☷"
             label="Activity Logs"
             active={activeTab === "activity"}
             onClick={() => setActiveTab("activity")}
           />
           <SidebarItem
-            icon="💰"
+            icon="◈"
             label="Revenue"
             active={activeTab === "revenue"}
             onClick={() => setActiveTab("revenue")}
           />
           <SidebarItem
-            icon="🤖"
+            icon="◎"
             label="AI Costs"
             active={activeTab === "ai-costs"}
             onClick={() => setActiveTab("ai-costs")}
           />
           <SidebarItem
-            icon="🔐"
+            icon="⚿"
             label="Env Vars"
             active={activeTab === "env-vars"}
             onClick={() => setActiveTab("env-vars")}
           />
           <SidebarItem
-            icon="🚩"
+            icon="⚑"
             label="Feature Flags"
             active={activeTab === "flags"}
             onClick={() => setActiveTab("flags")}
           />
           <SidebarItem
-            icon="🔗"
+            icon="⌁"
             label="Webhooks"
             active={activeTab === "webhooks"}
             onClick={() => setActiveTab("webhooks")}
           />
           <SidebarItem
-            icon="📧"
+            icon="✉"
             label="Email Templates"
             active={activeTab === "emails"}
             onClick={() => setActiveTab("emails")}
           />
           <SidebarItem
-            icon="💓"
+            icon="♡"
             label="System Health"
             active={activeTab === "health"}
             onClick={() => setActiveTab("health")}
@@ -550,8 +556,9 @@ export default function AdminDashboard() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}>
-          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#1a1a1a" }}>
+          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#4B5563" }}>
             {activeTab === "dashboard" && "Dashboard Overview"}
             {activeTab === "analytics" && "Analytics"}
             {activeTab === "users" && "User Management"}
@@ -574,7 +581,7 @@ export default function AdminDashboard() {
                   onClick={handleExportCSV}
                   style={{
                     background: "#f3f4f6",
-                    color: "#374151",
+                    color: "#4B5563",
                     border: "none",
                     padding: "8px 16px",
                     borderRadius: "6px",
@@ -587,7 +594,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setShowCreateUser(true)}
                   style={{
-                    background: "#6750A4",
+                    background: "#7DD3C0",
                     color: "white",
                     border: "none",
                     padding: "8px 16px",
@@ -608,7 +615,7 @@ export default function AdminDashboard() {
           {error && (
             <div style={{
               background: "#fee2e2",
-              color: "#dc2626",
+              color: "#EF4444",
               padding: "12px",
               borderRadius: "8px",
               marginBottom: "16px",
@@ -626,9 +633,9 @@ export default function AdminDashboard() {
                 gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Total Users" value={settings.total_users} color="#6750A4" icon="👥" />
-                <StatCard title="Active Subscriptions" value={settings.active_subscriptions} color="#22c55e" icon="💳" />
-                <StatCard title="Total Rooms" value={settings.total_rooms} color="#3b82f6" icon="💬" />
+                <StatCard title="Total Users" value={settings.total_users} color="#B8A7E5" icon="⚇" />
+                <StatCard title="Active Subscriptions" value={settings.active_subscriptions} color="#10B981" icon="⬡" />
+                <StatCard title="Total Rooms" value={settings.total_rooms} color="#7DD3C0" icon="◱" />
               </div>
 
               <div style={{
@@ -641,11 +648,11 @@ export default function AdminDashboard() {
                 {analytics && analytics.tier_breakdown && analytics.tier_breakdown.length > 0 && (
                   <div style={{
                     background: "white",
-                    borderRadius: "24px",
+                    borderRadius: "12px",
                     padding: "24px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   }}>
-                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                       Subscription Tiers
                     </h3>
                     <PieChart data={analytics.tier_breakdown} size={140} />
@@ -655,30 +662,30 @@ export default function AdminDashboard() {
                 {/* Circular Progress Cards */}
                 <div style={{
                   background: "white",
-                  borderRadius: "24px",
+                  borderRadius: "12px",
                   padding: "24px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 }}>
-                  <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                  <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                     Quick Stats
                   </h3>
                   <div style={{ display: "flex", justifyContent: "space-around" }}>
                     <CircularProgress
                       value={analytics?.active_users_7d || 0}
                       max={settings.total_users || 1}
-                      color="#6750A4"
+                      color="#B8A7E5"
                       label="Active (7d)"
                     />
                     <CircularProgress
                       value={settings.active_subscriptions}
                       max={settings.total_users || 1}
-                      color="#22c55e"
+                      color="#10B981"
                       label="Paid Users"
                     />
                     <CircularProgress
                       value={analytics?.avg_turns_per_room || 0}
                       max={50}
-                      color="#3b82f6"
+                      color="#7DD3C0"
                       label="Avg Turns"
                     />
                   </div>
@@ -687,11 +694,11 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   API Configuration Status
                 </h3>
                 <div style={{
@@ -720,8 +727,8 @@ export default function AdminDashboard() {
                 gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Active Users (7d)" value={analytics.active_users_7d || 0} color="#6750A4" icon="🔥" />
-                <StatCard title="Avg Turns/Room" value={analytics.avg_turns_per_room || 0} color="#22c55e" icon="💭" />
+                <StatCard title="Active Users (7d)" value={analytics.active_users_7d || 0} color="#B8A7E5" icon="◉" />
+                <StatCard title="Avg Turns/Room" value={analytics.avg_turns_per_room || 0} color="#10B981" icon="◇" />
               </div>
 
               <div style={{
@@ -734,17 +741,17 @@ export default function AdminDashboard() {
                 {analytics.tier_breakdown && analytics.tier_breakdown.length > 0 && (
                   <div style={{
                     background: "white",
-                    borderRadius: "24px",
+                    borderRadius: "12px",
                     padding: "24px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   }}>
-                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                       Tier Breakdown
                     </h3>
                     <PieChart
                       data={analytics.tier_breakdown}
                       size={140}
-                      colors={["#6750A4", "#22c55e", "#3b82f6"]}
+                      colors={["#B8A7E5", "#10B981", "#7DD3C0"]}
                     />
                   </div>
                 )}
@@ -753,17 +760,17 @@ export default function AdminDashboard() {
                 {analytics.rooms_by_phase && analytics.rooms_by_phase.length > 0 && (
                   <div style={{
                     background: "white",
-                    borderRadius: "24px",
+                    borderRadius: "12px",
                     padding: "24px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   }}>
-                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                       Rooms by Phase
                     </h3>
                     <PieChart
                       data={analytics.rooms_by_phase}
                       size={140}
-                      colors={["#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#22c55e", "#6750A4"]}
+                      colors={["#F59E0B", "#EF4444", "#B8A7E5", "#7DD3C0", "#10B981", "#6750A4"]}
                     />
                   </div>
                 )}
@@ -771,11 +778,11 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Recent Signups
                 </h3>
                 <div style={{ maxHeight: "250px", overflowY: "auto" }}>
@@ -787,13 +794,13 @@ export default function AdminDashboard() {
                       padding: "12px 16px",
                       marginBottom: "8px",
                       background: "#f9fafb",
-                      borderRadius: "24px",
+                      borderRadius: "12px",
                     }}>
-                      <span style={{ color: "#6b7280", fontSize: "14px" }}>{item.date}</span>
+                      <span style={{ color: "#6B7280", fontSize: "14px" }}>{item.date}</span>
                       <span style={{
                         fontWeight: "600",
-                        background: "#6750A420",
-                        color: "#6750A4",
+                        background: "#7DD3C020",
+                        color: "#7DD3C0",
                         padding: "4px 12px",
                         borderRadius: "20px",
                         fontSize: "13px",
@@ -811,9 +818,9 @@ export default function AdminDashboard() {
           {activeTab === "rooms" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -866,7 +873,7 @@ export default function AdminDashboard() {
                         <td style={tdStyle}>
                           <button
                             onClick={() => handleDeleteRoom(room.id)}
-                            style={{ ...actionBtnStyle, color: "#dc2626" }}
+                            style={{ ...actionBtnStyle, color: "#EF4444" }}
                           >
                             Delete
                           </button>
@@ -885,9 +892,9 @@ export default function AdminDashboard() {
               {/* Search and Filter Bar */}
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "16px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 marginBottom: "16px",
                 display: "flex",
                 gap: "12px",
@@ -942,7 +949,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={handleSearch}
                   style={{
-                    background: "#6750A4",
+                    background: "#7DD3C0",
                     color: "white",
                     border: "none",
                     padding: "8px 16px",
@@ -962,7 +969,7 @@ export default function AdminDashboard() {
                   }}
                   style={{
                     background: "#f3f4f6",
-                    color: "#374151",
+                    color: "#4B5563",
                     border: "none",
                     padding: "8px 16px",
                     borderRadius: "6px",
@@ -977,21 +984,21 @@ export default function AdminDashboard() {
               {/* Bulk Actions Bar */}
               {selectedUsers.length > 0 && (
                 <div style={{
-                  background: "#e0e7ff",
-                  borderRadius: "24px",
+                  background: "#EAF7F0",
+                  borderRadius: "12px",
                   padding: "12px 16px",
                   marginBottom: "16px",
                   display: "flex",
                   gap: "12px",
                   alignItems: "center",
                 }}>
-                  <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>
                     {selectedUsers.length} selected
                   </span>
                   <button
                     onClick={() => handleBulkUpdateSubscriptions("pro", "active")}
                     style={{
-                      background: "#22c55e",
+                      background: "#10B981",
                       color: "white",
                       border: "none",
                       padding: "6px 12px",
@@ -1005,7 +1012,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={() => handleBulkUpdateSubscriptions("free", "trial")}
                     style={{
-                      background: "#f59e0b",
+                      background: "#F59E0B",
                       color: "white",
                       border: "none",
                       padding: "6px 12px",
@@ -1019,7 +1026,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleBulkDelete}
                     style={{
-                      background: "#dc2626",
+                      background: "#EF4444",
                       color: "white",
                       border: "none",
                       padding: "6px 12px",
@@ -1035,9 +1042,9 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -1076,7 +1083,7 @@ export default function AdminDashboard() {
                               padding: "2px 8px",
                               borderRadius: "4px",
                               background: user.is_admin ? "#fef3c7" : user.is_guest ? "#e0e7ff" : "#f3f4f6",
-                              color: user.is_admin ? "#92400e" : user.is_guest ? "#3730a3" : "#6b7280",
+                              color: user.is_admin ? "#92400e" : user.is_guest ? "#3730a3" : "#6B7280",
                               fontSize: "12px",
                               fontWeight: "600",
                             }}>
@@ -1095,13 +1102,13 @@ export default function AdminDashboard() {
                             </button>
                             <button
                               onClick={() => handleImpersonate(user.id)}
-                              style={{ ...actionBtnStyle, color: "#f59e0b" }}
+                              style={{ ...actionBtnStyle, color: "#F59E0B" }}
                             >
                               Impersonate
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              style={{ ...actionBtnStyle, color: "#dc2626" }}
+                              style={{ ...actionBtnStyle, color: "#EF4444" }}
                             >
                               Delete
                             </button>
@@ -1119,9 +1126,9 @@ export default function AdminDashboard() {
           {activeTab === "subscriptions" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -1161,7 +1168,7 @@ export default function AdminDashboard() {
                               background: user.subscription?.tier === "pro" ? "#dcfce7" :
                                          user.subscription?.tier === "plus" ? "#dbeafe" : "#f3f4f6",
                               color: user.subscription?.tier === "pro" ? "#166534" :
-                                     user.subscription?.tier === "plus" ? "#1e40af" : "#6b7280",
+                                     user.subscription?.tier === "plus" ? "#1e40af" : "#6B7280",
                               fontSize: "12px",
                               fontWeight: "600",
                             }}>
@@ -1193,7 +1200,7 @@ export default function AdminDashboard() {
                                          user.subscription?.status === "cancelled" ? "#fee2e2" : "#f3f4f6",
                               color: user.subscription?.status === "active" ? "#166534" :
                                      user.subscription?.status === "trial" ? "#92400e" :
-                                     user.subscription?.status === "cancelled" ? "#dc2626" : "#6b7280",
+                                     user.subscription?.status === "cancelled" ? "#EF4444" : "#6B7280",
                               fontSize: "12px",
                             }}>
                               {user.subscription?.status || "trial"}
@@ -1201,7 +1208,7 @@ export default function AdminDashboard() {
                           )}
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ fontSize: "11px", color: "#6b7280" }}>
+                          <span style={{ fontSize: "11px", color: "#6B7280" }}>
                             {user.subscription?.stripe_subscription_id
                               ? user.subscription.stripe_subscription_id.slice(0, 15) + "..."
                               : "-"}
@@ -1211,7 +1218,7 @@ export default function AdminDashboard() {
                           {editingSubscription === user.id ? (
                             <button
                               onClick={() => setEditingSubscription(null)}
-                              style={{ ...actionBtnStyle, color: "#22c55e" }}
+                              style={{ ...actionBtnStyle, color: "#10B981" }}
                             >
                               Save
                             </button>
@@ -1236,14 +1243,14 @@ export default function AdminDashboard() {
           {activeTab === "settings" && settings && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
-              <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                 Platform Configuration
               </h3>
-              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "20px" }}>
+              <p style={{ color: "#6B7280", fontSize: "14px", marginBottom: "20px" }}>
                 API keys and configuration are managed via Railway environment variables.
               </p>
 
@@ -1264,9 +1271,9 @@ export default function AdminDashboard() {
           {activeTab === "activity" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
               <div style={{ overflowX: "auto", maxHeight: "600px", overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -1310,7 +1317,7 @@ export default function AdminDashboard() {
                         </td>
                         <td style={tdStyle}>{log.room_id || "-"}</td>
                         <td style={tdStyle}>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                          <span style={{ fontSize: "12px", color: "#6B7280" }}>
                             {log.created_at ? new Date(log.created_at).toLocaleString() : "-"}
                           </span>
                         </td>
@@ -1331,9 +1338,9 @@ export default function AdminDashboard() {
                 gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Total Revenue" value={revenue ? `$${revenue.total_revenue}` : "$0"} color="#22c55e" icon="💵" />
-                <StatCard title="Monthly Recurring" value={revenue ? `$${revenue.mrr}` : "$0"} color="#6750A4" icon="📅" />
-                <StatCard title="Active Subscriptions" value={revenue?.active_subscriptions || 0} color="#3b82f6" icon="💳" />
+                <StatCard title="Total Revenue" value={revenue ? `$${revenue.total_revenue}` : "$0"} color="#10B981" icon="◈" />
+                <StatCard title="Monthly Recurring" value={revenue ? `$${revenue.mrr}` : "$0"} color="#B8A7E5" icon="◯" />
+                <StatCard title="Active Subscriptions" value={revenue?.active_subscriptions || 0} color="#7DD3C0" icon="⬡" />
               </div>
 
               {revenue?.error && (
@@ -1351,11 +1358,11 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Recent Payments
                 </h3>
                 <div style={{ overflowX: "auto" }}>
@@ -1378,7 +1385,7 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td style={tdStyle}>
-                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                            <span style={{ fontWeight: "600", color: "#10B981" }}>
                               ${payment.amount} {payment.currency}
                             </span>
                           </td>
@@ -1395,7 +1402,7 @@ export default function AdminDashboard() {
                           </td>
                           <td style={tdStyle}>{payment.customer_email || "-"}</td>
                           <td style={tdStyle}>
-                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            <span style={{ fontSize: "12px", color: "#6B7280" }}>
                               {new Date(payment.created_at).toLocaleString()}
                             </span>
                           </td>
@@ -1417,20 +1424,20 @@ export default function AdminDashboard() {
                 gap: "20px",
                 marginBottom: "24px",
               }}>
-                <StatCard title="Today's Cost" value={aiCosts ? `$${aiCosts.today_cost.toFixed(4)}` : "$0"} color="#f97316" icon="📅" />
-                <StatCard title="This Month" value={aiCosts ? `$${aiCosts.month_cost.toFixed(4)}` : "$0"} color="#6750A4" icon="📊" />
-                <StatCard title="Last 30 Days" value={aiCosts ? `$${aiCosts.total_cost.toFixed(4)}` : "$0"} color="#3b82f6" icon="💰" />
+                <StatCard title="Today's Cost" value={aiCosts ? `$${aiCosts.today_cost.toFixed(4)}` : "$0"} color="#F59E0B" icon="◯" />
+                <StatCard title="This Month" value={aiCosts ? `$${aiCosts.month_cost.toFixed(4)}` : "$0"} color="#B8A7E5" icon="⊞" />
+                <StatCard title="Last 30 Days" value={aiCosts ? `$${aiCosts.total_cost.toFixed(4)}` : "$0"} color="#7DD3C0" icon="◈" />
               </div>
 
               {/* Costs by Service */}
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 marginBottom: "24px",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Costs by Service (Last 30 Days)
                 </h3>
                 <div style={{ display: "grid", gap: "12px" }}>
@@ -1441,31 +1448,31 @@ export default function AdminDashboard() {
                       alignItems: "center",
                       padding: "16px",
                       background: "#f9fafb",
-                      borderRadius: "16px",
+                      borderRadius: "12px",
                     }}>
                       <div>
-                        <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        <div style={{ fontWeight: "600", marginBottom: "4px", color: "#4B5563" }}>
                           {service.service === "anthropic" ? "Claude (Anthropic)" :
                            service.service === "openai_whisper" ? "Whisper (OpenAI)" :
                            service.service === "openai_tts" ? "TTS (OpenAI)" :
                            service.service === "gemini" ? "Gemini (Google)" :
                            service.service}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                        <div style={{ fontSize: "12px", color: "#6B7280" }}>
                           {service.calls} calls | {(service.input_tokens + service.output_tokens).toLocaleString()} tokens
                         </div>
                       </div>
                       <div style={{
                         fontSize: "18px",
                         fontWeight: "700",
-                        color: "#22c55e",
+                        color: "#10B981",
                       }}>
                         ${service.cost.toFixed(4)}
                       </div>
                     </div>
                   ))}
                   {(aiCosts?.costs_by_service || []).length === 0 && (
-                    <div style={{ color: "#6b7280", fontSize: "14px", textAlign: "center", padding: "20px" }}>
+                    <div style={{ color: "#6B7280", fontSize: "14px", textAlign: "center", padding: "20px" }}>
                       No cost data yet
                     </div>
                   )}
@@ -1475,12 +1482,12 @@ export default function AdminDashboard() {
               {/* Costs by Model */}
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 marginBottom: "24px",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Costs by Model
                 </h3>
                 <div style={{ overflowX: "auto" }}>
@@ -1502,7 +1509,7 @@ export default function AdminDashboard() {
                           </td>
                           <td style={tdStyle}>{model.calls}</td>
                           <td style={tdStyle}>
-                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                            <span style={{ fontWeight: "600", color: "#10B981" }}>
                               ${model.cost.toFixed(4)}
                             </span>
                           </td>
@@ -1516,11 +1523,11 @@ export default function AdminDashboard() {
               {/* Top Users by Cost */}
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Top Users by Cost
                 </h3>
                 <div style={{ overflowX: "auto" }}>
@@ -1538,13 +1545,13 @@ export default function AdminDashboard() {
                         <tr key={user.user_id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                           <td style={tdStyle}>{user.name || "Unknown"}</td>
                           <td style={tdStyle}>
-                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            <span style={{ fontSize: "12px", color: "#6B7280" }}>
                               {user.email}
                             </span>
                           </td>
                           <td style={tdStyle}>{user.calls}</td>
                           <td style={tdStyle}>
-                            <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                            <span style={{ fontWeight: "600", color: "#10B981" }}>
                               ${user.cost.toFixed(4)}
                             </span>
                           </td>
@@ -1560,7 +1567,7 @@ export default function AdminDashboard() {
           {/* Environment Variables Tab */}
           {activeTab === "env-vars" && (
             <>
-              <p style={{ color: "#666", marginBottom: "24px" }}>
+              <p style={{ color: "#6B7280", marginBottom: "24px" }}>
                 Manage environment variables for Vercel (frontend) and Railway (backend).
                 Changes require a redeploy to take effect.
               </p>
@@ -1568,7 +1575,7 @@ export default function AdminDashboard() {
               {/* Railway Section */}
               <div style={{ marginBottom: "32px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Railway (Backend)</h3>
+                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0, color: "#4B5563" }}>Railway (Backend)</h3>
                   <button
                     onClick={async () => {
                       if (confirm("Trigger Railway redeployment?")) {
@@ -1585,7 +1592,7 @@ export default function AdminDashboard() {
                     }}
                     style={{
                       padding: "8px 16px",
-                      background: "#2563eb",
+                      background: "#7DD3C0",
                       color: "white",
                       border: "none",
                       borderRadius: "8px",
@@ -1599,7 +1606,7 @@ export default function AdminDashboard() {
 
                 {envVars?.railway?.configured ? (
                   envVars.railway.error ? (
-                    <p style={{ color: "#dc2626" }}>Error: {envVars.railway.error}</p>
+                    <p style={{ color: "#EF4444" }}>Error: {envVars.railway.error}</p>
                   ) : (
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
@@ -1613,7 +1620,7 @@ export default function AdminDashboard() {
                         {envVars.railway.variables.map((v) => (
                           <tr key={v.key}>
                             <td style={tdStyle}><code>{v.key}</code></td>
-                            <td style={tdStyle}><code style={{ color: "#666" }}>{v.value}</code></td>
+                            <td style={tdStyle}><code style={{ color: "#6B7280" }}>{v.value}</code></td>
                             <td style={tdStyle}>
                               <button
                                 onClick={() => setEditingEnvVar({ ...v, platform: "railway" })}
@@ -1635,14 +1642,14 @@ export default function AdminDashboard() {
                     </table>
                   )
                 ) : (
-                  <p style={{ color: "#666" }}>Railway not configured. Set RAILWAY_TOKEN and RAILWAY_PROJECT_ID.</p>
+                  <p style={{ color: "#6B7280" }}>Railway not configured. Set RAILWAY_TOKEN and RAILWAY_PROJECT_ID.</p>
                 )}
               </div>
 
               {/* Vercel Section */}
               <div style={{ marginBottom: "32px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Vercel (Frontend)</h3>
+                  <h3 style={{ fontSize: "18px", fontWeight: 600, margin: 0, color: "#4B5563" }}>Vercel (Frontend)</h3>
                   <button
                     onClick={async () => {
                       if (confirm("Trigger Vercel redeployment?")) {
@@ -1673,7 +1680,7 @@ export default function AdminDashboard() {
 
                 {envVars?.vercel?.configured ? (
                   envVars.vercel.error ? (
-                    <p style={{ color: "#dc2626" }}>Error: {envVars.vercel.error}</p>
+                    <p style={{ color: "#EF4444" }}>Error: {envVars.vercel.error}</p>
                   ) : (
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
@@ -1688,7 +1695,7 @@ export default function AdminDashboard() {
                         {envVars.vercel.variables.map((v) => (
                           <tr key={v.id}>
                             <td style={tdStyle}><code>{v.key}</code></td>
-                            <td style={tdStyle}><code style={{ color: "#666" }}>{v.value}</code></td>
+                            <td style={tdStyle}><code style={{ color: "#6B7280" }}>{v.value}</code></td>
                             <td style={tdStyle}>{v.target?.join(", ")}</td>
                             <td style={tdStyle}>
                               <button
@@ -1711,13 +1718,13 @@ export default function AdminDashboard() {
                     </table>
                   )
                 ) : (
-                  <p style={{ color: "#666" }}>Vercel not configured. Set VERCEL_TOKEN and VERCEL_PROJECT_ID.</p>
+                  <p style={{ color: "#6B7280" }}>Vercel not configured. Set VERCEL_TOKEN and VERCEL_PROJECT_ID.</p>
                 )}
               </div>
 
               {/* Add New Variable */}
               <div style={{ background: "#f9fafb", padding: "16px", borderRadius: "8px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: 600, marginTop: 0, marginBottom: "12px" }}>Add New Variable</h3>
+                <h3 style={{ fontSize: "16px", fontWeight: 600, marginTop: 0, marginBottom: "12px", color: "#4B5563" }}>Add New Variable</h3>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <select
                     value={newEnvVar.platform}
@@ -1785,7 +1792,7 @@ export default function AdminDashboard() {
                     }}
                     style={{
                       padding: "8px 16px",
-                      background: "#16a34a",
+                      background: "#10B981",
                       color: "white",
                       border: "none",
                       borderRadius: "8px",
@@ -1819,8 +1826,8 @@ export default function AdminDashboard() {
                     width: "90%",
                     maxWidth: "500px",
                   }}>
-                    <h3 style={{ marginTop: 0 }}>Edit {editingEnvVar.key}</h3>
-                    <p style={{ color: "#666", fontSize: "14px" }}>
+                    <h3 style={{ marginTop: 0, color: "#4B5563" }}>Edit {editingEnvVar.key}</h3>
+                    <p style={{ color: "#6B7280", fontSize: "14px" }}>
                       Platform: {editingEnvVar.platform === "railway" ? "Railway" : "Vercel"}
                     </p>
                     <input
@@ -1879,7 +1886,7 @@ export default function AdminDashboard() {
                         }}
                         style={{
                           padding: "8px 16px",
-                          background: "#2563eb",
+                          background: "#7DD3C0",
                           color: "white",
                           border: "none",
                           borderRadius: "8px",
@@ -1899,14 +1906,14 @@ export default function AdminDashboard() {
           {activeTab === "flags" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
-              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700" }}>
+              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                 Feature Flags
               </h3>
-              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "24px" }}>
+              <p style={{ color: "#6B7280", fontSize: "14px", marginBottom: "24px" }}>
                 Toggle features on/off for all users. Changes take effect immediately.
               </p>
 
@@ -1918,13 +1925,13 @@ export default function AdminDashboard() {
                     alignItems: "center",
                     padding: "16px",
                     background: "#f9fafb",
-                    borderRadius: "16px",
+                    borderRadius: "12px",
                   }}>
                     <div>
-                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                      <div style={{ fontWeight: "600", marginBottom: "4px", color: "#4B5563" }}>
                         {flagName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
-                      <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                      <div style={{ fontSize: "12px", color: "#6B7280" }}>
                         {flagName}
                       </div>
                     </div>
@@ -1934,7 +1941,7 @@ export default function AdminDashboard() {
                         width: "56px",
                         height: "32px",
                         borderRadius: "16px",
-                        background: enabled ? "#22c55e" : "#d1d5db",
+                        background: enabled ? "#10B981" : "#d1d5db",
                         border: "none",
                         cursor: "pointer",
                         position: "relative",
@@ -1963,11 +1970,11 @@ export default function AdminDashboard() {
           {activeTab === "webhooks" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
-              <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+              <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                 Recent Stripe Webhook Events
               </h3>
               <div style={{ overflowX: "auto", maxHeight: "500px", overflowY: "auto" }}>
@@ -1995,7 +2002,7 @@ export default function AdminDashboard() {
                             background: event.type.includes("succeeded") ? "#dcfce7" :
                                        event.type.includes("failed") ? "#fee2e2" : "#dbeafe",
                             color: event.type.includes("succeeded") ? "#166534" :
-                                   event.type.includes("failed") ? "#dc2626" : "#1e40af",
+                                   event.type.includes("failed") ? "#EF4444" : "#1e40af",
                             fontSize: "11px",
                           }}>
                             {event.type}
@@ -2013,7 +2020,7 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                          <span style={{ fontSize: "12px", color: "#6B7280" }}>
                             {new Date(event.created_at).toLocaleString()}
                           </span>
                         </td>
@@ -2029,14 +2036,14 @@ export default function AdminDashboard() {
           {activeTab === "emails" && (
             <div style={{
               background: "white",
-              borderRadius: "24px",
+              borderRadius: "12px",
               padding: "24px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             }}>
-              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700" }}>
+              <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                 Email Templates
               </h3>
-              <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "16px" }}>
+              <p style={{ color: "#6B7280", fontSize: "14px", marginBottom: "16px" }}>
                 Manage email templates used by the notification system.
               </p>
 
@@ -2050,7 +2057,7 @@ export default function AdminDashboard() {
                 gap: "12px",
                 alignItems: "center",
               }}>
-                <label style={{ fontSize: "14px", fontWeight: "500" }}>Test Email:</label>
+                <label style={{ fontSize: "14px", fontWeight: "500", color: "#4B5563" }}>Test Email:</label>
                 <input
                   type="email"
                   placeholder="your@email.com"
@@ -2071,21 +2078,21 @@ export default function AdminDashboard() {
                   <div key={templateId} style={{
                     padding: "20px",
                     background: "#f9fafb",
-                    borderRadius: "16px",
+                    borderRadius: "12px",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
                       <div>
-                        <div style={{ fontWeight: "600", fontSize: "15px", marginBottom: "4px" }}>
+                        <div style={{ fontWeight: "600", fontSize: "15px", marginBottom: "4px", color: "#4B5563" }}>
                           {template.name}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                        <div style={{ fontSize: "12px", color: "#6B7280" }}>
                           {template.description}
                         </div>
                       </div>
                       <button
                         onClick={() => handleTestEmail(templateId)}
                         style={{
-                          background: "#6750A4",
+                          background: "#7DD3C0",
                           color: "white",
                           border: "none",
                           padding: "6px 12px",
@@ -2098,15 +2105,15 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                     <div style={{ marginBottom: "8px" }}>
-                      <span style={{ fontSize: "12px", color: "#6b7280" }}>Subject: </span>
+                      <span style={{ fontSize: "12px", color: "#6B7280" }}>Subject: </span>
                       <span style={{ fontSize: "13px", fontFamily: "monospace" }}>{template.subject}</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: "12px", color: "#6b7280" }}>Variables: </span>
+                      <span style={{ fontSize: "12px", color: "#6B7280" }}>Variables: </span>
                       {template.variables?.map((v) => (
                         <span key={v} style={{
-                          background: "#e0e7ff",
-                          color: "#3730a3",
+                          background: "#EAF7F0",
+                          color: "#166534",
                           padding: "2px 6px",
                           borderRadius: "4px",
                           fontSize: "11px",
@@ -2133,7 +2140,7 @@ export default function AdminDashboard() {
               }}>
                 <div style={{
                   background: systemHealth.status === "healthy" ? "#dcfce7" : "#fef3c7",
-                  borderRadius: "24px",
+                  borderRadius: "12px",
                   padding: "24px",
                   textAlign: "center",
                 }}>
@@ -2141,7 +2148,7 @@ export default function AdminDashboard() {
                     fontSize: "40px",
                     marginBottom: "8px",
                   }}>
-                    {systemHealth.status === "healthy" ? "💚" : "💛"}
+                    {systemHealth.status === "healthy" ? "♥" : "⚠"}
                   </div>
                   <div style={{
                     fontWeight: "700",
@@ -2155,11 +2162,11 @@ export default function AdminDashboard() {
 
               <div style={{
                 background: "white",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "24px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700" }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", color: "#4B5563" }}>
                   Health Checks
                 </h3>
                 <div style={{ display: "grid", gap: "12px" }}>
@@ -2173,15 +2180,15 @@ export default function AdminDashboard() {
                       borderRadius: "12px",
                     }}>
                       <div>
-                        <div style={{ fontWeight: "600", textTransform: "capitalize" }}>{name}</div>
+                        <div style={{ fontWeight: "600", textTransform: "capitalize", color: "#4B5563" }}>{name}</div>
                         {check.message && (
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>{check.message}</div>
+                          <div style={{ fontSize: "12px", color: "#6B7280" }}>{check.message}</div>
                         )}
                         {check.version && (
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>v{check.version}</div>
+                          <div style={{ fontSize: "12px", color: "#6B7280" }}>v{check.version}</div>
                         )}
                         {check.used_percent !== undefined && (
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                          <div style={{ fontSize: "12px", color: "#6B7280" }}>
                             {check.used_percent}% used
                             {check.used_gb && ` (${check.used_gb}/${check.total_gb} GB)`}
                           </div>
@@ -2201,7 +2208,7 @@ export default function AdminDashboard() {
                       }}>
                         {check.status === "ok" ? "✓" :
                          check.status === "warning" ? "!" :
-                         check.status === "not_configured" ? "○" : "×"}
+                         check.status === "not_configured" ? "○" : "✕"}
                       </div>
                     </div>
                   ))}
@@ -2225,19 +2232,19 @@ export default function AdminDashboard() {
         }}>
           <div style={{
             background: "white",
-            borderRadius: "24px",
+            borderRadius: "12px",
             padding: "24px",
             width: "100%",
             maxWidth: "400px",
           }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700", color: "#4B5563" }}>
               Create New User
             </h3>
 
             {createUserError && (
               <div style={{
                 background: "#fee2e2",
-                color: "#dc2626",
+                color: "#EF4444",
                 padding: "8px 12px",
                 borderRadius: "6px",
                 marginBottom: "16px",
@@ -2249,7 +2256,7 @@ export default function AdminDashboard() {
 
             <form onSubmit={handleCreateUser}>
               <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
                   Email
                 </label>
                 <input
@@ -2269,7 +2276,7 @@ export default function AdminDashboard() {
               </div>
 
               <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
                   Name (optional)
                 </label>
                 <input
@@ -2288,7 +2295,7 @@ export default function AdminDashboard() {
               </div>
 
               <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
                   Password
                 </label>
                 <input
@@ -2315,7 +2322,7 @@ export default function AdminDashboard() {
                     checked={newUser.isAdmin}
                     onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })}
                   />
-                  <span style={{ fontSize: "14px" }}>Make this user an admin</span>
+                  <span style={{ fontSize: "14px", color: "#4B5563" }}>Make this user an admin</span>
                 </label>
               </div>
 
@@ -2330,7 +2337,7 @@ export default function AdminDashboard() {
                     flex: 1,
                     padding: "10px",
                     background: "#f3f4f6",
-                    color: "#374151",
+                    color: "#4B5563",
                     border: "none",
                     borderRadius: "6px",
                     fontSize: "14px",
@@ -2344,7 +2351,7 @@ export default function AdminDashboard() {
                   style={{
                     flex: 1,
                     padding: "10px",
-                    background: "#6750A4",
+                    background: "#7DD3C0",
                     color: "white",
                     border: "none",
                     borderRadius: "6px",
@@ -2374,16 +2381,16 @@ export default function AdminDashboard() {
         }}>
           <div style={{
             background: "white",
-            borderRadius: "24px",
+            borderRadius: "12px",
             padding: "24px",
             width: "100%",
             maxWidth: "400px",
           }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700", color: "#4B5563" }}>
               Password Reset
             </h3>
 
-            <p style={{ marginBottom: "16px", color: "#6b7280", fontSize: "14px" }}>
+            <p style={{ marginBottom: "16px", color: "#6B7280", fontSize: "14px" }}>
               Temporary password generated for <strong>{resetPasswordUser.email}</strong>
             </p>
 
@@ -2400,7 +2407,7 @@ export default function AdminDashboard() {
               {tempPassword}
             </div>
 
-            <p style={{ marginBottom: "16px", color: "#dc2626", fontSize: "12px" }}>
+            <p style={{ marginBottom: "16px", color: "#EF4444", fontSize: "12px" }}>
               Please copy this password now. It will not be shown again.
             </p>
 
@@ -2412,7 +2419,7 @@ export default function AdminDashboard() {
               style={{
                 width: "100%",
                 padding: "10px",
-                background: "#6750A4",
+                background: "#7DD3C0",
                 color: "white",
                 border: "none",
                 borderRadius: "6px",
@@ -2440,12 +2447,12 @@ export default function AdminDashboard() {
         }}>
           <div style={{
             background: "white",
-            borderRadius: "24px",
+            borderRadius: "12px",
             padding: "24px",
             width: "100%",
             maxWidth: "500px",
           }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700" }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700", color: "#4B5563" }}>
               User Impersonation Token
             </h3>
 
@@ -2460,7 +2467,7 @@ export default function AdminDashboard() {
               {impersonateToken.warning}
             </div>
 
-            <p style={{ marginBottom: "8px", color: "#6b7280", fontSize: "14px" }}>
+            <p style={{ marginBottom: "8px", color: "#6B7280", fontSize: "14px" }}>
               Impersonating: <strong>{impersonateToken.user_email}</strong>
             </p>
 
@@ -2489,7 +2496,7 @@ export default function AdminDashboard() {
                   flex: 1,
                   padding: "10px",
                   background: "#f3f4f6",
-                  color: "#374151",
+                  color: "#4B5563",
                   border: "none",
                   borderRadius: "6px",
                   fontSize: "14px",
@@ -2507,7 +2514,7 @@ export default function AdminDashboard() {
                 style={{
                   flex: 1,
                   padding: "10px",
-                  background: "#f59e0b",
+                  background: "#F59E0B",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
@@ -2523,7 +2530,7 @@ export default function AdminDashboard() {
                 style={{
                   flex: 1,
                   padding: "10px",
-                  background: "#6750A4",
+                  background: "#7DD3C0",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
@@ -2571,9 +2578,9 @@ function StatCard({ title, value, color, icon }) {
   return (
     <div style={{
       background: "white",
-      borderRadius: "24px",
+      borderRadius: "12px",
       padding: "24px",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
       display: "flex",
       alignItems: "center",
       gap: "16px",
@@ -2587,12 +2594,13 @@ function StatCard({ title, value, color, icon }) {
         alignItems: "center",
         justifyContent: "center",
         fontSize: "24px",
+        color: color,
       }}>
-        {icon || "📊"}
+        {icon || "☰"}
       </div>
       <div>
-        <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</div>
-        <div style={{ fontSize: "32px", fontWeight: "700", color: "#1a1a1a" }}>{value}</div>
+        <div style={{ fontSize: "13px", color: "#6B7280", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</div>
+        <div style={{ fontSize: "32px", fontWeight: "700", color: "#4B5563" }}>{value}</div>
       </div>
     </div>
   );
@@ -2608,7 +2616,7 @@ function PieChart({ data, size = 160, colors }) {
     return [x, y];
   };
 
-  const defaultColors = ["#6750A4", "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+  const defaultColors = ["#B8A7E5", "#10B981", "#7DD3C0", "#F59E0B", "#EF4444", "#6750A4"];
   const chartColors = colors || defaultColors;
 
   return (
@@ -2646,7 +2654,7 @@ function PieChart({ data, size = 160, colors }) {
               borderRadius: "50%",
               background: chartColors[i % chartColors.length],
             }} />
-            <span style={{ fontSize: "13px", color: "#374151" }}>
+            <span style={{ fontSize: "13px", color: "#4B5563" }}>
               {item.tier || item.phase}: <strong>{item.count}</strong>
             </span>
           </div>
@@ -2656,7 +2664,7 @@ function PieChart({ data, size = 160, colors }) {
   );
 }
 
-function CircularProgress({ value, max, size = 80, color = "#6750A4", label }) {
+function CircularProgress({ value, max, size = 80, color = "#7DD3C0", label }) {
   const percentage = (value / max) * 100;
   const circumference = 2 * Math.PI * 35;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -2684,11 +2692,11 @@ function CircularProgress({ value, max, size = 80, color = "#6750A4", label }) {
           strokeDashoffset={strokeDashoffset}
           transform="rotate(-90 40 40)"
         />
-        <text x="40" y="45" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1a1a1a">
+        <text x="40" y="45" textAnchor="middle" fontSize="14" fontWeight="700" fill="#4B5563">
           {value}
         </text>
       </svg>
-      {label && <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>{label}</div>}
+      {label && <div style={{ fontSize: "12px", color: "#6B7280", marginTop: "4px" }}>{label}</div>}
     </div>
   );
 }
@@ -2700,9 +2708,9 @@ function ConfigItem({ label, configured }) {
         width: "8px",
         height: "8px",
         borderRadius: "50%",
-        background: configured ? "#22c55e" : "#ef4444",
+        background: configured ? "#10B981" : "#EF4444",
       }} />
-      <span style={{ fontSize: "14px", color: "#374151" }}>{label}</span>
+      <span style={{ fontSize: "14px", color: "#4B5563" }}>{label}</span>
     </div>
   );
 }
@@ -2716,22 +2724,22 @@ function ConfigItemCircle({ label, configured }) {
       gap: "8px",
       padding: "16px",
       background: configured ? "#dcfce720" : "#fee2e220",
-      borderRadius: "16px",
+      borderRadius: "12px",
     }}>
       <div style={{
         width: "40px",
         height: "40px",
         borderRadius: "50%",
-        background: configured ? "#22c55e" : "#ef4444",
+        background: configured ? "#10B981" : "#EF4444",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         color: "white",
         fontSize: "18px",
       }}>
-        {configured ? "✓" : "×"}
+        {configured ? "✓" : "✕"}
       </div>
-      <span style={{ fontSize: "13px", color: "#374151", fontWeight: "500" }}>{label}</span>
+      <span style={{ fontSize: "13px", color: "#4B5563", fontWeight: "500" }}>{label}</span>
     </div>
   );
 }
@@ -2745,10 +2753,10 @@ function SettingsRow({ label, value, status }) {
       padding: "12px 0",
       borderBottom: "1px solid #f3f4f6",
     }}>
-      <span style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>{label}</span>
+      <span style={{ fontSize: "14px", fontWeight: "500", color: "#4B5563" }}>{label}</span>
       <span style={{
         fontSize: "13px",
-        color: status === undefined ? "#6b7280" : status ? "#22c55e" : "#ef4444",
+        color: status === undefined ? "#6B7280" : status ? "#10B981" : "#EF4444",
       }}>
         {value}
       </span>
@@ -2760,18 +2768,18 @@ const thStyle = {
   textAlign: "left",
   padding: "12px 8px",
   fontWeight: "600",
-  color: "#374151",
+  color: "#4B5563",
 };
 
 const tdStyle = {
   padding: "12px 8px",
-  color: "#1a1a1a",
+  color: "#4B5563",
 };
 
 const actionBtnStyle = {
   background: "none",
   border: "none",
-  color: "#6750A4",
+  color: "#7DD3C0",
   cursor: "pointer",
   padding: "4px 8px",
   fontSize: "13px",

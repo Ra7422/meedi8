@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
+import meedi8Logo from '../assets/logo/meedi8_logo.png';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -37,36 +38,44 @@ export default function AdminLogin() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "#f5f5f5",
+      background: "linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%)",
       fontFamily: "'Nunito', sans-serif",
     }}>
       <div style={{
         background: "white",
         padding: "40px",
         borderRadius: "12px",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         width: "100%",
         maxWidth: "400px",
       }}>
-        <h1 style={{
-          fontSize: "28px",
-          fontWeight: "700",
-          marginBottom: "8px",
-          color: "#1a1a1a",
-        }}>
-          Admin Login
-        </h1>
-        <p style={{
-          color: "#6b7280",
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           marginBottom: "24px",
         }}>
-          Sign in to access the admin dashboard
-        </p>
+          <img
+            src={meedi8Logo}
+            alt="Meedi8"
+            style={{
+              height: "48px",
+              marginBottom: "16px"
+            }}
+          />
+          <p style={{
+            color: "#6B7280",
+            margin: 0,
+            fontSize: "14px",
+          }}>
+            Admin Dashboard Login
+          </p>
+        </div>
 
         {error && (
           <div style={{
             background: "#fee2e2",
-            color: "#dc2626",
+            color: "#EF4444",
             padding: "12px",
             borderRadius: "8px",
             marginBottom: "16px",
@@ -83,7 +92,7 @@ export default function AdminLogin() {
               marginBottom: "6px",
               fontWeight: "600",
               fontSize: "14px",
-              color: "#374151",
+              color: "#4B5563",
             }}>
               Email
             </label>
@@ -109,7 +118,7 @@ export default function AdminLogin() {
               marginBottom: "6px",
               fontWeight: "600",
               fontSize: "14px",
-              color: "#374151",
+              color: "#4B5563",
             }}>
               Password
             </label>
@@ -135,7 +144,7 @@ export default function AdminLogin() {
             style={{
               width: "100%",
               padding: "14px",
-              background: "#6750A4",
+              background: "#7DD3C0",
               color: "white",
               border: "none",
               borderRadius: "8px",
@@ -153,7 +162,7 @@ export default function AdminLogin() {
           marginTop: "24px",
           textAlign: "center",
           fontSize: "14px",
-          color: "#6b7280",
+          color: "#6B7280",
         }}>
           <a href="/" style={{ color: "#6750A4", textDecoration: "none" }}>
             Back to Home
