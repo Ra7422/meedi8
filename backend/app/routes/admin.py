@@ -1769,8 +1769,14 @@ def get_system_health(
     """Get system health metrics"""
     check_admin(current_user)
 
-    import psutil
     import sys
+
+    # Try to import psutil, but gracefully handle if not available
+    try:
+        import psutil
+        psutil_available = True
+    except ImportError:
+        psutil_available = False
 
     health = {
         "status": "healthy",
@@ -1786,26 +1792,30 @@ def get_system_health(
         health["status"] = "degraded"
 
     # Memory usage
-    try:
-        memory = psutil.virtual_memory()
-        health["checks"]["memory"] = {
-            "status": "ok" if memory.percent < 90 else "warning",
-            "used_percent": round(memory.percent, 1),
-            "used_gb": round(memory.used / (1024**3), 2),
-            "total_gb": round(memory.total / (1024**3), 2)
-        }
-    except:
-        health["checks"]["memory"] = {"status": "unknown"}
+    if psutil_available:
+        try:
+            memory = psutil.virtual_memory()
+            health["checks"]["memory"] = {
+                "status": "ok" if memory.percent < 90 else "warning",
+                "used_percent": round(memory.percent, 1),
+                "used_gb": round(memory.used / (1024**3), 2),
+                "total_gb": round(memory.total / (1024**3), 2)
+            }
+        except:
+            health["checks"]["memory"] = {"status": "unknown"}
 
-    # CPU usage
-    try:
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        health["checks"]["cpu"] = {
-            "status": "ok" if cpu_percent < 90 else "warning",
-            "used_percent": round(cpu_percent, 1)
-        }
-    except:
-        health["checks"]["cpu"] = {"status": "unknown"}
+        # CPU usage
+        try:
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            health["checks"]["cpu"] = {
+                "status": "ok" if cpu_percent < 90 else "warning",
+                "used_percent": round(cpu_percent, 1)
+            }
+        except:
+            health["checks"]["cpu"] = {"status": "unknown"}
+    else:
+        health["checks"]["memory"] = {"status": "unavailable", "message": "psutil not installed"}
+        health["checks"]["cpu"] = {"status": "unavailable", "message": "psutil not installed"}
 
     # Python version
     health["checks"]["python"] = {
