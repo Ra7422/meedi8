@@ -623,30 +623,49 @@ def export_users_csv(
 def get_analytics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    days: int = 30
+    days: int = 30,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
 ):
-    """Get analytics data for charts"""
+    """Get analytics data for charts
+
+    Args:
+        days: Number of days to look back (default 30, ignored if start_date/end_date provided)
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+    """
     check_admin(current_user)
 
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    # Parse dates or use default
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        end_dt = datetime.utcnow()
+        start_dt = end_dt - timedelta(days=days)
+
+    cutoff = start_dt
 
     # User signups over time
     signups = db.execute(text("""
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM users
-        WHERE created_at >= :cutoff
+        WHERE created_at >= :start_dt AND created_at <= :end_dt
         GROUP BY DATE(created_at)
         ORDER BY date
-    """), {"cutoff": cutoff}).fetchall()
+    """), {"start_dt": start_dt, "end_dt": end_dt}).fetchall()
 
     # Room completions over time
     completions = db.execute(text("""
         SELECT DATE(resolved_at) as date, COUNT(*) as count
         FROM rooms
-        WHERE resolved_at >= :cutoff AND phase = 'resolved'
+        WHERE resolved_at >= :start_dt AND resolved_at <= :end_dt AND phase = 'resolved'
         GROUP BY DATE(resolved_at)
         ORDER BY date
-    """), {"cutoff": cutoff}).fetchall()
+    """), {"start_dt": start_dt, "end_dt": end_dt}).fetchall()
 
     # Subscription breakdown
     tier_breakdown = db.execute(text("""
@@ -685,6 +704,10 @@ def get_analytics(
         "active_users_7d": active_users,
         "rooms_by_phase": [{"phase": r[0], "count": r[1]} for r in rooms_by_phase],
         "avg_turns_per_room": round(float(avg_turns), 1),
+        "date_range": {
+            "start_date": start_dt.strftime("%Y-%m-%d"),
+            "end_date": end_dt.strftime("%Y-%m-%d")
+        }
     }
 
 

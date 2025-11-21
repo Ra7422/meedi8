@@ -42,7 +42,64 @@ export default function AdminDashboard() {
   const [aiCosts, setAiCosts] = useState(null);
   const [aiCostDetails, setAiCostDetails] = useState([]);
 
+  // Date range for analytics
+  const [dateRangePreset, setDateRangePreset] = useState("30d");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+
   const adminToken = localStorage.getItem("admin_token");
+
+  // Calculate date range based on preset
+  const getDateRangeParams = () => {
+    const today = new Date();
+    let startDate, endDate;
+
+    switch (dateRangePreset) {
+      case "7d":
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7);
+        endDate = today;
+        break;
+      case "30d":
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+        endDate = today;
+        break;
+      case "90d":
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 90);
+        endDate = today;
+        break;
+      case "this_month":
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = today;
+        break;
+      case "last_month":
+        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+        break;
+      case "custom":
+        if (customStartDate && customEndDate) {
+          startDate = new Date(customStartDate);
+          endDate = new Date(customEndDate);
+        } else {
+          // Default to last 30 days if custom dates not set
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 30);
+          endDate = today;
+        }
+        break;
+      default:
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+        endDate = today;
+    }
+
+    return {
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0]
+    };
+  };
 
   useEffect(() => {
     if (!adminToken) {
@@ -55,6 +112,9 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const dateParams = getDateRangeParams();
+      const analyticsUrl = `${API_URL}/admin/analytics?start_date=${dateParams.start_date}&end_date=${dateParams.end_date}`;
+
       const [usersRes, settingsRes, roomsRes, analyticsRes, activityRes, revenueRes, flagsRes, webhooksRes] = await Promise.all([
         fetch(`${API_URL}/admin/users`, {
           headers: { Authorization: `Bearer ${adminToken}` },
@@ -65,7 +125,7 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/rooms`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        fetch(`${API_URL}/admin/analytics`, {
+        fetch(analyticsUrl, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
         fetch(`${API_URL}/admin/activity-logs`, {
@@ -403,6 +463,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    try {
+      const dateParams = getDateRangeParams();
+      const analyticsUrl = `${API_URL}/admin/analytics?start_date=${dateParams.start_date}&end_date=${dateParams.end_date}`;
+
+      const res = await fetch(analyticsUrl, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch analytics:", err);
+    }
+  };
+
+  const handleDateRangeChange = (preset) => {
+    setDateRangePreset(preset);
+    if (preset !== "custom") {
+      // Immediately fetch with new preset
+      setTimeout(() => fetchAnalytics(), 0);
+    }
+  };
+
+  const handleCustomDateApply = () => {
+    if (customStartDate && customEndDate) {
+      fetchAnalytics();
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Nunito', sans-serif", background: "linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%)", minHeight: "100vh" }}>
@@ -706,6 +798,118 @@ export default function AdminDashboard() {
           {/* Analytics Tab */}
           {activeTab === "analytics" && analytics && (
             <>
+              {/* Date Range Picker */}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                marginBottom: "24px",
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                  }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#4B5563" }}>Date Range:</span>
+                    {[
+                      { value: "7d", label: "Last 7 days" },
+                      { value: "30d", label: "Last 30 days" },
+                      { value: "90d", label: "Last 90 days" },
+                      { value: "this_month", label: "This month" },
+                      { value: "last_month", label: "Last month" },
+                      { value: "custom", label: "Custom" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.value}
+                        onClick={() => handleDateRangeChange(preset.value)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          border: "none",
+                          background: dateRangePreset === preset.value ? "#7DD3C0" : "#f3f4f6",
+                          color: dateRangePreset === preset.value ? "white" : "#4B5563",
+                          fontSize: "13px",
+                          fontWeight: dateRangePreset === preset.value ? "600" : "400",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {dateRangePreset === "custom" && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        style={{
+                          padding: "6px 10px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                        }}
+                      />
+                      <span style={{ color: "#6B7280" }}>to</span>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        style={{
+                          padding: "6px 10px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                        }}
+                      />
+                      <button
+                        onClick={handleCustomDateApply}
+                        disabled={!customStartDate || !customEndDate}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          border: "none",
+                          background: customStartDate && customEndDate ? "#7DD3C0" : "#d1d5db",
+                          color: "white",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: customStartDate && customEndDate ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+
+                  {analytics.date_range && (
+                    <div style={{
+                      fontSize: "12px",
+                      color: "#6B7280",
+                      background: "#f9fafb",
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                    }}>
+                      Showing: {analytics.date_range.start_date} to {analytics.date_range.end_date}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
