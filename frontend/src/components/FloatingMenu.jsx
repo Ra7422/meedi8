@@ -245,7 +245,7 @@ export default function FloatingMenu({
                   <img
                     src="/assets/logo/meedi8-logo.png"
                     alt="Meedi8"
-                    style={{ height: '40px', width: 'auto' }}
+                    style={{ height: '120px', width: 'auto' }}
                   />
                 </div>
               )}
