@@ -69,7 +69,6 @@ export default function FloatingMenu({
     { label: "Sessions", path: "/sessions" },
     { label: "New Mediation", path: "/create" },
     { label: "Solo Coaching", path: "/solo/start" },
-    { label: "Telegram Chats", path: "/telegram", guestRestricted: true, premiumRequired: true },
     { label: "How It Works", path: "/onboarding" },
     { label: "Pricing", path: "/subscription" },
     { label: "FAQ", path: "/faq" },
