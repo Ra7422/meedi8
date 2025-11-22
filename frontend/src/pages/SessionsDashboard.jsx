@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
+import { useGamification } from "../context/GamificationContext";
+import { HealthScore, StreakCounter } from "../components/gamification";
 
 export default function SessionsDashboard() {
   const navigate = useNavigate();
@@ -9,6 +11,14 @@ export default function SessionsDashboard() {
   const [selectedRooms, setSelectedRooms] = useState([]);
   const [deleting, setDeleting] = useState(false);
   const token = localStorage.getItem("token");
+  const { healthScore, performDailyCheckin } = useGamification();
+
+  // Perform daily check-in on load
+  useEffect(() => {
+    if (token) {
+      performDailyCheckin().catch(() => {});
+    }
+  }, [token]);
 
   useEffect(() => {
     fetchRooms();
@@ -296,6 +306,16 @@ export default function SessionsDashboard() {
         </div>
       </div>
 
+      {/* Gamification Stats */}
+      <div style={styles.gamificationBar}>
+        <div style={styles.gamificationLeft}>
+          <HealthScore size={80} showTier={true} showLabel={false} />
+        </div>
+        <div style={styles.gamificationRight}>
+          <StreakCounter compact={true} />
+        </div>
+      </div>
+
       {rooms.length === 0 ? (
         <div style={styles.empty}>
           <p style={styles.emptyText}>No active sessions</p>
@@ -459,6 +479,27 @@ const styles = {
     cursor: "pointer",
     fontSize: "15px",
     fontWeight: "600"
+  },
+  gamificationBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 20px",
+    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+    borderRadius: "16px",
+    marginBottom: "24px",
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+  },
+  gamificationLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px"
+  },
+  gamificationRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px"
   },
   loading: {
     textAlign: "center",

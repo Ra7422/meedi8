@@ -4,6 +4,18 @@ from .subscription import Subscription, SubscriptionTier, SubscriptionStatus, Ap
 from .health_screening import UserHealthProfile, SessionScreening
 from .telegram import TelegramSession, TelegramDownload, TelegramMessage
 from .announcement import Announcement
+from .gamification import (
+    UserProgress,
+    ScoreEvent,
+    GratitudeEntry,
+    BreathingSession,
+    EmotionalCheckin,
+    Achievement,
+    UserAchievement,
+    DailyChallenge,
+    UserDailyChallenge,
+    ConversionEvent,
+)
 
 __all__ = [
     'User',
@@ -20,4 +32,15 @@ __all__ = [
     'TelegramDownload',
     'TelegramMessage',
     'Announcement',
+    # Gamification
+    'UserProgress',
+    'ScoreEvent',
+    'GratitudeEntry',
+    'BreathingSession',
+    'EmotionalCheckin',
+    'Achievement',
+    'UserAchievement',
+    'DailyChallenge',
+    'UserDailyChallenge',
+    'ConversionEvent',
 ]

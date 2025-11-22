@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useGamification } from "../context/GamificationContext";
 
-export default function BreathingExercise({ inline = false }) {
+export default function BreathingExercise({ inline = false, onSessionComplete }) {
+  const { completeBreathingSession } = useGamification();
   const [isActive, setIsActive] = useState(false);
   const [step, setStep] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -91,6 +93,34 @@ export default function BreathingExercise({ inline = false }) {
     setIsActive(false);
     clearTimeout(timerRef.current);
     clearInterval(timeCounterRef.current);
+  };
+
+  const handleComplete = async () => {
+    handlePause();
+
+    if (cyclesCompleted > 0 && totalSeconds > 0) {
+      try {
+        // Map mode names for backend
+        const modeMap = { box: "box", "478": "478", coh: "coherence" };
+        await completeBreathingSession(
+          modeMap[mode] || "box",
+          cyclesCompleted,
+          totalSeconds
+        );
+
+        if (onSessionComplete) {
+          onSessionComplete({ mode, cycles: cyclesCompleted, duration: totalSeconds });
+        }
+      } catch (err) {
+        console.error("Failed to log breathing session:", err);
+      }
+    }
+
+    // Reset for next session
+    setCyclesCompleted(0);
+    setTotalSeconds(0);
+    setStep(0);
+    setCurrentTheme("");
   };
 
   const handleModeChange = (e) => {
@@ -193,6 +223,18 @@ export default function BreathingExercise({ inline = false }) {
           <button onClick={handlePause} style={{...styles.button, ...styles.mutedButton}}>
             Pause
           </button>
+          {cyclesCompleted > 0 && (
+            <button
+              onClick={handleComplete}
+              style={{
+                ...styles.button,
+                background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                marginLeft: "8px"
+              }}
+            >
+              Complete (+5)
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -2,10 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../api/client';
+import { useGamification } from '../context/GamificationContext';
+import { HealthScore, StreakCounter } from '../components/gamification';
 
 export default function Profile() {
   const { user, token, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const { healthScore } = useGamification();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -878,6 +881,41 @@ export default function Profile() {
               ) : (
                 <div style={styles.value}>{user?.bio || 'Tell us about yourself...'}</div>
               )}
+            </div>
+          </div>
+
+          {/* Gamification Progress Card */}
+          <div style={styles.card}>
+            <div style={styles.cardTitle}>
+              <span>Progress & Achievements</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', marginBottom: '20px' }}>
+              <HealthScore size={100} showTier={true} showLabel={true} />
+              <StreakCounter compact={false} showProtect={true} />
+            </div>
+
+            {healthScore && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
+                <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
+                    {healthScore.total_breathing_sessions}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>Breathing Sessions</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
+                    {healthScore.total_breathing_minutes}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>Minutes Breathed</div>
+                </div>
+              </div>
+            )}
+
+            {/* Placeholder for future badges */}
+            <div style={{ marginTop: '20px', padding: '16px', background: '#faf5ff', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#7c3aed', fontWeight: '500' }}>🏆 Badges Coming Soon</div>
+              <div style={{ fontSize: '12px', color: '#a78bfa', marginTop: '4px' }}>Complete activities to earn achievements</div>
             </div>
           </div>
 

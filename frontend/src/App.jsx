@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { GamificationProvider } from "./context/GamificationContext";
+import { ScoreEventToast } from "./components/gamification";
 import FloatingMenu from "./components/FloatingMenu";
 import Login from "./pages/LoginNew";
 import Signup from "./pages/Signup";
@@ -73,10 +75,12 @@ function GlobalMenu() {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <GlobalMenu />
-        <ScreeningGuard>
-        <Routes>
+      <GamificationProvider>
+        <ScoreEventToast />
+        <Router>
+          <GlobalMenu />
+          <ScreeningGuard>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/plasmic-host" element={<PlаsmicHost />} />
           <Route path="/login" element={<Login />} />
@@ -122,9 +126,10 @@ export default function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-        </Routes>
-        </ScreeningGuard>
-      </Router>
+          </Routes>
+          </ScreeningGuard>
+        </Router>
+      </GamificationProvider>
     </AuthProvider>
   );
 }
