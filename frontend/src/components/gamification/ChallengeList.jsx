@@ -8,11 +8,11 @@ export default function ChallengeList({ compact = false }) {
     return (
       <div style={{
         padding: compact ? "12px" : "16px",
-        background: "white",
+        background: "rgba(139, 92, 246, 0.1)",
         borderRadius: "12px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+        border: "1px solid rgba(139, 92, 246, 0.3)"
       }}>
-        <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "14px" }}>
+        <div style={{ textAlign: "center", color: "rgba(255, 255, 255, 0.5)", fontSize: "14px" }}>
           Loading challenges...
         </div>
       </div>
@@ -23,11 +23,11 @@ export default function ChallengeList({ compact = false }) {
     return (
       <div style={{
         padding: compact ? "12px" : "16px",
-        background: "white",
+        background: "rgba(139, 92, 246, 0.1)",
         borderRadius: "12px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+        border: "1px solid rgba(139, 92, 246, 0.3)"
       }}>
-        <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "14px" }}>
+        <div style={{ textAlign: "center", color: "rgba(255, 255, 255, 0.5)", fontSize: "14px" }}>
           No challenges available
         </div>
       </div>
@@ -44,10 +44,11 @@ export default function ChallengeList({ compact = false }) {
 
   return (
     <div style={{
-      background: "white",
+      background: "rgba(139, 92, 246, 0.1)",
       borderRadius: "12px",
       padding: compact ? "12px" : "16px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+      border: "1px solid rgba(139, 92, 246, 0.3)",
+      boxShadow: "0 0 20px rgba(139, 92, 246, 0.2)"
     }}>
       {/* Header */}
       <div style={{
@@ -60,13 +61,13 @@ export default function ChallengeList({ compact = false }) {
           margin: 0,
           fontSize: compact ? "14px" : "16px",
           fontWeight: "600",
-          color: "#1f2937"
+          color: "white"
         }}>
           Today's Challenges
         </h3>
         <span style={{
           fontSize: compact ? "12px" : "13px",
-          color: "#7c3aed",
+          color: "#a78bfa",
           fontWeight: "500"
         }}>
           {challengeStats.completed}/{challengeStats.total}
@@ -98,9 +99,9 @@ function ChallengeCard({ challenge, onClaim, compact }) {
       padding: compact ? "10px" : "12px",
       borderRadius: "8px",
       background: isComplete
-        ? (isClaimed ? "#f3f4f6" : "#f0fdf4")
-        : "#f9fafb",
-      border: `1px solid ${isComplete ? (isClaimed ? "#e5e7eb" : "#86efac") : "#e5e7eb"}`,
+        ? (isClaimed ? "rgba(100, 100, 100, 0.1)" : "rgba(34, 197, 94, 0.15)")
+        : "rgba(139, 92, 246, 0.08)",
+      border: `1px solid ${isComplete ? (isClaimed ? "rgba(100, 100, 100, 0.3)" : "rgba(34, 197, 94, 0.4)") : "rgba(139, 92, 246, 0.3)"}`,
       opacity: isClaimed ? 0.7 : 1
     }}>
       {/* Title and reward */}
@@ -114,14 +115,14 @@ function ChallengeCard({ challenge, onClaim, compact }) {
           <div style={{
             fontSize: compact ? "13px" : "14px",
             fontWeight: "600",
-            color: isClaimed ? "#9ca3af" : "#1f2937",
+            color: isClaimed ? "rgba(255, 255, 255, 0.4)" : "white",
             marginBottom: "2px"
           }}>
             {challenge.title}
           </div>
           <div style={{
             fontSize: compact ? "11px" : "12px",
-            color: isClaimed ? "#9ca3af" : "#6b7280"
+            color: isClaimed ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.6)"
           }}>
             {challenge.description}
           </div>
@@ -129,7 +130,7 @@ function ChallengeCard({ challenge, onClaim, compact }) {
         <div style={{
           fontSize: compact ? "11px" : "12px",
           fontWeight: "600",
-          color: isClaimed ? "#9ca3af" : "#7c3aed",
+          color: isClaimed ? "rgba(255, 255, 255, 0.3)" : "#a78bfa",
           whiteSpace: "nowrap"
         }}>
           +{challenge.score_reward}
@@ -139,7 +140,7 @@ function ChallengeCard({ challenge, onClaim, compact }) {
       {/* Progress bar */}
       <div style={{
         height: "6px",
-        background: "#e5e7eb",
+        background: "rgba(139, 92, 246, 0.2)",
         borderRadius: "3px",
         overflow: "hidden",
         marginBottom: compact ? "6px" : "8px"
@@ -148,8 +149,8 @@ function ChallengeCard({ challenge, onClaim, compact }) {
           height: "100%",
           width: `${progressPercent}%`,
           background: isComplete
-            ? (isClaimed ? "#9ca3af" : "#22c55e")
-            : "#7c3aed",
+            ? (isClaimed ? "rgba(255, 255, 255, 0.3)" : "#22c55e")
+            : "#8b5cf6",
           borderRadius: "3px",
           transition: "width 0.3s ease"
         }} />
@@ -163,7 +164,7 @@ function ChallengeCard({ challenge, onClaim, compact }) {
       }}>
         <span style={{
           fontSize: compact ? "10px" : "11px",
-          color: isClaimed ? "#9ca3af" : "#6b7280"
+          color: isClaimed ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.5)"
         }}>
           {challenge.progress}/{challenge.target}
         </span>
@@ -176,10 +177,11 @@ function ChallengeCard({ challenge, onClaim, compact }) {
               fontSize: compact ? "10px" : "11px",
               fontWeight: "600",
               color: "white",
-              background: "#22c55e",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer"
+              background: "rgba(34, 197, 94, 0.3)",
+              border: "1px solid rgba(34, 197, 94, 0.5)",
+              borderRadius: "50px",
+              cursor: "pointer",
+              boxShadow: "0 0 10px rgba(34, 197, 94, 0.4)"
             }}
           >
             Claim
@@ -187,7 +189,7 @@ function ChallengeCard({ challenge, onClaim, compact }) {
         ) : isClaimed ? (
           <span style={{
             fontSize: compact ? "10px" : "11px",
-            color: "#9ca3af"
+            color: "rgba(255, 255, 255, 0.3)"
           }}>
             Claimed
           </span>
