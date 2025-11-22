@@ -470,7 +470,7 @@ const styles = {
     margin: "0 auto",
     padding: "20px",
     minHeight: "100vh",
-    background: "linear-gradient(135deg, rgba(20, 15, 35, 1) 0%, rgba(30, 20, 50, 1) 100%)"
+    background: "linear-gradient(135deg, rgba(10, 8, 20, 1) 0%, rgba(15, 10, 30, 1) 100%)"
   },
   header: {
     display: "flex",
