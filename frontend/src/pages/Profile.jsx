@@ -272,7 +272,7 @@ export default function Profile() {
   const styles = {
     container: {
       minHeight: 'calc(100vh - 60px)',
-      background: 'linear-gradient(180deg, #EAF7F0 0%, #ffffff 100%)',
+      background: 'linear-gradient(135deg, rgba(10, 8, 20, 1) 0%, rgba(15, 10, 30, 1) 100%)',
       padding: '40px 20px',
       fontFamily: "'Nunito', sans-serif",
     },
@@ -294,7 +294,7 @@ export default function Profile() {
     title: {
       fontSize: '36px',
       fontWeight: '400',
-      color: '#6750A4',
+      color: 'white',
       marginBottom: '8px',
       fontFamily: "'Nunito', sans-serif",
     },
@@ -303,7 +303,7 @@ export default function Profile() {
     },
     subtitle: {
       fontSize: '16px',
-      color: '#888',
+      color: 'rgba(255, 255, 255, 0.6)',
       fontFamily: "'Nunito', sans-serif",
     },
     profilePictureContainer: {
@@ -354,16 +354,17 @@ export default function Profile() {
       marginBottom: '32px',
     },
     card: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: 'rgba(139, 92, 246, 0.08)',
       borderRadius: '16px',
       padding: '24px',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-      border: '2px solid #D3C1FF',
+      boxShadow: '0 0 25px rgba(139, 92, 246, 0.3), 0 0 50px rgba(139, 92, 246, 0.15)',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
+      backdropFilter: 'blur(10px)',
     },
     cardTitle: {
       fontSize: '20px',
       fontWeight: '700',
-      color: '#6750A4',
+      color: 'white',
       marginBottom: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -375,23 +376,23 @@ export default function Profile() {
     label: {
       fontSize: '14px',
       fontWeight: '600',
-      color: '#6750A4',
+      color: '#a78bfa',
       marginBottom: '4px',
     },
     value: {
       fontSize: '16px',
-      color: '#6750A4',
+      color: 'white',
       fontFamily: "'Nunito', sans-serif",
     },
     input: {
       width: '100%',
       padding: '12px',
       borderRadius: '8px',
-      border: '2px solid #D3C1FF',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
       fontSize: '16px',
       fontFamily: "'Nunito', sans-serif",
-      backgroundColor: '#F5EFFF',
-      color: '#6750A4',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      color: 'white',
     },
     button: {
       padding: '12px 24px',
@@ -404,13 +405,15 @@ export default function Profile() {
       transition: 'all 0.3s',
     },
     primaryButton: {
-      backgroundColor: '#D3C1FF',
-      color: '#FFFFFF',
+      backgroundColor: 'rgba(139, 92, 246, 0.3)',
+      color: 'white',
+      border: '1px solid rgba(139, 92, 246, 0.5)',
+      boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
     },
     secondaryButton: {
       backgroundColor: 'transparent',
-      color: '#D3C1FF',
-      border: '2px solid #D3C1FF',
+      color: 'white',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
     },
     tierBadge: (tier) => {
       const tierInfo = getTierDisplay(tier);
@@ -434,16 +437,16 @@ export default function Profile() {
     },
     sessionItem: {
       padding: '12px',
-      backgroundColor: '#F5EFFF',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
       borderRadius: '8px',
       transition: 'all 0.2s',
-      border: '2px solid transparent',
+      border: '1px solid rgba(139, 92, 246, 0.3)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
     sessionItemHover: {
-      border: '2px solid #D3C1FF',
+      border: '1px solid rgba(139, 92, 246, 0.6)',
       transform: 'translateY(-2px)',
     },
     sessionContent: {
@@ -453,12 +456,12 @@ export default function Profile() {
     sessionTitle: {
       fontSize: '16px',
       fontWeight: '600',
-      color: '#6750A4',
+      color: 'white',
       marginBottom: '4px',
     },
     sessionDate: {
       fontSize: '14px',
-      color: '#888',
+      color: 'rgba(255, 255, 255, 0.6)',
     },
     deleteButton: {
       padding: '8px 12px',
@@ -475,9 +478,9 @@ export default function Profile() {
     },
     expandButton: {
       padding: '12px',
-      backgroundColor: '#F5EFFF',
-      color: '#6750A4',
-      border: '2px solid #D3C1FF',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      color: 'white',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
       borderRadius: '8px',
       fontSize: '14px',
       fontWeight: '600',
@@ -502,15 +505,15 @@ export default function Profile() {
       display: 'flex',
       alignItems: 'center',
       padding: '12px',
-      backgroundColor: '#F5EFFF',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
       borderRadius: '8px',
       marginBottom: '12px',
-      border: '2px solid #D3C1FF',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
     },
     selectAllLabel: {
       fontSize: '14px',
       fontWeight: '600',
-      color: '#6750A4',
+      color: 'white',
       cursor: 'pointer',
       userSelect: 'none',
     },
@@ -521,9 +524,9 @@ export default function Profile() {
     },
     selectButton: {
       padding: '8px 16px',
-      backgroundColor: '#F5EFFF',
-      color: '#6750A4',
-      border: '2px solid #D3C1FF',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      color: 'white',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
       borderRadius: '8px',
       fontSize: '14px',
       fontWeight: '600',
@@ -546,17 +549,18 @@ export default function Profile() {
     stat: {
       textAlign: 'center',
       padding: '16px',
-      backgroundColor: '#F5EFFF',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
       borderRadius: '12px',
+      border: '1px solid rgba(139, 92, 246, 0.3)',
     },
     statValue: {
       fontSize: '32px',
       fontWeight: '700',
-      color: '#6750A4',
+      color: 'white',
     },
     statLabel: {
       fontSize: '14px',
-      color: '#888',
+      color: 'rgba(255, 255, 255, 0.6)',
       marginTop: '4px',
     },
     statsGrid: {
@@ -566,12 +570,12 @@ export default function Profile() {
       flex: 1,
     },
     statCompleted: {
-      backgroundColor: '#E8F9F5',
-      border: '2px solid #7DD3C0',
+      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+      border: '1px solid rgba(34, 197, 94, 0.4)',
     },
     statInProgress: {
-      backgroundColor: '#F5EFFF',
-      border: '2px solid #CCB2FF',
+      backgroundColor: 'rgba(139, 92, 246, 0.15)',
+      border: '1px solid rgba(139, 92, 246, 0.4)',
     },
     chartContainer: {
       display: 'flex',
@@ -582,12 +586,12 @@ export default function Profile() {
     emptyState: {
       textAlign: 'center',
       padding: '40px',
-      color: '#888',
+      color: 'rgba(255, 255, 255, 0.5)',
       fontSize: '16px',
       fontFamily: "'Nunito', sans-serif",
     },
     linkButton: {
-      color: '#D3C1FF',
+      color: '#a78bfa',
       textDecoration: 'none',
       fontWeight: '600',
       cursor: 'pointer',
@@ -653,7 +657,7 @@ export default function Profile() {
             <div style={styles.chartContainer}>
               <svg width="200" height="200" viewBox="0 0 200 200">
                 {/* Background circle */}
-                <circle cx="100" cy="100" r="80" fill="#F5EFFF" />
+                <circle cx="100" cy="100" r="80" fill="rgba(139, 92, 246, 0.1)" />
 
                 {sessions.length > 0 ? (
                   <>
@@ -728,8 +732,8 @@ export default function Profile() {
                       return null;
                     })()}
 
-                    {/* Center white circle to make it a donut */}
-                    <circle cx="100" cy="100" r="50" fill="white" />
+                    {/* Center dark circle to make it a donut */}
+                    <circle cx="100" cy="100" r="50" fill="rgba(10, 8, 20, 0.9)" />
 
                     {/* Total count in center */}
                     <text
@@ -739,7 +743,7 @@ export default function Profile() {
                       style={{
                         fontSize: '32px',
                         fontWeight: '700',
-                        fill: '#6750A4',
+                        fill: 'white',
                         fontFamily: "'Nunito', sans-serif",
                       }}
                     >
@@ -752,7 +756,7 @@ export default function Profile() {
                       style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        fill: '#888',
+                        fill: 'rgba(255, 255, 255, 0.6)',
                         fontFamily: "'Nunito', sans-serif",
                       }}
                     >
@@ -761,8 +765,8 @@ export default function Profile() {
                   </>
                 ) : (
                   <>
-                    <circle cx="100" cy="100" r="80" fill="#F5EFFF" />
-                    <circle cx="100" cy="100" r="50" fill="white" />
+                    <circle cx="100" cy="100" r="80" fill="rgba(139, 92, 246, 0.1)" />
+                    <circle cx="100" cy="100" r="50" fill="rgba(10, 8, 20, 0.9)" />
                     <text
                       x="100"
                       y="105"
@@ -770,7 +774,7 @@ export default function Profile() {
                       style={{
                         fontSize: '16px',
                         fontWeight: '600',
-                        fill: '#888',
+                        fill: 'rgba(255, 255, 255, 0.5)',
                         fontFamily: "'Nunito', sans-serif",
                       }}
                     >
