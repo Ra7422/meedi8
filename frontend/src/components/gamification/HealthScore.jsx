@@ -88,14 +88,14 @@ export default function HealthScore({ size = 120, showTier = true, showLabel = t
           <div style={{
             fontSize: size * 0.3,
             fontWeight: "bold",
-            color: "#1f2937"
+            color: "white"
           }}>
             {score}
           </div>
           {showLabel && (
             <div style={{
               fontSize: size * 0.1,
-              color: "#6b7280",
+              color: "rgba(255, 255, 255, 0.6)",
               textTransform: "uppercase",
               letterSpacing: 1
             }}>
@@ -113,8 +113,8 @@ export default function HealthScore({ size = 120, showTier = true, showLabel = t
           gap: 6,
           padding: "4px 12px",
           borderRadius: 12,
-          background: `${tierColor}15`,
-          border: `1px solid ${tierColor}40`
+          background: `${tierColor}25`,
+          border: `1px solid ${tierColor}50`
         }}>
           <span style={{ fontSize: 14 }}>
             {tier === "platinum" ? "💎" : tier === "gold" ? "🔶" : tier === "silver" ? "🔷" : "🟤"}
@@ -122,7 +122,7 @@ export default function HealthScore({ size = 120, showTier = true, showLabel = t
           <span style={{
             fontSize: 12,
             fontWeight: 600,
-            color: tier === "bronze" ? "#92400e" : tier === "silver" ? "#475569" : tier === "gold" ? "#a16207" : "#6366f1",
+            color: "white",
             textTransform: "capitalize"
           }}>
             {tier}

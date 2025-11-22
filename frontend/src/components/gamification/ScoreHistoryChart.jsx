@@ -18,9 +18,9 @@ export default function ScoreHistoryChart({ height = 120 }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "white",
+        background: "rgba(139, 92, 246, 0.1)",
         borderRadius: "12px",
-        color: "#9ca3af",
+        color: "rgba(255, 255, 255, 0.5)",
         fontSize: "13px"
       }}>
         Loading history...
@@ -35,9 +35,9 @@ export default function ScoreHistoryChart({ height = 120 }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "white",
+        background: "rgba(139, 92, 246, 0.1)",
         borderRadius: "12px",
-        color: "#9ca3af",
+        color: "rgba(255, 255, 255, 0.5)",
         fontSize: "13px"
       }}>
         No activity yet
@@ -55,9 +55,9 @@ export default function ScoreHistoryChart({ height = 120 }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "white",
+        background: "rgba(139, 92, 246, 0.1)",
         borderRadius: "12px",
-        color: "#9ca3af",
+        color: "rgba(255, 255, 255, 0.5)",
         fontSize: "13px"
       }}>
         Need more data for chart
@@ -99,10 +99,10 @@ export default function ScoreHistoryChart({ height = 120 }) {
 
   return (
     <div style={{
-      background: "white",
+      background: "rgba(139, 92, 246, 0.1)",
       borderRadius: "12px",
       padding: "12px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+      border: "1px solid rgba(139, 92, 246, 0.3)"
     }}>
       <div style={{
         display: "flex",
@@ -110,7 +110,7 @@ export default function ScoreHistoryChart({ height = 120 }) {
         alignItems: "center",
         marginBottom: "8px"
       }}>
-        <span style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>
+        <span style={{ fontSize: "14px", fontWeight: "600", color: "white" }}>
           30-Day Trend
         </span>
         <span style={{
@@ -141,7 +141,7 @@ export default function ScoreHistoryChart({ height = 120 }) {
                 y1={y}
                 x2={chartWidth - padding.right}
                 y2={y}
-                stroke="#e5e7eb"
+                stroke="rgba(139, 92, 246, 0.3)"
                 strokeWidth="1"
               />
               <text
@@ -149,7 +149,7 @@ export default function ScoreHistoryChart({ height = 120 }) {
                 y={y + 4}
                 textAnchor="end"
                 fontSize="10"
-                fill="#9ca3af"
+                fill="rgba(255, 255, 255, 0.5)"
               >
                 {val}
               </text>
@@ -192,7 +192,7 @@ export default function ScoreHistoryChart({ height = 120 }) {
           y={height - 8}
           textAnchor="start"
           fontSize="10"
-          fill="#9ca3af"
+          fill="rgba(255, 255, 255, 0.5)"
         >
           {formatDate(dailyScores[0].date)}
         </text>
@@ -201,7 +201,7 @@ export default function ScoreHistoryChart({ height = 120 }) {
           y={height - 8}
           textAnchor="end"
           fontSize="10"
-          fill="#9ca3af"
+          fill="rgba(255, 255, 255, 0.5)"
         >
           {formatDate(dailyScores[dailyScores.length - 1].date)}
         </text>
