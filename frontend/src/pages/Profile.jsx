@@ -20,6 +20,7 @@ export default function Profile() {
   const [selectMode, setSelectMode] = useState(false);
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
+  const [expandedFeature, setExpandedFeature] = useState(null);
   const fileInputRef = useRef(null);
 
   const [profileData, setProfileData] = useState({
@@ -1030,17 +1031,94 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div style={styles.infoGroup}>
-                  <div style={styles.label}>Rooms This Month</div>
-                  <div style={styles.value}>
-                    {subscription.rooms_created_this_month} / {subscription.rooms_limit === -1 ? '∞' : subscription.rooms_limit}
+                {/* Expandable Features List */}
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#C8B6FF', marginBottom: '12px' }}>
+                    Plan Features
                   </div>
+
+                  {(() => {
+                    const tier = subscription?.tier?.toLowerCase() || 'free';
+                    const features = {
+                      free: [
+                        { title: 'Mediations', detail: '3 active mediations per month. Perfect for occasional conflicts.' },
+                        { title: 'Voice Messages', detail: '1 free voice message to try the feature.' },
+                        { title: 'AI Coaching', detail: 'Full NVC-based coaching before each mediation session.' },
+                        { title: 'Chat Summary', detail: 'Basic summary of your mediation conversation.' }
+                      ],
+                      plus: [
+                        { title: 'Unlimited Mediations', detail: 'No limits on active mediations. Handle multiple conflicts at once.' },
+                        { title: 'Voice Messages', detail: '30 voice messages per month for more natural expression.' },
+                        { title: 'File Attachments', detail: 'Upload images and documents as evidence.' },
+                        { title: 'Telegram Import', detail: 'Import chat history from Telegram for AI analysis.' },
+                        { title: 'Priority Support', detail: 'Get faster responses to your questions.' }
+                      ],
+                      pro: [
+                        { title: 'Everything in Plus', detail: 'All Plus features included.' },
+                        { title: 'Unlimited Voice', detail: '300 voice messages per month.' },
+                        { title: 'Professional Reports', detail: 'Comprehensive therapist-style PDF reports included free.' },
+                        { title: 'Streak Protection', detail: 'Protect your streak once per week when you miss a day.' },
+                        { title: 'Advanced Analytics', detail: 'Detailed insights into your communication patterns.' },
+                        { title: 'Priority AI', detail: 'Faster AI response times during peak hours.' }
+                      ]
+                    };
+
+                    return (features[tier] || features.free).map((feature, idx) => (
+                      <div key={idx} style={{ marginBottom: '8px' }}>
+                        <div
+                          onClick={() => setExpandedFeature(expandedFeature === `${tier}-${idx}` ? null : `${tier}-${idx}`)}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px 12px',
+                            background: 'rgba(200, 182, 255, 0.1)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }}
+                        >
+                          <span style={{ fontSize: '13px', fontWeight: '500', color: '#E5E7EB' }}>
+                            {feature.title}
+                          </span>
+                          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                            {expandedFeature === `${tier}-${idx}` ? '▲' : '▼'}
+                          </span>
+                        </div>
+                        {expandedFeature === `${tier}-${idx}` && (
+                          <div style={{
+                            padding: '10px 12px',
+                            fontSize: '12px',
+                            color: '#9CA3AF',
+                            lineHeight: '1.5',
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            borderRadius: '0 0 8px 8px',
+                            marginTop: '-4px'
+                          }}>
+                            {feature.detail}
+                          </div>
+                        )}
+                      </div>
+                    ));
+                  })()}
                 </div>
 
-                <div style={styles.infoGroup}>
-                  <div style={styles.label}>Voice Messages</div>
-                  <div style={styles.value}>
-                    {subscription.voice_conversations_used} / {subscription.voice_conversations_limit}
+                {/* Usage Stats */}
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(200, 182, 255, 0.2)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#C8B6FF', marginBottom: '12px' }}>
+                    Usage This Month
+                  </div>
+                  <div style={styles.infoGroup}>
+                    <div style={styles.label}>Rooms</div>
+                    <div style={styles.value}>
+                      {subscription.rooms_created_this_month} / {subscription.rooms_limit === -1 ? '∞' : subscription.rooms_limit}
+                    </div>
+                  </div>
+                  <div style={styles.infoGroup}>
+                    <div style={styles.label}>Voice Messages</div>
+                    <div style={styles.value}>
+                      {subscription.voice_conversations_used} / {subscription.voice_conversations_limit}
+                    </div>
                   </div>
                 </div>
               </>
