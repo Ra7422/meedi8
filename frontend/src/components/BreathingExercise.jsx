@@ -179,25 +179,23 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
       <style>{breathingStyles}</style>
 
       <div style={cardStyle}>
-        <h1 style={styles.title}>🫧 {inline ? "Breathe & Earn" : "Center Yourself"}</h1>
-        {inline ? (
-          <p style={styles.encouragement}>
-            Complete 1 minute of breathing to earn +5 points. Go longer for bonus rewards: 2 min = +8, 3 min = +10!
-          </p>
-        ) : (
-          <>
-            <p style={styles.encouragement}>
-              You're about to discuss this with the other person and the AI mediator.
-              Take a moment to center yourself and prepare for a calm, productive conversation.
-              Finding your calm now will help you communicate clearly and listen openly for the best results.
-            </p>
-            <div style={styles.recommendation}>
-              ⏱️ <strong>Recommendation:</strong> 2-3 minutes while you wait
-            </div>
-          </>
-        )}
+        <h1 style={styles.title}>🫧 Breathe & Earn</h1>
+        <p style={styles.encouragement}>
+          Activate your calm. Just 1 minute of mindful breathing earns you +5 points.
+          Stay longer for bonus rewards: 2 min = +8, 3 min = +10!
+        </p>
 
-        <div className={`dot-wrap ${themeClass}`} style={styles.dotWrap}>
+        <div
+          className={`dot-wrap ${themeClass}`}
+          style={{...styles.dotWrap, cursor: "pointer"}}
+          onClick={() => {
+            if (isActive) {
+              handlePause();
+            } else {
+              handleStart();
+            }
+          }}
+        >
           <div
             className="halo"
             style={{
@@ -212,10 +210,15 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
               transform: `scale(${getScale()})`
             }}
           />
+          {!isActive && cyclesCompleted === 0 && (
+            <div style={styles.clickToBegin}>
+              Click to begin
+            </div>
+          )}
         </div>
 
         <div style={styles.prompt}>
-          {isActive ? labels[step] : "Press Start"}
+          {isActive ? labels[step] : (cyclesCompleted > 0 ? "Paused" : "")}
         </div>
         <p style={styles.sub}>
           {isActive ? `${secondsLeft}s` : "—"}
@@ -270,12 +273,6 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
               <option value="coh">Coherence 5-5</option>
             </select>
           </label>
-          <button onClick={handleStart} disabled={isActive} style={styles.button}>
-            Start
-          </button>
-          <button onClick={handlePause} style={{...styles.button, ...styles.mutedButton}}>
-            Pause
-          </button>
           {cyclesCompleted > 0 && canEarnPoints && (
             <button
               onClick={handleComplete}
@@ -384,6 +381,18 @@ const styles = {
     background: "radial-gradient(circle at 35% 30%, #a78bfa, #8b5cf6)",
     boxShadow: "0 0 24px rgba(109, 40, 217, 0.67) inset, 0 0 30px rgba(109, 40, 217, 0.53)",
     transition: "transform 0.8s cubic-bezier(0.2, 0.9, 0.2, 1), background 0.8s ease"
+  },
+  clickToBegin: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    color: "#e9e7ff",
+    fontSize: "14px",
+    fontWeight: "500",
+    textAlign: "center",
+    pointerEvents: "none",
+    textShadow: "0 2px 8px rgba(0,0,0,0.5)"
   },
   prompt: {
     fontSize: "22px",
