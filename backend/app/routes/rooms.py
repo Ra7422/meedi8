@@ -21,6 +21,8 @@ from app.services.whisper_service import transcribe_audio
 from app.services.subscription_service import require_feature_access, increment_voice_usage, check_room_creation_limit, increment_room_counter, check_file_upload_allowed
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
 from app.services.email_service import send_turn_notification, send_break_notification
+from app.routes.gamification import get_or_create_progress, update_score, extend_streak, update_challenge_progress_internal, SCORE_VALUES
+from app.services.achievement_checker import check_and_award_achievements
 from app.schemas.room import StartCoachingRequest, StartCoachingResponse, CoachingResponseRequest, CoachingResponseOut, FinalizeCoachingResponse, LobbyInfoResponse, MainRoomSummariesResponse, MainRoomStartResponse, MainRoomRespondRequest, MainRoomRespondResponse
 from app.models.room import Room, Turn
 from app.schemas.room import RoomCreate, RoomResponse, IntakeRequest, IntakeResponse, TurnResponse, TurnFeedItem, AIQuestionOut, MediateOut, RespondRequest, RespondOut, SignalRequest
@@ -1289,6 +1291,31 @@ def respond_main_room(
         # Reset deep exploration tracking
         room.last_speaker_id = None
         room.consecutive_questions_to_same = 0
+
+        # Award gamification points to both users for resolution
+        score_change = SCORE_VALUES.get("meditation_complete", 15)
+        for user in [user1, user2]:
+            if user:
+                try:
+                    progress = get_or_create_progress(db, user.id)
+                    update_score(
+                        db, progress, "mediation_complete", score_change,
+                        description=f"Completed mediation: {room.title}",
+                        metadata={"room_id": room_id}
+                    )
+                    # Extend streak
+                    bonus = extend_streak(db, progress)
+                    if bonus > 0:
+                        update_score(
+                            db, progress, f"streak_bonus_{progress.current_streak}", bonus,
+                            description=f"{progress.current_streak}-day streak bonus!"
+                        )
+                    # Update challenge progress
+                    update_challenge_progress_internal(db, user.id, "resolution")
+                    # Check for achievements
+                    check_and_award_achievements(db, user.id)
+                except Exception as e:
+                    print(f"Error awarding gamification points to user {user.id}: {e}")
     elif result.get("ai_response"):
         ai_turn = Turn(
             room_id=room_id,
