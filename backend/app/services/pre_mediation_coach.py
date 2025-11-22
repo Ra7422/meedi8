@@ -65,7 +65,59 @@ RESPONSE STYLE:
   - "That must be difficult when your efforts aren't recognized"
 """
 
-def start_coaching_session(user_input: str, is_user1: bool, user1_summary: str = None) -> Dict:
+def format_health_context(health_profile: dict) -> str:
+    """Format health profile data into context for the AI coach."""
+    if not health_profile:
+        return ""
+
+    context_parts = []
+
+    # Mental health awareness
+    if health_profile.get('has_mental_health_condition'):
+        conditions = health_profile.get('mental_health_conditions', [])
+        if conditions:
+            context_parts.append(f"User has disclosed mental health conditions: {', '.join(conditions)}.")
+        if health_profile.get('currently_in_treatment'):
+            context_parts.append("User is currently in treatment.")
+
+    # Aggression history - critical safety info
+    verbal = health_profile.get('verbal_aggression_history')
+    physical = health_profile.get('physical_aggression_history')
+    if verbal in ['recent', 'ongoing'] or physical in ['recent', 'ongoing']:
+        context_parts.append("IMPORTANT: User has recent history of aggression. Be extra mindful of escalation.")
+    elif verbal == 'past' or physical == 'past':
+        context_parts.append("User has past history of aggression. Monitor for escalation signs.")
+
+    # Substance use concerns
+    if health_profile.get('substances_affect_behavior'):
+        context_parts.append("User reports substances can affect their behavior.")
+
+    # Safety concerns
+    if not health_profile.get('feels_generally_safe', True):
+        context_parts.append("SAFETY: User has indicated they don't feel generally safe.")
+    if health_profile.get('safety_concerns'):
+        context_parts.append(f"Safety concerns: {health_profile['safety_concerns']}")
+
+    # Risk level
+    risk_level = health_profile.get('baseline_risk_level')
+    if risk_level in ['medium', 'high']:
+        context_parts.append(f"Risk assessment: {risk_level.upper()}. Be supportive and watch for distress signs.")
+
+    if context_parts:
+        return "\n\nUSER HEALTH CONTEXT (handle with care):\n" + "\n".join(f"- {part}" for part in context_parts)
+    return ""
+
+
+def start_coaching_session(user_input: str, is_user1: bool, user1_summary: str = None, health_profile: dict = None) -> Dict:
+    """
+    Start a coaching session with optional health profile context.
+
+    Args:
+        user_input: User's initial message
+        is_user1: Whether this is the first user (initiator)
+        user1_summary: For user2, the first user's summary
+        health_profile: User's health profile dict for context
+    """
     if is_user1:
         context = "This person initiated this conversation about an issue with someone else."
     else:
@@ -75,7 +127,12 @@ The other person's perspective (which they've already seen):
 {user1_summary}
 
 Help them respond to these specific concerns, not create a new narrative."""
-    
+
+    # Add health context if available
+    health_context = format_health_context(health_profile)
+    if health_context:
+        context += health_context
+
     try:
         response = client.messages.create(
             model="claude-sonnet-4-20250514",

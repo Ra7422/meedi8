@@ -621,21 +621,41 @@ def start_coaching(
     current_user: User = Depends(get_current_user)
 ):
     """Start AI coaching session for user before main mediation."""
+    from app.models.health_screening import UserHealthProfile
+
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    
+
     # Check if user is participant
     participant_ids = [p.id for p in room.participants]
     if current_user.id not in participant_ids:
         raise HTTPException(status_code=403, detail="Not a participant")
-    
+
     # Determine if this is User 1 or User 2
     is_user1 = (room.participants[0].id == current_user.id)
-    
+
+    # Fetch user's health profile for context
+    health_profile_data = None
+    health_profile = db.query(UserHealthProfile).filter(
+        UserHealthProfile.user_id == current_user.id
+    ).first()
+    if health_profile:
+        health_profile_data = {
+            'has_mental_health_condition': health_profile.has_mental_health_condition,
+            'mental_health_conditions': health_profile.mental_health_conditions or [],
+            'currently_in_treatment': health_profile.currently_in_treatment,
+            'verbal_aggression_history': health_profile.verbal_aggression_history,
+            'physical_aggression_history': health_profile.physical_aggression_history,
+            'substances_affect_behavior': health_profile.substances_affect_behavior,
+            'feels_generally_safe': health_profile.feels_generally_safe,
+            'safety_concerns': health_profile.safety_concerns,
+            'baseline_risk_level': health_profile.baseline_risk_level,
+        }
+
     # Start coaching (User 2 gets User 1's summary as context)
     user1_summary = room.user1_summary if not is_user1 else None
-    result = start_coaching_session(payload.initial_message, is_user1, user1_summary)
+    result = start_coaching_session(payload.initial_message, is_user1, user1_summary, health_profile_data)
     
     # Save initial turn
     turn = Turn(
