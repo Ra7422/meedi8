@@ -3165,3 +3165,118 @@ def generate_professional_report(
             status_code=500,
             detail=f"Failed to generate report: {str(e)}"
         )
+
+
+@router.post("/{room_id}/generate-comprehensive-report")
+def generate_comprehensive_report(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a comprehensive therapist-style report using OpenAI GPT-4.
+    Includes individual coaching analysis and professional recommendations.
+    Returns markdown report with referral to professional therapy.
+    """
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check authorization
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant in this room")
+
+    # Only allow for resolved rooms
+    if room.phase != 'resolved':
+        raise HTTPException(status_code=400, detail="Report can only be generated for resolved rooms")
+
+    try:
+        # Get participants
+        participants = room.participants
+        if len(participants) < 2:
+            raise HTTPException(status_code=400, detail="Room must have 2 participants")
+
+        # Determine User1 by finding who started coaching first
+        first_turn = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "pre_mediation"
+        ).order_by(Turn.created_at.asc()).first()
+
+        if not first_turn:
+            user1 = participants[0]
+            user2 = participants[1]
+        else:
+            user1_id = first_turn.user_id
+            user1 = next((p for p in participants if p.id == user1_id), participants[0])
+            user2 = next((p for p in participants if p.id != user1_id), participants[1])
+
+        # Get User 1's coaching turns
+        user1_coaching = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.user_id == user1.id,
+            Turn.context == "pre_mediation"
+        ).order_by(Turn.created_at.asc()).all()
+
+        # Get User 2's coaching turns
+        user2_coaching = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.user_id == user2.id,
+            Turn.context == "pre_mediation"
+        ).order_by(Turn.created_at.asc()).all()
+
+        # Get main room turns
+        main_turns = db.query(Turn).filter(
+            Turn.room_id == room_id,
+            Turn.context == "main"
+        ).order_by(Turn.created_at.asc()).all()
+
+        # Format turns for report generator
+        def format_turns(turns):
+            formatted = []
+            for turn in turns:
+                formatted.append({
+                    "kind": turn.kind,
+                    "content": turn.summary,
+                    "role": "assistant" if turn.kind in ["ai_question", "ai_response"] else "user",
+                    "speaker_name": clean_user_name(db.query(User).filter(User.id == turn.user_id).first()) if turn.user_id else "AI"
+                })
+            return formatted
+
+        # Generate comprehensive report
+        from app.services.mediation_report import generate_mediation_report
+
+        report_result = generate_mediation_report(
+            resolution_text=room.resolution_text or "No formal resolution recorded",
+            user1_coaching_turns=format_turns(user1_coaching),
+            user2_coaching_turns=format_turns(user2_coaching),
+            main_room_turns=format_turns(main_turns),
+            user1_name="Party A",  # Anonymized
+            user2_name="Party B",  # Anonymized
+            room_title=room.title or "Mediation Session"
+        )
+
+        if "error" in report_result:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Report generation failed: {report_result['error']}"
+            )
+
+        return {
+            "success": True,
+            "report": report_result["full_report"],
+            "resolution": report_result["resolution"],
+            "cost_info": report_result["cost_info"],
+            "message": "Comprehensive report generated successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error generating comprehensive report: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate comprehensive report: {str(e)}"
+        )
