@@ -72,6 +72,10 @@ export default function AdminDashboard() {
     end_date: "",
   });
 
+  // Achievements
+  const [recentAchievements, setRecentAchievements] = useState([]);
+  const [achievementStats, setAchievementStats] = useState(null);
+
   // Date range for analytics
   const [dateRangePreset, setDateRangePreset] = useState("30d");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -191,7 +195,7 @@ export default function AdminDashboard() {
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
       // Fetch email templates, system health, AI costs, error logs, audit logs, and announcements
-      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes, announcementsRes] = await Promise.all([
+      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes, announcementsRes, achievementsRecentRes, achievementsStatsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -210,6 +214,12 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/announcements`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/achievements/recent`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        fetch(`${API_URL}/admin/achievements/stats`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
@@ -218,6 +228,8 @@ export default function AdminDashboard() {
       const errorLogsData = errorLogsRes.ok ? await errorLogsRes.json() : { logs: [], unresolved_count: 0 };
       const auditLogsData = auditLogsRes.ok ? await auditLogsRes.json() : { logs: [], action_types: [] };
       const announcementsData = announcementsRes.ok ? await announcementsRes.json() : { announcements: [] };
+      const achievementsRecentData = achievementsRecentRes.ok ? await achievementsRecentRes.json() : { achievements: [] };
+      const achievementsStatsData = achievementsStatsRes.ok ? await achievementsStatsRes.json() : null;
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -235,6 +247,8 @@ export default function AdminDashboard() {
       setAuditLogs(auditLogsData.logs || []);
       setAuditActionTypes(auditLogsData.action_types || []);
       setAnnouncements(announcementsData.announcements || []);
+      setRecentAchievements(achievementsRecentData.achievements || []);
+      setAchievementStats(achievementsStatsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -746,6 +760,12 @@ export default function AdminDashboard() {
             active={activeTab === "announcements"}
             onClick={() => setActiveTab("announcements")}
           />
+          <SidebarItem
+            icon="🏆"
+            label="Achievements"
+            active={activeTab === "achievements"}
+            onClick={() => setActiveTab("achievements")}
+          />
         </nav>
 
         <div style={{ padding: "20px", marginTop: "auto" }}>
@@ -796,6 +816,7 @@ export default function AdminDashboard() {
             {activeTab === "emails" && "Email Templates"}
             {activeTab === "health" && "System Health"}
             {activeTab === "announcements" && "Announcement Banners"}
+            {activeTab === "achievements" && "User Achievements"}
           </h2>
           <div style={{ display: "flex", gap: "8px" }}>
             {activeTab === "users" && (
@@ -2874,6 +2895,113 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </>
+          )}
+
+          {/* Achievements Tab */}
+          {activeTab === "achievements" && (
+            <>
+              {/* Stats Cards */}
+              {achievementStats && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>TOTAL BADGES</div>
+                    <div style={{ fontSize: "24px", fontWeight: "700", color: "#374151" }}>{achievementStats.total_achievements}</div>
+                  </div>
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>TOTAL EARNED</div>
+                    <div style={{ fontSize: "24px", fontWeight: "700", color: "#374151" }}>{achievementStats.total_earned}</div>
+                  </div>
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>EARNED TODAY</div>
+                    <div style={{ fontSize: "24px", fontWeight: "700", color: "#22c55e" }}>{achievementStats.earned_today}</div>
+                  </div>
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>THIS WEEK</div>
+                    <div style={{ fontSize: "24px", fontWeight: "700", color: "#3b82f6" }}>{achievementStats.earned_week}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Two columns: Most Earned & Top Users */}
+              {achievementStats && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                  {/* Most Earned */}
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700", color: "#374151" }}>Most Earned Badges</h3>
+                    {achievementStats.most_earned.length === 0 ? (
+                      <p style={{ color: "#6B7280", fontSize: "14px" }}>No badges earned yet</p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {achievementStats.most_earned.map((a, i) => (
+                          <div key={a.code} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontSize: "20px" }}>{a.icon}</span>
+                            <span style={{ flex: 1, fontSize: "14px", color: "#374151" }}>{a.name}</span>
+                            <span style={{ fontSize: "14px", fontWeight: "600", color: "#6B7280" }}>{a.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Top Users */}
+                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                    <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700", color: "#374151" }}>Top Achievers</h3>
+                    {achievementStats.top_users.length === 0 ? (
+                      <p style={{ color: "#6B7280", fontSize: "14px" }}>No achievements yet</p>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {achievementStats.top_users.map((u, i) => (
+                          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontSize: "14px", fontWeight: "600", color: "#6B7280", width: "20px" }}>#{i + 1}</span>
+                            <span style={{ flex: 1, fontSize: "14px", color: "#374151" }}>{u.name || u.email}</span>
+                            <span style={{ fontSize: "14px", fontWeight: "600", color: "#7c3aed" }}>{u.count} badges</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Achievements */}
+              <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700", color: "#374151" }}>Recently Earned (Last 7 Days)</h3>
+                {recentAchievements.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", color: "#6B7280" }}>
+                    <p style={{ fontSize: "48px", marginBottom: "16px" }}>🏆</p>
+                    <p style={{ fontSize: "14px" }}>No achievements earned in the last 7 days</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {recentAchievements.map((a) => (
+                      <div key={a.id} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px",
+                        background: "#f9fafb",
+                        borderRadius: "8px",
+                        borderLeft: `3px solid ${
+                          a.rarity === "legendary" ? "#a855f7" :
+                          a.rarity === "epic" ? "#8b5cf6" :
+                          a.rarity === "rare" ? "#3b82f6" : "#22c55e"
+                        }`
+                      }}>
+                        <span style={{ fontSize: "24px" }}>{a.achievement_icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>
+                            {a.user_name || a.user_email} earned <strong>{a.achievement_name}</strong>
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#6B7280" }}>
+                            +{a.xp_reward} XP • {a.rarity} • {new Date(a.earned_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

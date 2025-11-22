@@ -2358,3 +2358,133 @@ def toggle_announcement(
         "announcement_id": announcement_id,
         "is_active": announcement.is_active
     }
+
+
+# ========================================
+# ACHIEVEMENTS
+# ========================================
+
+@router.get("/achievements/recent")
+def get_recent_achievements(
+    request: Request,
+    days: int = 7,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get recently earned achievements across all users"""
+    check_admin(current_user)
+
+    from ..models.gamification import UserAchievement, Achievement
+
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+
+    recent = db.query(
+        UserAchievement,
+        Achievement,
+        User
+    ).join(
+        Achievement, UserAchievement.achievement_id == Achievement.id
+    ).join(
+        User, UserAchievement.user_id == User.id
+    ).filter(
+        UserAchievement.earned_at >= cutoff_date
+    ).order_by(
+        UserAchievement.earned_at.desc()
+    ).limit(limit).all()
+
+    results = []
+    for ua, achievement, user in recent:
+        results.append({
+            "id": ua.id,
+            "user_id": user.id,
+            "user_email": user.email,
+            "user_name": user.name,
+            "achievement_code": achievement.code,
+            "achievement_name": achievement.name,
+            "achievement_icon": achievement.icon,
+            "xp_reward": achievement.xp_reward,
+            "rarity": achievement.rarity,
+            "earned_at": ua.earned_at.isoformat() if ua.earned_at else None
+        })
+
+    return {
+        "achievements": results,
+        "total": len(results),
+        "days": days
+    }
+
+
+@router.get("/achievements/stats")
+def get_achievement_stats(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get achievement statistics"""
+    check_admin(current_user)
+
+    from ..models.gamification import UserAchievement, Achievement
+
+    # Total achievements
+    total_achievements = db.query(func.count(Achievement.id)).filter(
+        Achievement.is_active == True
+    ).scalar() or 0
+
+    # Total earned (all time)
+    total_earned = db.query(func.count(UserAchievement.id)).scalar() or 0
+
+    # Earned today
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    earned_today = db.query(func.count(UserAchievement.id)).filter(
+        UserAchievement.earned_at >= today_start
+    ).scalar() or 0
+
+    # Earned this week
+    week_start = datetime.utcnow() - timedelta(days=7)
+    earned_week = db.query(func.count(UserAchievement.id)).filter(
+        UserAchievement.earned_at >= week_start
+    ).scalar() or 0
+
+    # Most earned achievements
+    most_earned = db.query(
+        Achievement.code,
+        Achievement.name,
+        Achievement.icon,
+        func.count(UserAchievement.id).label('count')
+    ).join(
+        UserAchievement, Achievement.id == UserAchievement.achievement_id
+    ).group_by(
+        Achievement.id
+    ).order_by(
+        func.count(UserAchievement.id).desc()
+    ).limit(5).all()
+
+    # Users with most achievements
+    top_users = db.query(
+        User.id,
+        User.email,
+        User.name,
+        func.count(UserAchievement.id).label('count')
+    ).join(
+        UserAchievement, User.id == UserAchievement.user_id
+    ).group_by(
+        User.id
+    ).order_by(
+        func.count(UserAchievement.id).desc()
+    ).limit(5).all()
+
+    return {
+        "total_achievements": total_achievements,
+        "total_earned": total_earned,
+        "earned_today": earned_today,
+        "earned_week": earned_week,
+        "most_earned": [
+            {"code": a.code, "name": a.name, "icon": a.icon, "count": a.count}
+            for a in most_earned
+        ],
+        "top_users": [
+            {"id": u.id, "email": u.email, "name": u.name, "count": u.count}
+            for u in top_users
+        ]
+    }
