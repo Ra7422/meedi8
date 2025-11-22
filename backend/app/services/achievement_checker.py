@@ -223,7 +223,41 @@ def check_special_criteria(
 ) -> bool:
     """Check special achievement criteria."""
 
-    if target == "fast_resolution":
+    if target == "double_breath_streak":
+        # Check if user has breathed at least twice per day for X consecutive days
+        from datetime import timedelta
+
+        sessions = db.query(BreathingSession).filter(
+            BreathingSession.user_id == user_id
+        ).order_by(BreathingSession.created_at.desc()).all()
+
+        if not sessions:
+            return False
+
+        # Group sessions by date
+        sessions_by_date = {}
+        for session in sessions:
+            date_key = session.created_at.date()
+            if date_key not in sessions_by_date:
+                sessions_by_date[date_key] = 0
+            sessions_by_date[date_key] += 1
+
+        # Check for consecutive days with 2+ sessions
+        today = datetime.now(timezone.utc).date()
+        consecutive_days = 0
+
+        for i in range(value + 30):  # Check up to 30 days back from required
+            check_date = today - timedelta(days=i)
+            if sessions_by_date.get(check_date, 0) >= 2:
+                consecutive_days += 1
+                if consecutive_days >= value:
+                    return True
+            else:
+                consecutive_days = 0
+
+        return False
+
+    elif target == "fast_resolution":
         # Check if any mediation was resolved in under X minutes
         from app.models.room import Room, RoomParticipant
         rooms = db.query(Room).join(

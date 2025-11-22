@@ -460,7 +460,7 @@ export default function FloatingMenu({
                 onMouseEnter={(e) => !showBreathingSection && (e.currentTarget.style.background = "#f9fafb")}
                 onMouseLeave={(e) => !showBreathingSection && (e.currentTarget.style.background = "none")}
               >
-                🫧 Take a Breath (+5)
+                🫧 Breathe & Earn Rewards
               </button>
 
               {showBreathingSection && (

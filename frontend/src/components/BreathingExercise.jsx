@@ -151,16 +151,23 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
       <style>{breathingStyles}</style>
 
       <div style={cardStyle}>
-        <h1 style={styles.title}>🫧 Center Yourself</h1>
-        <p style={styles.encouragement}>
-          You're about to discuss this with the other person and the AI mediator.
-          Take a moment to center yourself and prepare for a calm, productive conversation.
-          Finding your calm now will help you communicate clearly and listen openly for the best results.
-        </p>
-
-        <div style={styles.recommendation}>
-          ⏱️ <strong>Recommendation:</strong> 2-3 minutes while you wait
-        </div>
+        <h1 style={styles.title}>🫧 {inline ? "Breathe & Earn" : "Center Yourself"}</h1>
+        {inline ? (
+          <p style={styles.encouragement}>
+            Complete a breathing session to earn +5 points. Breathe twice daily to build your streak and unlock bonus rewards!
+          </p>
+        ) : (
+          <>
+            <p style={styles.encouragement}>
+              You're about to discuss this with the other person and the AI mediator.
+              Take a moment to center yourself and prepare for a calm, productive conversation.
+              Finding your calm now will help you communicate clearly and listen openly for the best results.
+            </p>
+            <div style={styles.recommendation}>
+              ⏱️ <strong>Recommendation:</strong> 2-3 minutes while you wait
+            </div>
+          </>
+        )}
 
         <div className={`dot-wrap ${themeClass}`} style={styles.dotWrap}>
           <div

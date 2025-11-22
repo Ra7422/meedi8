@@ -245,6 +245,42 @@ ACHIEVEMENTS = [
         "is_hidden": False
     },
     {
+        "code": "double_breath_7",
+        "name": "Dedicated Breather",
+        "description": "Breathe twice daily for 7 days straight",
+        "icon": "🌬️",
+        "category": "mindfulness",
+        "criteria": {"type": "special", "target": "double_breath_streak", "value": 7},
+        "xp_reward": 50,
+        "rarity": "rare",
+        "sort_order": 42,
+        "is_hidden": False
+    },
+    {
+        "code": "double_breath_14",
+        "name": "Breath Devotee",
+        "description": "Breathe twice daily for 14 days straight",
+        "icon": "💨",
+        "category": "mindfulness",
+        "criteria": {"type": "special", "target": "double_breath_streak", "value": 14},
+        "xp_reward": 100,
+        "rarity": "epic",
+        "sort_order": 43,
+        "is_hidden": False
+    },
+    {
+        "code": "double_breath_30",
+        "name": "Breath Legend",
+        "description": "Breathe twice daily for 30 days straight",
+        "icon": "🌟",
+        "category": "mindfulness",
+        "criteria": {"type": "special", "target": "double_breath_streak", "value": 30},
+        "xp_reward": 200,
+        "rarity": "legendary",
+        "sort_order": 44,
+        "is_hidden": False
+    },
+    {
         "code": "gratitude_starter",
         "name": "Gratitude Starter",
         "description": "Write your first gratitude entry",
