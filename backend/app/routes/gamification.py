@@ -1247,3 +1247,161 @@ def seed_challenges_endpoint(
         "message": f"Seeded challenges: {created} created, {updated} updated",
         "total": len(CHALLENGES)
     }
+
+
+# ========================================
+# INACTIVITY PENALTY (Admin/Scheduled Job)
+# ========================================
+
+@router.post("/admin/apply-inactivity-penalties")
+def apply_inactivity_penalties(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Apply score penalties for inactive users.
+    Should be run daily by a scheduled job.
+    Admin only endpoint.
+
+    Penalty schedule:
+    - 7 days inactive: -5 points
+    - 14 days inactive: -10 points
+    - 30 days inactive: -15 points
+    """
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = datetime.now(timezone.utc)
+    penalties_applied = 0
+    users_penalized = []
+
+    # Get all users with progress records
+    all_progress = db.query(UserProgress).filter(
+        UserProgress.streak_last_activity.isnot(None),
+        UserProgress.health_score > 0  # Only penalize users with scores
+    ).all()
+
+    for progress in all_progress:
+        if not progress.streak_last_activity:
+            continue
+
+        days_inactive = (now - progress.streak_last_activity).days
+
+        # Determine penalty based on inactivity duration
+        penalty = 0
+        penalty_type = None
+
+        if days_inactive >= 30:
+            penalty = 15
+            penalty_type = "30_day_inactivity"
+        elif days_inactive >= 14:
+            penalty = 10
+            penalty_type = "14_day_inactivity"
+        elif days_inactive >= 7:
+            penalty = 5
+            penalty_type = "7_day_inactivity"
+
+        if penalty > 0:
+            # Check if we already penalized today for this level
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            existing_penalty = db.query(ScoreEvent).filter(
+                ScoreEvent.user_id == progress.user_id,
+                ScoreEvent.event_type == penalty_type,
+                ScoreEvent.created_at >= today_start
+            ).first()
+
+            if existing_penalty:
+                continue  # Already penalized today
+
+            # Apply the penalty
+            old_score = progress.health_score
+            new_score = max(0, old_score - penalty)
+            progress.health_score = new_score
+
+            # Update tier
+            if new_score >= 90:
+                progress.health_tier = "platinum"
+            elif new_score >= 70:
+                progress.health_tier = "gold"
+            elif new_score >= 40:
+                progress.health_tier = "silver"
+            else:
+                progress.health_tier = "bronze"
+
+            # Log the event
+            event = ScoreEvent(
+                user_id=progress.user_id,
+                event_type=penalty_type,
+                score_change=-penalty,
+                score_before=old_score,
+                score_after=new_score,
+                description=f"Inactivity penalty: {days_inactive} days without activity"
+            )
+            db.add(event)
+
+            penalties_applied += 1
+            users_penalized.append({
+                "user_id": progress.user_id,
+                "days_inactive": days_inactive,
+                "penalty": penalty,
+                "new_score": new_score
+            })
+
+    db.commit()
+
+    return {
+        "message": f"Applied {penalties_applied} inactivity penalties",
+        "penalties": users_penalized
+    }
+
+
+@router.post("/admin/break-expired-streaks")
+def break_expired_streaks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Break streaks for users who haven't been active in 24+ hours.
+    Should be run daily by a scheduled job.
+    Admin only endpoint.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = datetime.now(timezone.utc)
+    streaks_broken = 0
+    users_affected = []
+
+    # Get all users with active streaks
+    active_streaks = db.query(UserProgress).filter(
+        UserProgress.current_streak > 0,
+        UserProgress.streak_last_activity.isnot(None)
+    ).all()
+
+    for progress in active_streaks:
+        time_since_last = now - progress.streak_last_activity
+
+        # Check if protected
+        is_protected = (
+            progress.streak_protected_until and
+            progress.streak_protected_until > now
+        )
+
+        # Break streak if 24+ hours inactive and not protected
+        if time_since_last.total_seconds() > 86400 and not is_protected:  # 24 hours
+            old_streak = progress.current_streak
+            progress.current_streak = 0
+
+            streaks_broken += 1
+            users_affected.append({
+                "user_id": progress.user_id,
+                "old_streak": old_streak,
+                "hours_inactive": round(time_since_last.total_seconds() / 3600, 1)
+            })
+
+    db.commit()
+
+    return {
+        "message": f"Broke {streaks_broken} expired streaks",
+        "affected_users": users_affected
+    }
