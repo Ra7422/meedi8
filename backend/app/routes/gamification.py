@@ -141,8 +141,10 @@ class AchievementResponse(BaseModel):
     xp_reward: int
     rarity: str
     is_hidden: bool
+    visibility_tier: str = "visible"  # visible, silhouette, secret
+    hint: Optional[str] = None
     earned: bool = False
-    earned_at: Optional[datetime] = None
+    unlocked_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -752,11 +754,9 @@ def get_achievements(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all achievements with user's progress."""
+    """Get all achievements with user's progress using hybrid visibility."""
     # Get all achievements
-    all_achievements = db.query(Achievement).filter(
-        Achievement.is_active == True
-    ).order_by(
+    all_achievements = db.query(Achievement).order_by(
         Achievement.category,
         Achievement.sort_order
     ).all()
@@ -769,7 +769,7 @@ def get_achievements(
     # Create lookup dict for earned achievements
     earned_lookup = {ua.achievement_id: ua for ua in user_achievements}
 
-    # Build response
+    # Build response with hybrid visibility
     achievements = []
     total_earned = 0
 
@@ -780,23 +780,50 @@ def get_achievements(
         if is_earned:
             total_earned += 1
 
-        # Don't show hidden achievements that haven't been earned
-        if achievement.is_hidden and not is_earned:
+        # Get visibility tier (default to visible if not set)
+        visibility = getattr(achievement, 'visibility_tier', 'visible') or 'visible'
+
+        # Handle visibility tiers:
+        # - visible: Show full details
+        # - silhouette: Show hint instead of description, obscured name
+        # - secret: Don't show at all unless earned
+        if visibility == "secret" and not is_earned:
             continue
 
-        achievements.append(AchievementResponse(
-            id=achievement.id,
-            code=achievement.code,
-            name=achievement.name,
-            description=achievement.description,
-            icon=achievement.icon,
-            category=achievement.category,
-            xp_reward=achievement.xp_reward,
-            rarity=achievement.rarity,
-            is_hidden=achievement.is_hidden,
-            earned=is_earned,
-            earned_at=user_ach.earned_at if user_ach else None
-        ))
+        # For silhouette badges, obscure details if not earned
+        if visibility == "silhouette" and not is_earned:
+            achievements.append(AchievementResponse(
+                id=achievement.id,
+                code=achievement.code,
+                name="???",
+                description=achievement.hint or "Keep exploring to unlock this badge...",
+                icon="❓",
+                category=achievement.category,
+                xp_reward=achievement.xp_reward,
+                rarity=achievement.rarity,
+                is_hidden=achievement.is_hidden,
+                visibility_tier=visibility,
+                hint=achievement.hint,
+                earned=False,
+                unlocked_at=None
+            ))
+        else:
+            # Visible badges or earned badges show full details
+            achievements.append(AchievementResponse(
+                id=achievement.id,
+                code=achievement.code,
+                name=achievement.name,
+                description=achievement.description,
+                icon=achievement.icon,
+                category=achievement.category,
+                xp_reward=achievement.xp_reward,
+                rarity=achievement.rarity,
+                is_hidden=achievement.is_hidden,
+                visibility_tier=visibility,
+                hint=achievement.hint,
+                earned=is_earned,
+                unlocked_at=user_ach.unlocked_at if user_ach else None
+            ))
 
     return AchievementsListResponse(
         achievements=achievements,
@@ -816,20 +843,46 @@ def seed_achievements_endpoint(
 
     from app.services.seed_achievements import ACHIEVEMENTS
 
+    # Define visibility tiers
+    secret_badges = {"night_owl", "early_bird"}
+    silhouette_badges = {
+        "eloquent": "Keep the conversation flowing...",
+        "conflict_master": "True mastery takes dedication...",
+        "diamond_soul": "Reach for the highest tier...",
+        "streak_90": "Commitment beyond measure...",
+        "zen_master": "Breathe deeply and often...",
+        "double_breath_30": "Make breathing a daily ritual...",
+        "emotional_intelligence": "Know yourself to know others...",
+    }
+
     created = 0
     updated = 0
 
     for achievement_data in ACHIEVEMENTS:
+        # Make a copy to avoid modifying original
+        data = achievement_data.copy()
+
+        # Set visibility tier if not already set
+        code = data["code"]
+        if "visibility_tier" not in data:
+            if code in secret_badges:
+                data["visibility_tier"] = "secret"
+            elif code in silhouette_badges:
+                data["visibility_tier"] = "silhouette"
+                data["hint"] = silhouette_badges[code]
+            else:
+                data["visibility_tier"] = "visible"
+
         existing = db.query(Achievement).filter(
-            Achievement.code == achievement_data["code"]
+            Achievement.code == data["code"]
         ).first()
 
         if existing:
-            for key, value in achievement_data.items():
+            for key, value in data.items():
                 setattr(existing, key, value)
             updated += 1
         else:
-            achievement = Achievement(**achievement_data)
+            achievement = Achievement(**data)
             db.add(achievement)
             created += 1
 

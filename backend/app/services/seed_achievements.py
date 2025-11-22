@@ -361,11 +361,39 @@ def seed_achievements():
     """Seed all achievements into the database."""
     db = SessionLocal()
 
+    # Define visibility tiers based on badge characteristics
+    # Secret badges - hidden surprises (is_hidden=True)
+    secret_badges = {"night_owl", "early_bird"}
+
+    # Silhouette badges - aspirational with hints (typically legendary/epic or high-value)
+    silhouette_badges = {
+        "eloquent": "Keep the conversation flowing...",
+        "conflict_master": "True mastery takes dedication...",
+        "diamond_soul": "Reach for the highest tier...",
+        "streak_90": "Commitment beyond measure...",
+        "zen_master": "Breathe deeply and often...",
+        "double_breath_30": "Make breathing a daily ritual...",
+        "emotional_intelligence": "Know yourself to know others...",
+    }
+
+    # All others are visible
+
     try:
         created = 0
         updated = 0
 
         for achievement_data in ACHIEVEMENTS:
+            # Set visibility tier if not already set
+            code = achievement_data["code"]
+            if "visibility_tier" not in achievement_data:
+                if code in secret_badges:
+                    achievement_data["visibility_tier"] = "secret"
+                elif code in silhouette_badges:
+                    achievement_data["visibility_tier"] = "silhouette"
+                    achievement_data["hint"] = silhouette_badges[code]
+                else:
+                    achievement_data["visibility_tier"] = "visible"
+
             # Check if achievement already exists
             existing = db.query(Achievement).filter(
                 Achievement.code == achievement_data["code"]

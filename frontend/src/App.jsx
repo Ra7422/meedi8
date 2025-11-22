@@ -39,6 +39,7 @@ import ScreeningTest from "./pages/ScreeningTest";
 import ScreeningCarousel from "./pages/ScreeningCarousel";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Achievements from "./pages/Achievements";
 import Home from "./pages/Home";
 import TelegramConnect from "./pages/TelegramConnect";
 import CreateSoloSession from "./pages/CreateSoloSession";
@@ -97,6 +98,7 @@ export default function App() {
           <Route path="/rooms" element={<PrivateRoute><Rooms /></PrivateRoute>} />
           <Route path="/sessions" element={<PrivateRoute><SessionsDashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/achievements" element={<PrivateRoute><Achievements /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/create" element={<PrivateRoute><CreateSoloSession /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />

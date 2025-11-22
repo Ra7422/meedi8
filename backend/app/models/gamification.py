@@ -133,6 +133,8 @@ class Achievement(Base):
     rarity = Column(String(20), default='common', nullable=False)  # common, rare, epic, legendary
     sort_order = Column(Integer, default=0, nullable=False)
     is_hidden = Column(Boolean, default=False, nullable=False)  # Secret achievements
+    visibility_tier = Column(String(20), default='visible', nullable=False)  # visible, silhouette, secret
+    hint = Column(String(200), nullable=True)  # Hint for silhouette badges
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

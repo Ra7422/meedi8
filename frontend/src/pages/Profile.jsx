@@ -979,17 +979,19 @@ export default function Profile() {
                 </div>
               )}
 
-              {achievements.length > 12 && (
-                <div style={{
-                  marginTop: '8px',
+              <div
+                onClick={() => navigate('/achievements')}
+                style={{
+                  marginTop: '12px',
                   textAlign: 'center',
                   fontSize: '12px',
                   color: '#6366f1',
-                  cursor: 'pointer'
-                }}>
-                  +{achievements.length - 12} more badges
-                </div>
-              )}
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                }}
+              >
+                {achievements.length > 12 ? `View all ${achievements.length} badges →` : 'View all badges →'}
+              </div>
             </div>
           </div>
 
