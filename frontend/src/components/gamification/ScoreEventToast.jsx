@@ -17,11 +17,11 @@ export default function ScoreEventToast() {
 
   const getTypeColor = () => {
     switch (scoreToast.type) {
-      case "breathing": return "#3b82f6";
-      case "gratitude": return "#8b5cf6";
-      case "mood": return "#f59e0b";
+      case "breathing": return "#8b5cf6";
+      case "gratitude": return "#a855f7";
+      case "mood": return "#8b5cf6";
       case "checkin": return "#22c55e";
-      default: return "#6366f1";
+      default: return "#8b5cf6";
     }
   };
 
@@ -48,10 +48,11 @@ export default function ScoreEventToast() {
         alignItems: "center",
         gap: 12,
         padding: "12px 16px",
-        background: `linear-gradient(135deg, ${getTypeColor()}22 0%, ${getTypeColor()}11 100%)`,
-        border: `1px solid ${getTypeColor()}44`,
+        background: `linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(20, 15, 35, 0.98) 100%)`,
+        border: `1px solid ${getTypeColor()}66`,
         borderRadius: 12,
-        boxShadow: `0 4px 20px ${getTypeColor()}33`
+        boxShadow: `0 4px 25px ${getTypeColor()}55`,
+        backdropFilter: "blur(10px)"
       }}>
         <span style={{ fontSize: 24 }}>{getTypeEmoji()}</span>
         <div>

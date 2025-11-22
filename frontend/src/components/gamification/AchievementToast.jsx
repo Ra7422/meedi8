@@ -47,7 +47,7 @@ export default function AchievementToast() {
         flexDirection: "column",
         alignItems: "center",
         padding: "24px 32px",
-        background: `linear-gradient(135deg, ${getRarityColor()}22 0%, ${getRarityColor()}11 100%)`,
+        background: `linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(20, 15, 35, 0.98) 100%)`,
         border: `2px solid ${getRarityColor()}`,
         borderRadius: 16,
         boxShadow: getRarityGlow(),
