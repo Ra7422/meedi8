@@ -47,15 +47,36 @@ def upgrade() -> None:
             sa.PrimaryKeyConstraint('id')
         )
         op.create_index(op.f('ix_announcements_id'), 'announcements', ['id'], unique=False)
-    op.add_column('subscriptions', sa.Column('rooms_created_this_month', sa.Integer(), server_default='0', nullable=False))
-    op.add_column('subscriptions', sa.Column('month_reset_date', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('subscriptions', sa.Column('reports_generated_this_month', sa.Integer(), server_default='0', nullable=False))
-    op.add_column('subscriptions', sa.Column('reports_limit_per_month', sa.Integer(), server_default='10', nullable=False))
-    op.create_index(op.f('ix_telegram_downloads_id'), 'telegram_downloads', ['id'], unique=False)
-    op.create_index(op.f('ix_telegram_messages_id'), 'telegram_messages', ['id'], unique=False)
-    op.create_index(op.f('ix_telegram_sessions_id'), 'telegram_sessions', ['id'], unique=False)
-    op.add_column('turns', sa.Column('attachment_url', sa.String(length=500), nullable=True))
-    op.add_column('turns', sa.Column('attachment_filename', sa.String(length=255), nullable=True))
+
+    # Check existing columns before adding (for idempotent migrations)
+    subscriptions_columns = [col['name'] for col in inspector.get_columns('subscriptions')]
+    turns_columns = [col['name'] for col in inspector.get_columns('turns')]
+
+    if 'rooms_created_this_month' not in subscriptions_columns:
+        op.add_column('subscriptions', sa.Column('rooms_created_this_month', sa.Integer(), server_default='0', nullable=False))
+    if 'month_reset_date' not in subscriptions_columns:
+        op.add_column('subscriptions', sa.Column('month_reset_date', sa.DateTime(timezone=True), nullable=True))
+    if 'reports_generated_this_month' not in subscriptions_columns:
+        op.add_column('subscriptions', sa.Column('reports_generated_this_month', sa.Integer(), server_default='0', nullable=False))
+    if 'reports_limit_per_month' not in subscriptions_columns:
+        op.add_column('subscriptions', sa.Column('reports_limit_per_month', sa.Integer(), server_default='10', nullable=False))
+
+    # Check existing indexes before creating
+    telegram_downloads_indexes = [idx['name'] for idx in inspector.get_indexes('telegram_downloads')] if 'telegram_downloads' in existing_tables else []
+    telegram_messages_indexes = [idx['name'] for idx in inspector.get_indexes('telegram_messages')] if 'telegram_messages' in existing_tables else []
+    telegram_sessions_indexes = [idx['name'] for idx in inspector.get_indexes('telegram_sessions')] if 'telegram_sessions' in existing_tables else []
+
+    if 'ix_telegram_downloads_id' not in telegram_downloads_indexes and 'telegram_downloads' in existing_tables:
+        op.create_index(op.f('ix_telegram_downloads_id'), 'telegram_downloads', ['id'], unique=False)
+    if 'ix_telegram_messages_id' not in telegram_messages_indexes and 'telegram_messages' in existing_tables:
+        op.create_index(op.f('ix_telegram_messages_id'), 'telegram_messages', ['id'], unique=False)
+    if 'ix_telegram_sessions_id' not in telegram_sessions_indexes and 'telegram_sessions' in existing_tables:
+        op.create_index(op.f('ix_telegram_sessions_id'), 'telegram_sessions', ['id'], unique=False)
+
+    if 'attachment_url' not in turns_columns:
+        op.add_column('turns', sa.Column('attachment_url', sa.String(length=500), nullable=True))
+    if 'attachment_filename' not in turns_columns:
+        op.add_column('turns', sa.Column('attachment_filename', sa.String(length=255), nullable=True))
     # ### end Alembic commands ###
 
 
