@@ -105,8 +105,9 @@ export default function App() {
           <Route path="/create" element={<PrivateRoute><CreateSoloSession /></PrivateRoute>} />
           <Route path="/rooms/:roomId/coaching" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
           <Route path="/coaching/:roomId" element={<PrivateRoute><CoachingChat /></PrivateRoute>} />
-          <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} />
-          <Route path="/solo/start" element={<PrivateRoute><StartSolo /></PrivateRoute>} />
+          {/* Solo mode temporarily disabled - will be added as new feature */}
+          {/* <Route path="/rooms/:roomId/solo" element={<PrivateRoute><SoloCoaching /></PrivateRoute>} /> */}
+          {/* <Route path="/solo/start" element={<PrivateRoute><StartSolo /></PrivateRoute>} /> */}
           <Route path="/coaching-demo" element={<CoachingChatDemo />} />
           <Route path="/coaching-demo-user2" element={<CoachingChatDemoUser2 />} />
           <Route path="/coaching-summary-demo" element={<CoachingSummaryDemo />} />
