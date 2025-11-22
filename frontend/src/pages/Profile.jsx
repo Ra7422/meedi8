@@ -121,7 +121,7 @@ export default function Profile() {
       // Fetch subscription
       try {
         console.log('💳 Fetching subscription...');
-        const subData = await apiRequest('/subscriptions/me', 'GET', null, token);
+        const subData = await apiRequest('/subscriptions/status', 'GET', null, token);
         console.log('💳 Subscription received:', subData?.tier || 'N/A');
         setSubscription(subData);
       } catch (err) {
