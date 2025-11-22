@@ -14,9 +14,9 @@ from app.models.subscription import Subscription
 from app.services.llm_service import is_unsafe
 from app.services.pre_mediation_coach import start_coaching_session, process_coaching_response, generate_invite_token
 from app.services.main_room_mediator import start_main_room, process_main_room_response
-# SOLO MODE - Commented out for production until deployed
-# from app.services.solo_coach import start_solo_session, process_solo_response
-# from app.services.therapy_report import generate_professional_report
+# SOLO MODE
+from app.services.solo_coach import start_solo_session, process_solo_response
+# from app.services.therapy_report import generate_professional_report  # Not needed yet
 from app.services.whisper_service import transcribe_audio
 from app.services.subscription_service import require_feature_access, increment_voice_usage, check_room_creation_limit, increment_room_counter, check_file_upload_allowed
 from app.services.cost_tracker import calculate_whisper_cost, track_api_cost
