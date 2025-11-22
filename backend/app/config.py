@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PRO_MONTHLY: str = "price_1ST4EQIFSfYvttlACMstQcuO"
     STRIPE_PRICE_PRO_YEARLY: str = "price_1ST4FDIFSfYvttlAyIghPKBf"
 
+    # One-time products
+    STRIPE_PRICE_COMPREHENSIVE_REPORT: str = ""  # Set in Railway env - $9.99 one-time
+
     # Stripe Price IDs (Live Mode - for reference when switching to production)
     # STRIPE_PRICE_PLUS_MONTHLY: str = "price_1ST3SOI6BakpcqZhMdACodvT"
     # STRIPE_PRICE_PLUS_YEARLY: str = "price_1ST3RqI6BakpcqZhg8F3UcAd"

@@ -3177,7 +3177,11 @@ def generate_comprehensive_report(
     Generate a comprehensive therapist-style report using OpenAI GPT-4.
     Includes individual coaching analysis and professional recommendations.
     Returns markdown report with referral to professional therapy.
+
+    Access requires PRO subscription OR one-time purchase.
     """
+    from app.services.subscription_service import get_or_create_subscription
+
     # Get room
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
@@ -3190,6 +3194,17 @@ def generate_comprehensive_report(
     # Only allow for resolved rooms
     if room.phase != 'resolved':
         raise HTTPException(status_code=400, detail="Report can only be generated for resolved rooms")
+
+    # Check payment authorization
+    subscription = get_or_create_subscription(db, current_user.id)
+    is_pro = subscription.tier.value == "pro"
+    has_purchased = room.report_payment_id is not None
+
+    if not is_pro and not has_purchased:
+        raise HTTPException(
+            status_code=402,
+            detail="Payment required. Please purchase the comprehensive report or upgrade to PRO."
+        )
 
     try:
         # Get participants
@@ -3279,4 +3294,219 @@ def generate_comprehensive_report(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate comprehensive report: {str(e)}"
+        )
+
+
+# ========================================
+# REPORT PAYMENT ENDPOINTS
+# ========================================
+
+class ReportCheckoutResponse(BaseModel):
+    client_secret: str
+    session_id: str
+    price: float
+
+class ReportStatusResponse(BaseModel):
+    can_access: bool
+    reason: str  # "pro_subscriber", "purchased", "not_purchased"
+    price: float
+    room_id: int
+
+@router.get("/{room_id}/report/status", response_model=ReportStatusResponse)
+def get_report_status(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check if user can access the comprehensive report for this room.
+    PRO subscribers get free access, others need to purchase.
+    """
+    import stripe
+    from app.config import settings
+    from app.services.subscription_service import get_or_create_subscription
+
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check authorization
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant in this room")
+
+    # Only resolved rooms can have reports
+    if room.phase != 'resolved':
+        raise HTTPException(status_code=400, detail="Report only available for resolved rooms")
+
+    # Report price ($9.99)
+    report_price = 9.99
+
+    # Check if PRO subscriber
+    subscription = get_or_create_subscription(db, current_user.id)
+    if subscription.tier.value == "pro":
+        return ReportStatusResponse(
+            can_access=True,
+            reason="pro_subscriber",
+            price=report_price,
+            room_id=room_id
+        )
+
+    # Check if already purchased
+    if room.report_payment_id:
+        return ReportStatusResponse(
+            can_access=True,
+            reason="purchased",
+            price=report_price,
+            room_id=room_id
+        )
+
+    # Not purchased
+    return ReportStatusResponse(
+        can_access=False,
+        reason="not_purchased",
+        price=report_price,
+        room_id=room_id
+    )
+
+
+@router.post("/{room_id}/report/create-checkout", response_model=ReportCheckoutResponse)
+def create_report_checkout(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create Stripe checkout session for comprehensive report purchase.
+    One-time payment of $9.99.
+    """
+    import stripe
+    from app.config import settings
+    from app.services.stripe_service import get_or_create_stripe_customer
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check authorization
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant in this room")
+
+    # Only resolved rooms can have reports
+    if room.phase != 'resolved':
+        raise HTTPException(status_code=400, detail="Report only available for resolved rooms")
+
+    # Check if already purchased
+    if room.report_payment_id:
+        raise HTTPException(status_code=400, detail="Report already purchased for this room")
+
+    # Check if price ID is configured
+    if not settings.STRIPE_PRICE_COMPREHENSIVE_REPORT:
+        raise HTTPException(
+            status_code=500,
+            detail="Report payment not configured. Please contact support."
+        )
+
+    try:
+        customer_id = get_or_create_stripe_customer(db, current_user)
+
+        # Create checkout session for one-time payment
+        frontend_url = settings.FRONTEND_URL
+        success_url = f"{frontend_url}/rooms/{room_id}/summary?report_purchased=true"
+        cancel_url = f"{frontend_url}/rooms/{room_id}/summary"
+
+        checkout_session = stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=['card'],
+            line_items=[{
+                'price': settings.STRIPE_PRICE_COMPREHENSIVE_REPORT,
+                'quantity': 1,
+            }],
+            mode='payment',  # One-time payment, not subscription
+            ui_mode='embedded',
+            return_url=success_url + "&session_id={CHECKOUT_SESSION_ID}",
+            metadata={
+                "user_id": str(current_user.id),
+                "room_id": str(room_id),
+                "product_type": "comprehensive_report"
+            }
+        )
+
+        return ReportCheckoutResponse(
+            client_secret=checkout_session.client_secret,
+            session_id=checkout_session.id,
+            price=9.99
+        )
+
+    except Exception as e:
+        print(f"Report checkout creation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create checkout: {str(e)}"
+        )
+
+
+@router.post("/{room_id}/report/confirm-purchase")
+def confirm_report_purchase(
+    room_id: int,
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Confirm report purchase after Stripe checkout completes.
+    Called from frontend after successful payment.
+    """
+    import stripe
+    from app.config import settings
+    from datetime import datetime
+
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+    # Get room
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check authorization
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant in this room")
+
+    # Already purchased
+    if room.report_payment_id:
+        return {"success": True, "message": "Report already available"}
+
+    try:
+        # Verify the checkout session
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+        # Verify it's for this room
+        if checkout_session.metadata.get("room_id") != str(room_id):
+            raise HTTPException(status_code=400, detail="Session does not match room")
+
+        # Verify payment completed
+        if checkout_session.payment_status != "paid":
+            raise HTTPException(status_code=400, detail="Payment not completed")
+
+        # Mark room as report paid
+        room.report_payment_id = checkout_session.payment_intent
+        room.report_paid_at = datetime.utcnow()
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "Report purchase confirmed",
+            "payment_id": room.report_payment_id
+        }
+
+    except stripe.InvalidRequestError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid session: {str(e)}")
+    except Exception as e:
+        print(f"Report purchase confirmation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to confirm purchase: {str(e)}"
         )

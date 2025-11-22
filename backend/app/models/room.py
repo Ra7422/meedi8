@@ -57,6 +57,10 @@ class Room(Base):
     # Professional PDF report URL (for resolved mediation rooms)
     professional_report_url = Column(String(500), nullable=True)  # S3 URL for PDF report
 
+    # Report payment tracking (Stripe payment or PRO subscriber)
+    report_payment_id = Column(String(100), nullable=True)  # Stripe payment intent ID or "pro_subscriber"
+    report_paid_at = Column(DateTime(timezone=True), nullable=True)
+
     # Break/pause tracking for main room
     break_requested_by_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     break_requested_at = Column(DateTime(timezone=True), nullable=True)

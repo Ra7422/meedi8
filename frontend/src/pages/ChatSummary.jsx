@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api/client";
 import { Logo } from "../components/ui";
 import CategoryIcon from "../components/ui/CategoryIcon";
+import { loadStripe } from "@stripe/stripe-js";
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 export default function ChatSummary() {
   const { roomId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { token } = useAuth();
   const [room, setRoom] = useState(null);
   const [summaries, setSummaries] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Report state
+  const [reportStatus, setReportStatus] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [comprehensiveReport, setComprehensiveReport] = useState(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState(null);
 
   useEffect(() => {
     const loadRoomSummary = async () => {
@@ -21,6 +33,12 @@ export default function ChatSummary() {
 
         const summariesData = await apiRequest(`/rooms/${roomId}/main-room/summaries`, "GET", null, token);
         setSummaries(summariesData);
+
+        // Load report status for resolved rooms
+        if (roomData.phase === 'resolved') {
+          const statusData = await apiRequest(`/rooms/${roomId}/report/status`, "GET", null, token);
+          setReportStatus(statusData);
+        }
       } catch (error) {
         console.error("Load error:", error);
       }
@@ -29,6 +47,56 @@ export default function ChatSummary() {
 
     loadRoomSummary();
   }, [roomId, token]);
+
+  // Handle post-purchase confirmation
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    const reportPurchased = searchParams.get('report_purchased');
+
+    if (sessionId && reportPurchased === 'true') {
+      // Confirm the purchase
+      const confirmPurchase = async () => {
+        try {
+          await apiRequest(`/rooms/${roomId}/report/confirm-purchase?session_id=${sessionId}`, "POST", null, token);
+          // Reload report status
+          const statusData = await apiRequest(`/rooms/${roomId}/report/status`, "GET", null, token);
+          setReportStatus(statusData);
+          // Clear URL params
+          navigate(`/rooms/${roomId}/summary`, { replace: true });
+        } catch (error) {
+          console.error("Confirm purchase error:", error);
+        }
+      };
+      confirmPurchase();
+    }
+  }, [searchParams, roomId, token, navigate]);
+
+  const handlePurchaseReport = async () => {
+    try {
+      const result = await apiRequest(`/rooms/${roomId}/report/create-checkout`, "POST", null, token);
+      setCheckoutClientSecret(result.client_secret);
+      setShowCheckout(true);
+    } catch (error) {
+      console.error("Create checkout error:", error);
+      alert("Failed to start checkout. Please try again.");
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    setReportLoading(true);
+    try {
+      const result = await apiRequest(`/rooms/${roomId}/generate-comprehensive-report`, "POST", null, token);
+      setComprehensiveReport(result.report);
+    } catch (error) {
+      console.error("Generate report error:", error);
+      if (error.message?.includes("402")) {
+        alert("Payment required. Please purchase the report first.");
+      } else {
+        alert("Failed to generate report. Please try again.");
+      }
+    }
+    setReportLoading(false);
+  };
 
   const handleSendReminder = () => {
     // In a real app, this would send a push notification or email
@@ -112,6 +180,84 @@ export default function ChatSummary() {
             </p>
           )}
         </div>
+
+        {/* Comprehensive Report Section - Only for resolved rooms */}
+        {room.phase === 'resolved' && reportStatus && (
+          <div style={styles.reportSection}>
+            <h2 style={styles.sectionTitle}>Professional Report</h2>
+
+            {/* Checkout Modal */}
+            {showCheckout && checkoutClientSecret && (
+              <div style={styles.checkoutOverlay}>
+                <div style={styles.checkoutModal}>
+                  <button
+                    style={styles.closeCheckout}
+                    onClick={() => setShowCheckout(false)}
+                  >
+                    ×
+                  </button>
+                  <h3 style={styles.checkoutTitle}>Purchase Comprehensive Report</h3>
+                  <EmbeddedCheckoutProvider
+                    stripe={stripePromise}
+                    options={{ clientSecret: checkoutClientSecret }}
+                  >
+                    <EmbeddedCheckout />
+                  </EmbeddedCheckoutProvider>
+                </div>
+              </div>
+            )}
+
+            {/* Report Content */}
+            {comprehensiveReport ? (
+              <div style={styles.reportContent}>
+                <div style={styles.reportBox}>
+                  <pre style={styles.reportText}>{comprehensiveReport}</pre>
+                </div>
+              </div>
+            ) : reportStatus.can_access ? (
+              <div style={styles.reportAction}>
+                <p style={styles.reportDescription}>
+                  {reportStatus.reason === 'pro_subscriber'
+                    ? 'As a PRO subscriber, you have free access to comprehensive reports.'
+                    : 'Your comprehensive report is ready to generate.'}
+                </p>
+                <button
+                  style={styles.generateButton}
+                  onClick={handleGenerateReport}
+                  disabled={reportLoading}
+                >
+                  {reportLoading ? 'Generating...' : 'Generate Report'}
+                </button>
+              </div>
+            ) : (
+              <div style={styles.reportAction}>
+                <p style={styles.reportDescription}>
+                  Get a comprehensive therapist-style analysis of your mediation session,
+                  including individual assessments, relationship dynamics, and professional recommendations.
+                </p>
+                <div style={styles.reportPricing}>
+                  <span style={styles.price}>${reportStatus.price}</span>
+                  <span style={styles.priceNote}>one-time purchase</span>
+                </div>
+                <button
+                  style={styles.purchaseButton}
+                  onClick={handlePurchaseReport}
+                >
+                  Purchase Report
+                </button>
+                <p style={styles.proNote}>
+                  PRO subscribers get unlimited free reports.{' '}
+                  <span
+                    style={styles.upgradeLink}
+                    onClick={() => navigate('/subscription')}
+                  >
+                    Upgrade to PRO
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Send Reminder Section */}
         {isWaiting && (
@@ -379,5 +525,132 @@ const styles = {
     fontSize: '18px',
     fontWeight: '400',
     color: '#ef4444',
+  },
+  // Report section styles
+  reportSection: {
+    marginBottom: '40px',
+    padding: '24px',
+    background: 'rgba(200, 182, 255, 0.1)',
+    borderRadius: '16px',
+    border: '2px solid rgba(200, 182, 255, 0.3)',
+  },
+  reportAction: {
+    textAlign: 'center',
+  },
+  reportDescription: {
+    fontSize: '15px',
+    fontWeight: '400',
+    color: '#6B7280',
+    lineHeight: '1.6',
+    marginBottom: '16px',
+  },
+  reportPricing: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  price: {
+    fontSize: '32px',
+    fontWeight: '600',
+    color: '#C8B6FF',
+  },
+  priceNote: {
+    fontSize: '14px',
+    fontWeight: '400',
+    color: '#9CA3AF',
+  },
+  purchaseButton: {
+    background: 'linear-gradient(135deg, #C8B6FF 0%, #9F7AEA 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px 32px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    marginBottom: '16px',
+    boxShadow: '0 4px 12px rgba(200, 182, 255, 0.3)',
+  },
+  generateButton: {
+    background: 'linear-gradient(135deg, #7DD3C0 0%, #4DC3B0 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px 32px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(125, 211, 192, 0.3)',
+  },
+  proNote: {
+    fontSize: '13px',
+    fontWeight: '400',
+    color: '#9CA3AF',
+    margin: 0,
+  },
+  upgradeLink: {
+    color: '#C8B6FF',
+    cursor: 'pointer',
+    fontWeight: '600',
+  },
+  reportContent: {
+    marginTop: '16px',
+  },
+  reportBox: {
+    background: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    maxHeight: '500px',
+    overflowY: 'auto',
+  },
+  reportText: {
+    fontSize: '14px',
+    fontWeight: '400',
+    color: '#4B5563',
+    lineHeight: '1.8',
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    fontFamily: "'Nunito', sans-serif",
+  },
+  checkoutOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  checkoutModal: {
+    background: 'white',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '500px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    position: 'relative',
+  },
+  closeCheckout: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'transparent',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#9CA3AF',
+  },
+  checkoutTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: '20px',
+    textAlign: 'center',
   },
 };
