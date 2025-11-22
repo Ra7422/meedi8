@@ -3,10 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest, API_URL } from "../api/client";
 import VoiceRecorder from "../components/VoiceRecorder";
-import FileUpload from "../components/FileUpload";
-import FloatingMenu from "../components/FloatingMenu";
+import AttachmentMenu from "../components/AttachmentMenu";
+import TelegramImportModal from "../components/TelegramImportModal";
 import GuestConversionModal from "../components/GuestConversionModal";
-import { soloTheme, soloStyles, getActionButtonStyle } from "../styles/soloTheme";
 
 export default function SoloCoaching() {
   const { roomId } = useParams();
@@ -23,6 +22,7 @@ export default function SoloCoaching() {
   const [evidenceFiles, setEvidenceFiles] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showTelegramImport, setShowTelegramImport] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function SoloCoaching() {
 
         // Show guest conversion modal if user is a guest
         if (user?.is_guest) {
-          setTimeout(() => setShowGuestModal(true), 1000); // Small delay for better UX
+          setTimeout(() => setShowGuestModal(true), 1000);
         }
       }
     } catch (error) {
@@ -128,17 +128,10 @@ export default function SoloCoaching() {
     setSending(true);
 
     try {
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
 
-      // Upload to voice endpoint
-      const endpoint = `${API_URL}/rooms/${roomId}/solo/respond`;
-
-      console.log("Uploading voice recording to:", endpoint);
-      console.log("Audio blob size:", audioBlob.size, "bytes");
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}/rooms/${roomId}/solo/respond`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -149,21 +142,12 @@ export default function SoloCoaching() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 402) {
-          // Payment required - show upgrade message
           const message = typeof errorData.detail === 'object'
             ? errorData.detail.message
             : errorData.detail;
-          alert(message || "Voice recording requires a Plus or Pro subscription. You have 1 free trial - this will use it.");
-        } else if (response.status === 500) {
-          // Server error - likely API key issue
-          alert("Server error processing voice recording. Please try text input or contact support.");
-          console.error("Voice recording error:", errorData);
+          alert(message || "Voice recording requires a Plus or Pro subscription.");
         } else {
-          const message = typeof errorData.detail === 'string'
-            ? errorData.detail
-            : JSON.stringify(errorData);
-          alert(`Voice recording failed: ${message}`);
-          console.error("Voice recording error:", errorData);
+          alert(`Voice recording failed: ${errorData.detail || response.status}`);
         }
         setSending(false);
         return;
@@ -180,25 +164,12 @@ export default function SoloCoaching() {
         setClaritySummary(result.clarity_summary);
         setEditedSummary(JSON.stringify(result.clarity_summary, null, 2));
 
-        // Show guest conversion modal if user is a guest
         if (user?.is_guest) {
-          setTimeout(() => setShowGuestModal(true), 1000); // Small delay for better UX
+          setTimeout(() => setShowGuestModal(true), 1000);
         }
       }
     } catch (error) {
-      console.error("Voice recording error:", error);
-
-      // More detailed error message
-      let errorMsg = "Voice recording failed: ";
-      if (error.message === "Load failed" || error.message === "Failed to fetch") {
-        errorMsg += "Cannot connect to server. ";
-        errorMsg += `Trying to reach: ${API_URL}. `;
-        errorMsg += "Check that the backend is running and accessible.";
-      } else {
-        errorMsg += error.message;
-      }
-
-      alert(errorMsg);
+      alert("Voice recording failed: " + error.message);
     } finally {
       setSending(false);
     }
@@ -212,20 +183,18 @@ export default function SoloCoaching() {
         { clarity_summary: claritySummary },
         token
       );
-      alert("Clarity summary saved!");
-      navigate('/rooms');
+      alert("Session saved!");
+      navigate('/sessions');
     } catch (error) {
-      alert("Error saving summary: " + error.message);
+      alert("Error saving: " + error.message);
     }
   };
 
-  const handleFileSelect = async (files) => {
+  const handleFileSelect = async (file) => {
     setUploadingFiles(true);
     try {
       const formData = new FormData();
-      files.forEach((file, index) => {
-        formData.append(`files`, file);
-      });
+      formData.append('files', file);
 
       const response = await fetch(`${API_URL}/rooms/${roomId}/upload-evidence`, {
         method: "POST",
@@ -236,221 +205,92 @@ export default function SoloCoaching() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload files");
+        throw new Error("Failed to upload file");
       }
 
       const result = await response.json();
       setEvidenceFiles(prev => [...prev, ...result.files]);
-      alert(`${files.length} file(s) uploaded successfully!`);
+      alert("File uploaded successfully!");
     } catch (error) {
-      console.error("File upload error:", error);
-      alert("Failed to upload files: " + error.message);
+      alert("Failed to upload: " + error.message);
     } finally {
       setUploadingFiles(false);
     }
   };
 
+  const handleTelegramImport = async (downloadId, chatName, messageCount) => {
+    try {
+      const response = await apiRequest(
+        `/rooms/${roomId}/import-telegram`,
+        "POST",
+        {
+          download_id: downloadId,
+          chat_name: chatName,
+          message_count: messageCount
+        },
+        token
+      );
+
+      // Refresh conversation
+      const history = await apiRequest(`/rooms/${roomId}/solo/turns`, "GET", null, token);
+      setMessages(history.messages || []);
+
+      setShowTelegramImport(false);
+      alert("Telegram messages imported successfully!");
+    } catch (error) {
+      alert("Failed to import: " + error.message);
+    }
+  };
+
   if (loading) {
-    return <div style={{ textAlign: "center", padding: "60px", color: soloTheme.colors.textSecondary }}>Loading Solo session...</div>;
+    return <div style={{ textAlign: "center", padding: "60px" }}>Loading Solo session...</div>;
   }
 
-  const mobileStyles = `
-    .solo-header {
-      margin: 0;
-      padding: 16px 20px;
-      font-size: 18px;
-      border-bottom: 1px solid ${soloTheme.colors.border};
-      background: white;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .messages-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px 20px 80px 20px;
-      background: ${soloTheme.colors.backgroundPrimary};
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .input-container {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      padding: 8px 16px;
-      background: white;
-      border-top: 1px solid ${soloTheme.colors.border};
-      position: sticky;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 20;
-    }
-
-    .icon-button {
-      background: none;
-      border: none;
-      color: ${soloTheme.colors.primary};
-      cursor: pointer;
-      padding: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      min-height: 40px;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-
-    .icon-button:active {
-      background: ${soloTheme.colors.primaryPale};
-    }
-
-    .icon-button:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    .input-wrapper {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-
-    .chat-input {
-      flex: 1;
-      width: 100%;
-      padding: 12px 50px 12px 16px;
-      border-radius: 24px;
-      border: 1px solid ${soloTheme.colors.border};
-      background: ${soloTheme.colors.backgroundPrimary};
-      font-size: 16px;
-      resize: none;
-      min-height: 44px;
-      max-height: 120px;
-      font-family: 'Nunito', sans-serif;
-      line-height: 1.4;
-      color: ${soloTheme.colors.textSecondary};
-    }
-
-    .chat-input:focus {
-      outline: none;
-      border-color: ${soloTheme.colors.primary};
-      background: white;
-    }
-
-    .mic-icon-wrapper {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      opacity: 0.5;
-    }
-
-    .send-button {
-      background: ${soloTheme.colors.primary};
-      color: white;
-      border: none;
-      min-width: 44px;
-      min-height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.2s, opacity 0.2s;
-      padding: 0;
-    }
-
-    .send-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #d1d5db;
-    }
-
-    .send-button:not(:disabled):active {
-      background: ${soloTheme.colors.secondary};
-    }
-
-    /* Desktop styles */
-    @media (min-width: 769px) {
-      .solo-header {
-        padding: 16px 24px;
-        position: static;
-      }
-
-      .messages-container {
-        padding: 16px 24px 20px 24px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-      }
-
-      .input-container {
-        position: static;
-        padding: 0;
-        border-top: none;
-        background: transparent;
-        gap: 12px;
-      }
-
-      .chat-input {
-        border-radius: 12px;
-        min-height: 60px;
-        font-size: 14px;
-      }
-
-      .send-button {
-        border-radius: 12px;
-        min-width: 60px;
-        padding: 12px 20px;
-      }
-    }
-
-    /* Ensure proper spacing on mobile when keyboard is open */
-    @media (max-width: 768px) {
-      @supports (-webkit-touch-callout: none) {
-        /* iOS specific */
-        .input-container {
-          padding-bottom: max(8px, env(safe-area-inset-bottom));
-        }
-      }
-    }
-  `;
+  // Purple user bubble color
+  const userBubbleColor = "#EDE9FE";
 
   return (
     <div style={{
-      maxWidth: "800px",
-      margin: "0 auto",
-      height: "100vh",
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)",
       display: "flex",
-      flexDirection: "column",
-      position: "relative"
+      flexDirection: "column"
     }}>
-      <FloatingMenu />
-      <style>{mobileStyles}</style>
-
-      <h2 className="solo-header" style={{
-        color: soloTheme.colors.textPrimary,
+      {/* Header */}
+      <h2 className="coaching-header" style={{
+        margin: 0,
+        padding: "20px 24px",
+        fontSize: "24px",
         fontWeight: "700",
-        fontSize: "20px"
-      }}>Solo Reflection Session</h2>
+        color: "#7DD3C0",
+        textAlign: "center",
+        fontFamily: "'Nunito', sans-serif",
+        textShadow: "0 0 20px rgba(125, 211, 192, 0.3)"
+      }}>
+        Solo Reflection
+      </h2>
 
-      <div className="messages-container">
+      {/* Messages */}
+      <div className="messages-container" style={{
+        flex: 1,
+        overflowY: "auto",
+        padding: "16px 20px 100px 20px",
+        maxWidth: "800px",
+        margin: "0 auto",
+        width: "100%"
+      }}>
         {messages.map((msg, idx) => (
           <div
             key={idx}
             style={{
               marginBottom: "16px",
               padding: "14px 18px",
-              borderRadius: "12px",
-              background: msg.role === "user" ? soloTheme.colors.userMessageBg : soloTheme.colors.aiMessageBg,
-              border: msg.role === "assistant" ? "none" : `1px solid ${soloTheme.colors.border}`,
+              borderRadius: "16px",
+              background: msg.role === "user" ? userBubbleColor : "#FFFFFF",
               maxWidth: "85%",
               marginLeft: msg.role === "user" ? "auto" : "0",
               marginRight: msg.role === "user" ? "0" : "auto",
-              boxShadow: soloTheme.shadows.sm
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}
           >
             <div style={{
@@ -464,21 +304,17 @@ export default function SoloCoaching() {
                   width: "32px",
                   height: "32px",
                   borderRadius: "50%",
-                  background: soloTheme.colors.primaryPale,
+                  background: "#E8F9F5",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
-                  border: `2px solid ${soloTheme.colors.primary}`
+                  border: "2px solid #7DD3C0"
                 }}>
                   <img
                     src="/assets/illustrations/Meedi_Profile.svg"
                     alt="Meedi"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover"
-                    }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
               )}
@@ -491,7 +327,7 @@ export default function SoloCoaching() {
                       width: "32px",
                       height: "32px",
                       borderRadius: "50%",
-                      border: `2px solid ${soloTheme.colors.primary}`,
+                      border: "2px solid #C8B6FF",
                       objectFit: "cover"
                     }}
                   />
@@ -500,12 +336,12 @@ export default function SoloCoaching() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: soloTheme.colors.primaryPale,
+                    background: "#EDE9FE",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: "16px",
-                    border: `2px solid ${soloTheme.colors.primary}`
+                    border: "2px solid #C8B6FF"
                   }}>
                     👤
                   </div>
@@ -513,7 +349,7 @@ export default function SoloCoaching() {
               )}
               <strong style={{
                 fontSize: "14px",
-                color: msg.role === "user" ? soloTheme.colors.textPrimary : soloTheme.colors.textSecondary,
+                color: msg.role === "user" ? "#6B21A8" : "#1F2937",
                 fontWeight: "700"
               }}>
                 {msg.role === "user" ? "You" : "Meedi"}
@@ -523,7 +359,7 @@ export default function SoloCoaching() {
               margin: 0,
               whiteSpace: "pre-wrap",
               lineHeight: "1.6",
-              color: soloTheme.colors.textSecondary,
+              color: "#374151",
               fontSize: "15px"
             }}>
               {msg.content}
@@ -533,35 +369,20 @@ export default function SoloCoaching() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input Area */}
       {!finalized && (
         <div className="input-container">
-          {/* Plus icon for file upload */}
-          <button
-            onClick={() => document.getElementById('file-input-solo').click()}
-            disabled={sending || uploadingFiles}
-            className="icon-button"
-            title="Upload evidence"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-          </button>
-          <input
-            id="file-input-solo"
-            type="file"
-            accept="image/*,.pdf,.doc,.docx,.txt"
-            multiple
-            onChange={(e) => {
-              const files = Array.from(e.target.files || []);
-              if (files.length > 0) {
-                handleFileSelect(files);
-              }
-              e.target.value = "";
-            }}
-            style={{ display: "none" }}
+          {/* Attachment menu */}
+          <AttachmentMenu
+            onFileSelect={handleFileSelect}
+            onTelegramImport={() => setShowTelegramImport(true)}
+            disabled={sending}
+            uploading={uploadingFiles}
+            isGuest={user?.email?.startsWith('guest_')}
+            isPremium={true}
           />
 
-          {/* Input field with microphone inside */}
+          {/* Input with mic */}
           <div className="input-wrapper">
             <textarea
               value={userInput}
@@ -576,22 +397,19 @@ export default function SoloCoaching() {
               className="chat-input"
               disabled={sending}
               rows="1"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
             />
-            {/* Microphone icon inside input */}
             <div className="mic-icon-wrapper">
               <VoiceRecorder
                 onRecordingComplete={handleVoiceRecording}
                 disabled={sending}
                 inline={true}
+                isGuest={user?.email?.startsWith('guest_')}
+                isPremium={true}
               />
             </div>
           </div>
 
-          {/* Send button as arrow */}
+          {/* Send button */}
           <button
             onClick={handleSend}
             disabled={sending || !userInput.trim()}
@@ -604,151 +422,111 @@ export default function SoloCoaching() {
         </div>
       )}
 
-      {/* Show uploaded evidence files */}
+      {/* Evidence files */}
       {evidenceFiles.length > 0 && !finalized && (
-        <div style={{ marginTop: "8px", padding: "8px", background: soloTheme.colors.primaryPale, borderRadius: "8px", fontSize: "13px" }}>
-          <strong>Evidence uploaded:</strong> {evidenceFiles.map(f => f.filename).join(", ")}
+        <div style={{
+          margin: "8px 20px",
+          padding: "8px 12px",
+          background: "rgba(125, 211, 192, 0.2)",
+          borderRadius: "8px",
+          fontSize: "13px",
+          color: "#7DD3C0"
+        }}>
+          <strong>Uploaded:</strong> {evidenceFiles.map(f => f.filename).join(", ")}
         </div>
       )}
 
+      {/* Clarity Summary */}
       {finalized && claritySummary && (
         <div style={{
-          padding: "20px",
-          background: `linear-gradient(180deg, ${soloTheme.colors.backgroundPrimary} 0%, #ffffff 100%)`,
-          borderRadius: "12px"
+          padding: "24px",
+          margin: "20px",
+          background: "rgba(103, 80, 164, 0.9)",
+          borderRadius: "16px",
+          border: "2px solid #9CDAD5"
         }}>
           <h3 style={{
             marginTop: 0,
-            fontSize: "28px",
-            color: soloTheme.colors.textPrimary,
+            fontSize: "24px",
+            color: "#CCB2FF",
             fontWeight: "700",
-            marginBottom: "24px",
+            marginBottom: "20px",
             textAlign: "center"
           }}>Your Clarity Summary</h3>
 
-          {/* Clarity Summary Display */}
-          <div style={{
-            ...soloStyles.claritySummary,
-            marginBottom: "24px"
-          }}>
-            {/* Key Insights Section */}
-            {claritySummary.key_insights && claritySummary.key_insights.length > 0 && (
-              <div style={{ marginBottom: "24px" }}>
-                <h4 style={{
-                  color: soloTheme.colors.textPrimary,
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px"
+          {/* Key Insights */}
+          {claritySummary.key_insights && claritySummary.key_insights.length > 0 && (
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ color: "#9CDAD5", fontSize: "18px", marginBottom: "12px" }}>
+                Key Insights
+              </h4>
+              {claritySummary.key_insights.map((insight, idx) => (
+                <div key={idx} style={{
+                  padding: "12px 16px",
+                  background: "rgba(156, 218, 213, 0.1)",
+                  borderRadius: "8px",
+                  marginBottom: "8px",
+                  color: "#E5E7EB",
+                  fontSize: "14px",
+                  borderLeft: "3px solid #9CDAD5"
                 }}>
-                  <span>💡</span> Key Insights
-                </h4>
-                {claritySummary.key_insights.map((insight, idx) => (
-                  <div key={idx} style={soloStyles.clarityInsightItem}>
-                    {insight}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Suggested Actions Section */}
-            {claritySummary.suggested_actions && claritySummary.suggested_actions.length > 0 && (
-              <div style={{ marginBottom: "24px" }}>
-                <h4 style={{
-                  color: soloTheme.colors.textPrimary,
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px"
-                }}>
-                  <span>✨</span> Suggested Next Steps
-                </h4>
-                {claritySummary.suggested_actions.map((action, idx) => (
-                  <div key={idx} style={soloStyles.claritySuggestionItem}>
-                    {action}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Action Buttons Section */}
-            {claritySummary.actions && claritySummary.actions.length > 0 && (
-              <div>
-                <h4 style={{
-                  color: soloTheme.colors.textPrimary,
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px"
-                }}>
-                  <span>🎯</span> You Could...
-                </h4>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px"
-                }}>
-                  {claritySummary.actions.map((action, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        // Handle action button clicks
-                        if (action.type === 'invite_to_mediation') {
-                          navigate('/create');
-                        } else {
-                          alert(`Action: ${action.label}\n\n${action.description || 'This action is suggested based on your reflection.'}`);
-                        }
-                      }}
-                      style={{
-                        ...getActionButtonStyle(action.type),
-                        width: "100%",
-                        fontFamily: "'Nunito', sans-serif",
-                        textAlign: "left"
-                      }}
-                    >
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <span style={{ fontWeight: "600", fontSize: "16px" }}>
-                          {action.label}
-                        </span>
-                        {action.description && (
-                          <span style={{
-                            fontSize: "13px",
-                            opacity: 0.9,
-                            fontWeight: "400"
-                          }}>
-                            {action.description}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  {insight}
                 </div>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {/* Save and Continue Button */}
+          {/* Suggested Actions */}
+          {claritySummary.suggested_actions && claritySummary.suggested_actions.length > 0 && (
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ color: "#9CDAD5", fontSize: "18px", marginBottom: "12px" }}>
+                Next Steps
+              </h4>
+              {claritySummary.suggested_actions.map((action, idx) => (
+                <div key={idx} style={{
+                  padding: "12px 16px",
+                  background: "rgba(204, 178, 255, 0.1)",
+                  borderRadius: "8px",
+                  marginBottom: "8px",
+                  color: "#E5E7EB",
+                  fontSize: "14px",
+                  borderLeft: "3px solid #CCB2FF"
+                }}>
+                  {action}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Save Button */}
           <button
             onClick={handleFinalize}
             style={{
-              ...soloStyles.buttonPrimary,
               width: "100%",
+              padding: "16px 24px",
+              background: "#7DD3C0",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
               fontSize: "18px",
               fontWeight: "700",
+              cursor: "pointer",
               fontFamily: "'Nunito', sans-serif",
-              boxShadow: soloTheme.shadows.md
+              boxShadow: "0 4px 12px rgba(125, 211, 192, 0.3)"
             }}
           >
-            Save & Return to Rooms
+            Save & Continue
           </button>
         </div>
       )}
+
+      {/* Telegram Import Modal */}
+      <TelegramImportModal
+        isOpen={showTelegramImport}
+        onClose={() => setShowTelegramImport(false)}
+        onImport={handleTelegramImport}
+        roomId={roomId}
+      />
 
       {/* Guest Conversion Modal */}
       <GuestConversionModal
