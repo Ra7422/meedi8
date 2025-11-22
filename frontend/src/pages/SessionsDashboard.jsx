@@ -342,7 +342,7 @@ export default function SessionsDashboard() {
                 onChange={handleSelectAll}
                 style={styles.checkbox}
               />
-              <span style={{ marginLeft: "8px", fontSize: "14px", fontWeight: "600" }}>
+              <span style={{ marginLeft: "8px", fontSize: "14px", fontWeight: "600", color: "white" }}>
                 Select All ({rooms.length})
               </span>
             </label>
@@ -357,7 +357,7 @@ export default function SessionsDashboard() {
                   key={room.id}
                   style={{
                     ...styles.roomCard,
-                    border: isSelected ? "2px solid #3b82f6" : "1px solid #e5e7eb"
+                    border: isSelected ? "2px solid #8b5cf6" : "1px solid rgba(139, 92, 246, 0.3)"
                   }}
                 >
                   {/* Checkbox */}
@@ -464,7 +464,9 @@ const styles = {
   container: {
     maxWidth: "900px",
     margin: "0 auto",
-    padding: "20px"
+    padding: "20px",
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, rgba(20, 15, 35, 1) 0%, rgba(30, 20, 50, 1) 100%)"
   },
   header: {
     display: "flex",
@@ -478,28 +480,29 @@ const styles = {
     fontSize: "28px",
     fontWeight: "700",
     margin: 0,
-    color: "#111827"
+    color: "white"
   },
   newButton: {
     padding: "10px 20px",
-    background: "#3b82f6",
+    background: "#8b5cf6",
     color: "white",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
-    fontWeight: "600"
+    fontWeight: "600",
+    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.4)"
   },
   gamificationBar: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "16px 20px",
-    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+    background: "rgba(139, 92, 246, 0.1)",
     borderRadius: "16px",
     marginBottom: "24px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+    border: "1px solid rgba(139, 92, 246, 0.3)",
+    boxShadow: "0 4px 20px rgba(139, 92, 246, 0.2)"
   },
   gamificationLeft: {
     display: "flex",
@@ -514,24 +517,24 @@ const styles = {
   loading: {
     textAlign: "center",
     padding: "40px",
-    color: "#6b7280"
+    color: "rgba(255, 255, 255, 0.6)"
   },
   empty: {
     textAlign: "center",
     padding: "60px 20px",
-    background: "#f9fafb",
+    background: "rgba(139, 92, 246, 0.1)",
     borderRadius: "12px",
-    border: "2px dashed #d1d5db"
+    border: "2px dashed rgba(139, 92, 246, 0.4)"
   },
   emptyText: {
     fontSize: "18px",
     fontWeight: "600",
-    color: "#374151",
+    color: "white",
     margin: "0 0 8px 0"
   },
   emptySubtext: {
     fontSize: "14px",
-    color: "#6b7280",
+    color: "rgba(255, 255, 255, 0.6)",
     margin: 0
   },
   roomsList: {
@@ -541,11 +544,11 @@ const styles = {
   },
   roomCard: {
     position: "relative",
-    background: "white",
-    border: "1px solid #e5e7eb",
+    background: "rgba(139, 92, 246, 0.1)",
+    border: "1px solid rgba(139, 92, 246, 0.3)",
     borderRadius: "12px",
     padding: "20px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+    boxShadow: "0 4px 20px rgba(139, 92, 246, 0.15)",
     transition: "box-shadow 0.2s",
     cursor: "pointer"
   },
@@ -563,7 +566,7 @@ const styles = {
   roomName: {
     fontSize: "20px",
     fontWeight: "600",
-    color: "#111827",
+    color: "white",
     margin: 0
   },
   statusBadge: {
@@ -571,14 +574,14 @@ const styles = {
     alignItems: "center",
     gap: "6px",
     padding: "6px 12px",
-    background: "white",
+    background: "rgba(0, 0, 0, 0.3)",
     border: "2px solid",
     borderRadius: "20px",
     fontSize: "14px"
   },
   roomDescription: {
     fontSize: "14px",
-    color: "#6b7280",
+    color: "rgba(255, 255, 255, 0.6)",
     margin: "8px 0 0 0"
   },
   roomInfo: {
@@ -593,11 +596,11 @@ const styles = {
     fontSize: "14px"
   },
   infoLabel: {
-    color: "#6b7280",
+    color: "rgba(255, 255, 255, 0.5)",
     fontWeight: "500"
   },
   infoValue: {
-    color: "#111827",
+    color: "white",
     fontWeight: "600"
   },
   roomActions: {
@@ -618,9 +621,9 @@ const styles = {
   },
   secondaryButton: {
     padding: "12px 20px",
-    background: "#f3f4f6",
-    color: "#374151",
-    border: "1px solid #d1d5db",
+    background: "rgba(139, 92, 246, 0.2)",
+    color: "white",
+    border: "1px solid rgba(139, 92, 246, 0.4)",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
@@ -656,19 +659,20 @@ const styles = {
   },
   deleteIconButton: {
     padding: "12px 16px",
-    background: "#fee2e2",
-    color: "#dc2626",
-    border: "1px solid #fecaca",
+    background: "rgba(239, 68, 68, 0.2)",
+    color: "#fca5a5",
+    border: "1px solid rgba(239, 68, 68, 0.4)",
     borderRadius: "8px",
     fontSize: "18px",
     transition: "background 0.2s"
   },
   selectAllBar: {
     padding: "12px 16px",
-    background: "#f9fafb",
+    background: "rgba(139, 92, 246, 0.1)",
     borderRadius: "8px",
     marginBottom: "16px",
-    border: "1px solid #e5e7eb"
+    border: "1px solid rgba(139, 92, 246, 0.3)",
+    color: "white"
   },
   checkboxLabel: {
     display: "flex",
@@ -679,7 +683,7 @@ const styles = {
     width: "18px",
     height: "18px",
     cursor: "pointer",
-    accentColor: "#3b82f6"
+    accentColor: "#8b5cf6"
   },
   cardCheckbox: {
     position: "absolute",
