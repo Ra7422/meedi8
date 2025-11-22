@@ -192,8 +192,8 @@ export default function FloatingMenu({
             top: "16px",
             right: "16px",
             zIndex: 1000,
-            background: "white",
-            border: "1px solid #e5e7eb",
+            background: "rgba(139, 92, 246, 0.15)",
+            border: "1px solid rgba(139, 92, 246, 0.4)",
             borderRadius: "50%",
             width: "48px",
             height: "48px",
@@ -202,14 +202,15 @@ export default function FloatingMenu({
             justifyContent: "center",
             cursor: "pointer",
             boxShadow: showTooltip
-              ? "0 0 0 0 rgba(125, 211, 192, 1)"
-              : "0 4px 6px rgba(0, 0, 0, 0.1)",
-            transition: "transform 0.2s",
+              ? "0 0 0 0 rgba(139, 92, 246, 1)"
+              : "0 4px 15px rgba(139, 92, 246, 0.3)",
+            backdropFilter: "blur(10px)",
+            transition: "transform 0.2s, box-shadow 0.2s",
             animation: showTooltip ? "pulse 2s infinite" : "none"
           }}
         >
           {/* Always show hamburger/X icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="#374151">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
             {isOpen ? (
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             ) : (
@@ -225,13 +226,14 @@ export default function FloatingMenu({
               position: "fixed",
               top: "72px",
               right: "16px",
-              background: "#7DD3C0",
+              background: "rgba(139, 92, 246, 0.9)",
               color: "white",
               padding: "12px 16px",
               borderRadius: "12px",
               fontSize: "14px",
               fontWeight: "500",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+              boxShadow: "0 4px 20px rgba(139, 92, 246, 0.4)",
+              backdropFilter: "blur(10px)",
               zIndex: 999,
               maxWidth: "200px",
               animation: "fadeInDown 0.3s ease",
@@ -246,7 +248,7 @@ export default function FloatingMenu({
               height: 0,
               borderLeft: "6px solid transparent",
               borderRight: "6px solid transparent",
-              borderBottom: "6px solid #7DD3C0"
+              borderBottom: "6px solid rgba(139, 92, 246, 0.9)"
             }} />
             👥 Tap here to see both perspectives
           </div>
@@ -280,9 +282,10 @@ export default function FloatingMenu({
               bottom: 0,
               width: "280px",
               maxWidth: "80vw",
-              background: "white",
+              background: "linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(20, 15, 35, 0.98) 100%)",
               zIndex: 1001,
-              boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.1)",
+              boxShadow: "-2px 0 30px rgba(139, 92, 246, 0.3)",
+              backdropFilter: "blur(20px)",
               animation: "slideInRight 0.3s ease",
               display: "flex",
               flexDirection: "column"
@@ -291,13 +294,13 @@ export default function FloatingMenu({
             {/* Menu Header */}
             <div style={{
               padding: "20px",
-              borderBottom: "1px solid #e5e7eb"
+              borderBottom: "1px solid rgba(139, 92, 246, 0.3)"
             }}>
               {user ? (
                 <p style={{
                   margin: 0,
                   fontSize: "14px",
-                  color: "#6b7280",
+                  color: "rgba(255, 255, 255, 0.8)",
                   fontWeight: "500"
                 }}>
                   {user.name || user.email}
@@ -328,15 +331,15 @@ export default function FloatingMenu({
                       width: "100%",
                       padding: "14px 20px",
                       textAlign: "left",
-                      background: showPerspectives ? "#f9fafb" : "none",
+                      background: showPerspectives ? "rgba(139, 92, 246, 0.2)" : "none",
                       border: "none",
                       fontSize: "16px",
-                      color: "#374151",
+                      color: "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
                       fontWeight: showPerspectives ? "600" : "400"
                     }}
-                    onMouseEnter={(e) => !showPerspectives && (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseEnter={(e) => !showPerspectives && (e.currentTarget.style.background = "rgba(139, 92, 246, 0.15)")}
                     onMouseLeave={(e) => !showPerspectives && (e.currentTarget.style.background = "none")}
                   >
                     👥 Both Perspectives
@@ -345,24 +348,24 @@ export default function FloatingMenu({
                   {showPerspectives && (
                     <div style={{
                       padding: "16px 20px",
-                      background: "#f9fafb",
-                      borderTop: "1px solid #e5e7eb",
-                      borderBottom: "1px solid #e5e7eb",
+                      background: "rgba(139, 92, 246, 0.1)",
+                      borderTop: "1px solid rgba(139, 92, 246, 0.3)",
+                      borderBottom: "1px solid rgba(139, 92, 246, 0.3)",
                       fontSize: "13px"
                     }}>
                       <div style={{ marginBottom: "16px" }}>
-                        <p style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px" }}>
+                        <p style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "rgba(255, 255, 255, 0.9)" }}>
                           {summaries.user1_name}:
                         </p>
-                        <p style={{ margin: 0, lineHeight: "1.6", whiteSpace: "pre-wrap", color: "#374151" }}>
+                        <p style={{ margin: 0, lineHeight: "1.6", whiteSpace: "pre-wrap", color: "rgba(255, 255, 255, 0.7)" }}>
                           {summaries.user1_summary}
                         </p>
                       </div>
                       <div>
-                        <p style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px" }}>
+                        <p style={{ fontWeight: "600", marginBottom: "6px", fontSize: "14px", color: "rgba(255, 255, 255, 0.9)" }}>
                           {summaries.user2_name}:
                         </p>
-                        <p style={{ margin: 0, lineHeight: "1.6", whiteSpace: "pre-wrap", color: "#374151" }}>
+                        <p style={{ margin: 0, lineHeight: "1.6", whiteSpace: "pre-wrap", color: "rgba(255, 255, 255, 0.7)" }}>
                           {summaries.user2_summary}
                         </p>
                       </div>
@@ -379,15 +382,15 @@ export default function FloatingMenu({
                       width: "100%",
                       padding: "14px 20px",
                       textAlign: "left",
-                      background: showLink ? "#f9fafb" : "none",
+                      background: showLink ? "rgba(139, 92, 246, 0.2)" : "none",
                       border: "none",
                       fontSize: "16px",
-                      color: "#374151",
+                      color: "white",
                       cursor: "pointer",
                       transition: "background 0.2s",
                       fontWeight: showLink ? "600" : "400"
                     }}
-                    onMouseEnter={(e) => !showLink && (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseEnter={(e) => !showLink && (e.currentTarget.style.background = "rgba(139, 92, 246, 0.15)")}
                     onMouseLeave={(e) => !showLink && (e.currentTarget.style.background = "none")}
                   >
                     🔗 Share Link
@@ -396,11 +399,11 @@ export default function FloatingMenu({
                   {showLink && (
                     <div style={{
                       padding: "16px 20px",
-                      background: "#fef3c7",
-                      borderTop: "1px solid #f59e0b",
-                      borderBottom: "1px solid #f59e0b"
+                      background: "rgba(139, 92, 246, 0.15)",
+                      borderTop: "1px solid rgba(139, 92, 246, 0.3)",
+                      borderBottom: "1px solid rgba(139, 92, 246, 0.3)"
                     }}>
-                      <p style={{ margin: "0 0 8px 0", fontWeight: "600", fontSize: "13px" }}>
+                      <p style={{ margin: "0 0 8px 0", fontWeight: "600", fontSize: "13px", color: "rgba(255, 255, 255, 0.9)" }}>
                         Share this link:
                       </p>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -412,8 +415,9 @@ export default function FloatingMenu({
                             flex: 1,
                             padding: "8px",
                             borderRadius: "6px",
-                            border: "1px solid #d1d5db",
-                            background: "white",
+                            border: "1px solid rgba(139, 92, 246, 0.4)",
+                            background: "rgba(0, 0, 0, 0.3)",
+                            color: "white",
                             fontSize: "12px"
                           }}
                         />
@@ -424,7 +428,7 @@ export default function FloatingMenu({
                           }}
                           style={{
                             padding: "8px 12px",
-                            background: "#3b82f6",
+                            background: "#8b5cf6",
                             color: "white",
                             border: "none",
                             borderRadius: "6px",
@@ -455,12 +459,12 @@ export default function FloatingMenu({
                   background: "none",
                   border: "none",
                   fontSize: "16px",
-                  color: "#374151",
+                  color: "white",
                   cursor: "pointer",
                   transition: "background 0.2s",
                   fontWeight: "400"
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(139, 92, 246, 0.15)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = "none"}
               >
                 🫧 Breathe & Earn Rewards
@@ -470,7 +474,7 @@ export default function FloatingMenu({
               {(summaries || inviteLink || onToggleBreathing) && (
                 <div style={{
                   height: "1px",
-                  background: "#e5e7eb",
+                  background: "rgba(139, 92, 246, 0.3)",
                   margin: "8px 0"
                 }} />
               )}
@@ -491,7 +495,7 @@ export default function FloatingMenu({
                     background: "none",
                     border: "none",
                     fontSize: "16px",
-                    color: isGuest ? "#9ca3af" : "#374151",
+                    color: isGuest ? "rgba(255, 255, 255, 0.4)" : "white",
                     cursor: isGuest ? "not-allowed" : "pointer",
                     transition: "background 0.2s",
                     fontWeight: "500",
@@ -500,7 +504,7 @@ export default function FloatingMenu({
                     gap: "8px",
                     opacity: isGuest ? 0.5 : 1
                   }}
-                  onMouseEnter={(e) => !isGuest && (e.currentTarget.style.background = "#f9fafb")}
+                  onMouseEnter={(e) => !isGuest && (e.currentTarget.style.background = "rgba(139, 92, 246, 0.15)")}
                   onMouseLeave={(e) => e.currentTarget.style.background = "none"}
                   title={isGuest ? "Sign up to access your profile" : ""}
                 >
@@ -564,7 +568,7 @@ export default function FloatingMenu({
                       background: "none",
                       border: "none",
                       fontSize: "16px",
-                      color: isRestricted ? "#9ca3af" : "#374151",
+                      color: isRestricted ? "rgba(255, 255, 255, 0.4)" : "white",
                       cursor: isRestricted ? "not-allowed" : "pointer",
                       transition: "background 0.2s",
                       opacity: isRestricted ? 0.5 : 1,
@@ -572,13 +576,13 @@ export default function FloatingMenu({
                       alignItems: "center",
                       justifyContent: "space-between"
                     }}
-                    onMouseEnter={(e) => !isRestricted && (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseEnter={(e) => !isRestricted && (e.currentTarget.style.background = "rgba(139, 92, 246, 0.15)")}
                     onMouseLeave={(e) => e.currentTarget.style.background = "none"}
                     title={tooltipText}
                   >
                     {item.label}
                     {isRestricted && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                       </svg>
@@ -594,7 +598,7 @@ export default function FloatingMenu({
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  borderTop: "1px solid #e5e7eb",
+                  borderTop: "1px solid rgba(139, 92, 246, 0.3)",
                   marginTop: "8px"
                 }}>
                   <div style={{
@@ -780,7 +784,7 @@ export default function FloatingMenu({
             {/* Menu Footer */}
             <div style={{
               padding: "16px 20px",
-              borderTop: "1px solid #e5e7eb"
+              borderTop: "1px solid rgba(139, 92, 246, 0.3)"
             }}>
               {user ? (
                 <button
@@ -788,13 +792,14 @@ export default function FloatingMenu({
                   style={{
                     width: "100%",
                     padding: "12px",
-                    background: "#ef4444",
+                    background: "rgba(239, 68, 68, 0.8)",
                     color: "white",
-                    border: "none",
+                    border: "1px solid rgba(239, 68, 68, 0.5)",
                     borderRadius: "8px",
                     fontSize: "15px",
                     fontWeight: "600",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)"
                   }}
                 >
                   Logout
@@ -880,8 +885,8 @@ export default function FloatingMenu({
                       width: "100%",
                       padding: "10px",
                       background: "transparent",
-                      color: "#6b7280",
-                      border: "1px solid #e5e7eb",
+                      color: "rgba(255, 255, 255, 0.7)",
+                      border: "1px solid rgba(139, 92, 246, 0.4)",
                       borderRadius: "8px",
                       fontSize: "13px",
                       fontWeight: "500",
@@ -914,13 +919,13 @@ export default function FloatingMenu({
 
         @keyframes pulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(125, 211, 192, 0.7);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
           }
           70% {
-            box-shadow: 0 0 0 10px rgba(125, 211, 192, 0);
+            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(125, 211, 192, 0);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
           }
         }
 
