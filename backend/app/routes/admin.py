@@ -2102,3 +2102,259 @@ def get_audit_logs(
         "total": len(logs),
         "action_types": action_types
     }
+
+
+# ========================================
+# ANNOUNCEMENTS
+# ========================================
+
+class AnnouncementIn(BaseModel):
+    title: str
+    message: str
+    type: str = "info"  # info, warning, success, error
+    is_active: bool = True
+    is_dismissible: bool = True
+    target_audience: str = "all"  # all, free, plus, pro
+    show_on_pages: str = "all"  # all, home, dashboard, coaching, etc.
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = None
+    message: Optional[str] = None
+    type: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_dismissible: Optional[bool] = None
+    target_audience: Optional[str] = None
+    show_on_pages: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
+@router.get("/announcements")
+def get_announcements(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    active_only: bool = False
+):
+    """Get all announcements"""
+    check_admin(current_user)
+
+    from ..models import Announcement
+
+    query = db.query(Announcement).order_by(Announcement.created_at.desc())
+
+    if active_only:
+        query = query.filter(Announcement.is_active == True)
+
+    announcements = query.all()
+
+    return {
+        "announcements": [
+            {
+                "id": a.id,
+                "title": a.title,
+                "message": a.message,
+                "type": a.type,
+                "is_active": a.is_active,
+                "is_dismissible": a.is_dismissible,
+                "target_audience": a.target_audience,
+                "show_on_pages": a.show_on_pages,
+                "start_date": a.start_date.isoformat() if a.start_date else None,
+                "end_date": a.end_date.isoformat() if a.end_date else None,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+                "created_by": a.created_by,
+                "view_count": a.view_count,
+                "dismiss_count": a.dismiss_count,
+            }
+            for a in announcements
+        ],
+        "total": len(announcements)
+    }
+
+
+@router.post("/announcements")
+def create_announcement(
+    payload: AnnouncementIn,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new announcement"""
+    check_admin(current_user)
+
+    from ..models import Announcement
+
+    announcement = Announcement(
+        title=payload.title,
+        message=payload.message,
+        type=payload.type,
+        is_active=payload.is_active,
+        is_dismissible=payload.is_dismissible,
+        target_audience=payload.target_audience,
+        show_on_pages=payload.show_on_pages,
+        start_date=datetime.fromisoformat(payload.start_date) if payload.start_date else None,
+        end_date=datetime.fromisoformat(payload.end_date) if payload.end_date else None,
+        created_by=current_user.id
+    )
+
+    db.add(announcement)
+    db.commit()
+    db.refresh(announcement)
+
+    log_audit(
+        admin_email=current_user.email,
+        action="announcement_created",
+        target_type="announcement",
+        target_id=announcement.id,
+        details={"title": payload.title, "type": payload.type},
+        request=request
+    )
+
+    return {
+        "status": "success",
+        "announcement": {
+            "id": announcement.id,
+            "title": announcement.title,
+            "message": announcement.message,
+            "type": announcement.type,
+            "is_active": announcement.is_active,
+            "created_at": announcement.created_at.isoformat() if announcement.created_at else None,
+        }
+    }
+
+
+@router.put("/announcements/{announcement_id}")
+def update_announcement(
+    announcement_id: int,
+    payload: AnnouncementUpdate,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an announcement"""
+    check_admin(current_user)
+
+    from ..models import Announcement
+
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+
+    changes = {}
+    if payload.title is not None:
+        changes["title"] = {"from": announcement.title, "to": payload.title}
+        announcement.title = payload.title
+    if payload.message is not None:
+        changes["message"] = {"from": announcement.message[:50] + "...", "to": payload.message[:50] + "..."}
+        announcement.message = payload.message
+    if payload.type is not None:
+        changes["type"] = {"from": announcement.type, "to": payload.type}
+        announcement.type = payload.type
+    if payload.is_active is not None:
+        changes["is_active"] = {"from": announcement.is_active, "to": payload.is_active}
+        announcement.is_active = payload.is_active
+    if payload.is_dismissible is not None:
+        announcement.is_dismissible = payload.is_dismissible
+    if payload.target_audience is not None:
+        announcement.target_audience = payload.target_audience
+    if payload.show_on_pages is not None:
+        announcement.show_on_pages = payload.show_on_pages
+    if payload.start_date is not None:
+        announcement.start_date = datetime.fromisoformat(payload.start_date) if payload.start_date else None
+    if payload.end_date is not None:
+        announcement.end_date = datetime.fromisoformat(payload.end_date) if payload.end_date else None
+
+    announcement.updated_at = datetime.utcnow()
+    db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="announcement_updated",
+        target_type="announcement",
+        target_id=announcement_id,
+        details=changes,
+        request=request
+    )
+
+    return {
+        "status": "success",
+        "announcement": {
+            "id": announcement.id,
+            "title": announcement.title,
+            "message": announcement.message,
+            "type": announcement.type,
+            "is_active": announcement.is_active,
+            "updated_at": announcement.updated_at.isoformat() if announcement.updated_at else None,
+        }
+    }
+
+
+@router.delete("/announcements/{announcement_id}")
+def delete_announcement(
+    announcement_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an announcement"""
+    check_admin(current_user)
+
+    from ..models import Announcement
+
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+
+    title = announcement.title
+    db.delete(announcement)
+    db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="announcement_deleted",
+        target_type="announcement",
+        target_id=announcement_id,
+        details={"title": title},
+        request=request
+    )
+
+    return {"status": "success", "message": f"Announcement '{title}' deleted"}
+
+
+@router.post("/announcements/{announcement_id}/toggle")
+def toggle_announcement(
+    announcement_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Toggle an announcement's active status"""
+    check_admin(current_user)
+
+    from ..models import Announcement
+
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+
+    old_status = announcement.is_active
+    announcement.is_active = not announcement.is_active
+    announcement.updated_at = datetime.utcnow()
+    db.commit()
+
+    log_audit(
+        admin_email=current_user.email,
+        action="announcement_toggled",
+        target_type="announcement",
+        target_id=announcement_id,
+        details={"from": old_status, "to": announcement.is_active},
+        request=request
+    )
+
+    return {
+        "status": "success",
+        "announcement_id": announcement_id,
+        "is_active": announcement.is_active
+    }

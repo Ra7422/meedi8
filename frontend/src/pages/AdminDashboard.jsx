@@ -56,6 +56,22 @@ export default function AdminDashboard() {
   const [auditFilterEndDate, setAuditFilterEndDate] = useState("");
   const [expandedAuditId, setExpandedAuditId] = useState(null);
 
+  // Announcements
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: "",
+    message: "",
+    type: "info",
+    is_active: true,
+    is_dismissible: true,
+    target_audience: "all",
+    show_on_pages: "all",
+    start_date: "",
+    end_date: "",
+  });
+
   // Date range for analytics
   const [dateRangePreset, setDateRangePreset] = useState("30d");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -174,8 +190,8 @@ export default function AdminDashboard() {
       const flagsData = flagsRes.ok ? await flagsRes.json() : { flags: {} };
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
-      // Fetch email templates, system health, AI costs, error logs, and audit logs
-      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes] = await Promise.all([
+      // Fetch email templates, system health, AI costs, error logs, audit logs, and announcements
+      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes, announcementsRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -191,6 +207,9 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/audit-logs`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/announcements`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
@@ -198,6 +217,7 @@ export default function AdminDashboard() {
       const aiCostsData = aiCostsRes.ok ? await aiCostsRes.json() : null;
       const errorLogsData = errorLogsRes.ok ? await errorLogsRes.json() : { logs: [], unresolved_count: 0 };
       const auditLogsData = auditLogsRes.ok ? await auditLogsRes.json() : { logs: [], action_types: [] };
+      const announcementsData = announcementsRes.ok ? await announcementsRes.json() : { announcements: [] };
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -214,6 +234,7 @@ export default function AdminDashboard() {
       setErrorLogsUnresolved(errorLogsData.unresolved_count || 0);
       setAuditLogs(auditLogsData.logs || []);
       setAuditActionTypes(auditLogsData.action_types || []);
+      setAnnouncements(announcementsData.announcements || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -611,6 +632,10 @@ export default function AdminDashboard() {
         color: "white",
         padding: "20px 0",
         flexShrink: 0,
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
       }}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #333" }}>
           <img
@@ -623,7 +648,7 @@ export default function AdminDashboard() {
           />
         </div>
 
-        <nav style={{ marginTop: "20px" }}>
+        <nav style={{ marginTop: "20px", flex: 1 }}>
           <SidebarItem
             icon="☰"
             label="Dashboard"
@@ -715,9 +740,15 @@ export default function AdminDashboard() {
             active={activeTab === "health"}
             onClick={() => setActiveTab("health")}
           />
+          <SidebarItem
+            icon="📢"
+            label="Announcements"
+            active={activeTab === "announcements"}
+            onClick={() => setActiveTab("announcements")}
+          />
         </nav>
 
-        <div style={{ position: "absolute", bottom: "20px", left: "20px", right: "20px" }}>
+        <div style={{ padding: "20px", marginTop: "auto" }}>
           <button
             onClick={handleLogout}
             style={{
@@ -764,6 +795,7 @@ export default function AdminDashboard() {
             {activeTab === "webhooks" && "Webhook Logs"}
             {activeTab === "emails" && "Email Templates"}
             {activeTab === "health" && "System Health"}
+            {activeTab === "announcements" && "Announcement Banners"}
           </h2>
           <div style={{ display: "flex", gap: "8px" }}>
             {activeTab === "users" && (
@@ -2631,8 +2663,481 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {/* Announcements Tab */}
+          {activeTab === "announcements" && (
+            <>
+              <div style={{ marginBottom: "24px", display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => {
+                    setEditingAnnouncement(null);
+                    setAnnouncementForm({
+                      title: "",
+                      message: "",
+                      type: "info",
+                      is_active: true,
+                      is_dismissible: true,
+                      target_audience: "all",
+                      show_on_pages: "all",
+                      start_date: "",
+                      end_date: "",
+                    });
+                    setShowAnnouncementForm(true);
+                  }}
+                  style={{
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                  }}
+                >
+                  + New Announcement
+                </button>
+              </div>
+
+              {announcements.length === 0 ? (
+                <div style={{
+                  background: "white",
+                  borderRadius: "24px",
+                  padding: "60px",
+                  textAlign: "center",
+                  color: "#6B7280",
+                }}>
+                  <p style={{ fontSize: "48px", marginBottom: "16px" }}>📢</p>
+                  <p style={{ fontSize: "16px" }}>No announcements yet</p>
+                  <p style={{ fontSize: "14px", marginTop: "8px" }}>Create your first announcement to communicate with users</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: "16px" }}>
+                  {announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      style={{
+                        background: "white",
+                        borderRadius: "12px",
+                        padding: "20px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                        borderLeft: `4px solid ${
+                          announcement.type === "info" ? "#3b82f6" :
+                          announcement.type === "warning" ? "#f59e0b" :
+                          announcement.type === "success" ? "#10b981" :
+                          announcement.type === "error" ? "#ef4444" : "#6b7280"
+                        }`,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#374151" }}>
+                            {announcement.title}
+                          </h3>
+                          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              background: announcement.is_active ? "#DCFCE7" : "#f3f4f6",
+                              color: announcement.is_active ? "#166534" : "#6B7280",
+                            }}>
+                              {announcement.is_active ? "ACTIVE" : "INACTIVE"}
+                            </span>
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              background: announcement.type === "info" ? "#DBEAFE" :
+                                         announcement.type === "warning" ? "#FEF3C7" :
+                                         announcement.type === "success" ? "#DCFCE7" :
+                                         announcement.type === "error" ? "#FEE2E2" : "#f3f4f6",
+                              color: announcement.type === "info" ? "#1e40af" :
+                                     announcement.type === "warning" ? "#92400e" :
+                                     announcement.type === "success" ? "#166534" :
+                                     announcement.type === "error" ? "#991b1b" : "#4B5563",
+                            }}>
+                              {announcement.type.toUpperCase()}
+                            </span>
+                            <span style={{
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontSize: "11px",
+                              background: "#f3f4f6",
+                              color: "#4B5563",
+                            }}>
+                              {announcement.target_audience.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`${API_URL}/admin/announcements/${announcement.id}/toggle`, {
+                                  method: "POST",
+                                  headers: { Authorization: `Bearer ${adminToken}` },
+                                });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  setAnnouncements(prev =>
+                                    prev.map(a => a.id === announcement.id ? { ...a, is_active: data.is_active } : a)
+                                  );
+                                }
+                              } catch (err) {
+                                alert("Failed to toggle announcement");
+                              }
+                            }}
+                            style={{
+                              background: announcement.is_active ? "#fee2e2" : "#DCFCE7",
+                              color: announcement.is_active ? "#991b1b" : "#166534",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {announcement.is_active ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingAnnouncement(announcement);
+                              setAnnouncementForm({
+                                title: announcement.title,
+                                message: announcement.message,
+                                type: announcement.type,
+                                is_active: announcement.is_active,
+                                is_dismissible: announcement.is_dismissible,
+                                target_audience: announcement.target_audience,
+                                show_on_pages: announcement.show_on_pages,
+                                start_date: announcement.start_date ? announcement.start_date.split("T")[0] : "",
+                                end_date: announcement.end_date ? announcement.end_date.split("T")[0] : "",
+                              });
+                              setShowAnnouncementForm(true);
+                            }}
+                            style={{
+                              background: "#f3f4f6",
+                              color: "#4B5563",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(`Delete announcement "${announcement.title}"?`)) {
+                                try {
+                                  const res = await fetch(`${API_URL}/admin/announcements/${announcement.id}`, {
+                                    method: "DELETE",
+                                    headers: { Authorization: `Bearer ${adminToken}` },
+                                  });
+                                  if (res.ok) {
+                                    setAnnouncements(prev => prev.filter(a => a.id !== announcement.id));
+                                  }
+                                } catch (err) {
+                                  alert("Failed to delete announcement");
+                                }
+                              }
+                            }}
+                            style={{
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ margin: "12px 0 0", fontSize: "14px", color: "#4B5563", lineHeight: "1.5" }}>
+                        {announcement.message}
+                      </p>
+                      <div style={{ marginTop: "12px", display: "flex", gap: "16px", fontSize: "12px", color: "#6B7280" }}>
+                        <span>Pages: {announcement.show_on_pages}</span>
+                        <span>Views: {announcement.view_count}</span>
+                        <span>Dismissals: {announcement.dismiss_count}</span>
+                        {announcement.start_date && <span>Starts: {new Date(announcement.start_date).toLocaleDateString()}</span>}
+                        {announcement.end_date && <span>Ends: {new Date(announcement.end_date).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
+
+      {/* Announcement Form Modal */}
+      {showAnnouncementForm && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "500px",
+            maxHeight: "90vh",
+            overflow: "auto",
+          }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "18px", fontWeight: "700", color: "#4B5563" }}>
+              {editingAnnouncement ? "Edit Announcement" : "Create Announcement"}
+            </h3>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const payload = {
+                  ...announcementForm,
+                  start_date: announcementForm.start_date || null,
+                  end_date: announcementForm.end_date || null,
+                };
+
+                const url = editingAnnouncement
+                  ? `${API_URL}/admin/announcements/${editingAnnouncement.id}`
+                  : `${API_URL}/admin/announcements`;
+                const method = editingAnnouncement ? "PUT" : "POST";
+
+                const res = await fetch(url, {
+                  method,
+                  headers: {
+                    Authorization: `Bearer ${adminToken}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (res.ok) {
+                  setShowAnnouncementForm(false);
+                  fetchData();
+                } else {
+                  throw new Error("Failed to save announcement");
+                }
+              } catch (err) {
+                alert(err.message);
+              }
+            }}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                  Message
+                </label>
+                <textarea
+                  value={announcementForm.message}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, message: e.target.value })}
+                  required
+                  rows={4}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                    Type
+                  </label>
+                  <select
+                    value={announcementForm.type}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, type: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="success">Success</option>
+                    <option value="error">Error</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                    Target Audience
+                  </label>
+                  <select
+                    value={announcementForm.target_audience}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, target_audience: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <option value="all">All Users</option>
+                    <option value="free">Free Tier Only</option>
+                    <option value="plus">Plus Tier Only</option>
+                    <option value="pro">Pro Tier Only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                  Show On Pages
+                </label>
+                <input
+                  type="text"
+                  value={announcementForm.show_on_pages}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, show_on_pages: e.target.value })}
+                  placeholder="all, home, dashboard, coaching"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                    Start Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={announcementForm.start_date}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, start_date: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: "6px", fontWeight: "600", fontSize: "14px", color: "#4B5563" }}>
+                    End Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={announcementForm.end_date}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, end_date: e.target.value })}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.is_active}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, is_active: e.target.checked })}
+                  />
+                  <span style={{ fontSize: "14px", color: "#4B5563" }}>Active</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.is_dismissible}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, is_dismissible: e.target.checked })}
+                  />
+                  <span style={{ fontSize: "14px", color: "#4B5563" }}>Dismissible</span>
+                </label>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAnnouncementForm(false)}
+                  style={{
+                    background: "#f3f4f6",
+                    color: "#4B5563",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {editingAnnouncement ? "Update" : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Create User Modal */}
       {showCreateUser && (
