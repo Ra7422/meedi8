@@ -33,6 +33,9 @@ export function GamificationProvider({ children }) {
   // Toast notifications for score changes
   const [scoreToast, setScoreToast] = useState(null);
 
+  // Achievement toast
+  const [achievementToast, setAchievementToast] = useState(null);
+
   // Fetch health score data
   const fetchHealthScore = useCallback(async () => {
     if (!token) return;
@@ -125,6 +128,14 @@ export function GamificationProvider({ children }) {
       });
       setTimeout(() => setScoreToast(null), 3000);
 
+      // Show achievement toast if earned
+      if (data.new_achievements && data.new_achievements.length > 0) {
+        setTimeout(() => {
+          setAchievementToast(data.new_achievements[0]);
+          setTimeout(() => setAchievementToast(null), 5000);
+        }, 3500);
+      }
+
       return data;
     } catch (err) {
       console.error("Failed to create journal entry:", err);
@@ -145,6 +156,12 @@ export function GamificationProvider({ children }) {
       throw err;
     }
   }, [token, fetchJournal]);
+
+  // Helper to show achievement toast
+  const showAchievementToast = useCallback((achievement) => {
+    setAchievementToast(achievement);
+    setTimeout(() => setAchievementToast(null), 5000);
+  }, []);
 
   // Complete breathing session
   const completeBreathingSession = useCallback(async (mode, cyclesCompleted, durationSeconds) => {
@@ -168,12 +185,18 @@ export function GamificationProvider({ children }) {
       });
       setTimeout(() => setScoreToast(null), 3000);
 
+      // Show achievement toast if earned
+      if (data.new_achievements && data.new_achievements.length > 0) {
+        // Show first achievement (could queue multiple)
+        setTimeout(() => showAchievementToast(data.new_achievements[0]), 3500);
+      }
+
       return data;
     } catch (err) {
       console.error("Failed to log breathing session:", err);
       throw err;
     }
-  }, [token, fetchHealthScore]);
+  }, [token, fetchHealthScore, showAchievementToast]);
 
   // Fetch breathing history
   const fetchBreathingHistory = useCallback(async (limit = 20) => {
@@ -211,6 +234,14 @@ export function GamificationProvider({ children }) {
         type: "mood"
       });
       setTimeout(() => setScoreToast(null), 3000);
+
+      // Show achievement toast if earned
+      if (data.new_achievements && data.new_achievements.length > 0) {
+        setTimeout(() => {
+          setAchievementToast(data.new_achievements[0]);
+          setTimeout(() => setAchievementToast(null), 5000);
+        }, 3500);
+      }
 
       return data;
     } catch (err) {
@@ -266,6 +297,14 @@ export function GamificationProvider({ children }) {
           type: "checkin"
         });
         setTimeout(() => setScoreToast(null), 3000);
+
+        // Show achievement toast if earned
+        if (data.new_achievements && data.new_achievements.length > 0) {
+          setTimeout(() => {
+            setAchievementToast(data.new_achievements[0]);
+            setTimeout(() => setAchievementToast(null), 5000);
+          }, 3500);
+        }
       }
 
       return data;
@@ -326,6 +365,7 @@ export function GamificationProvider({ children }) {
       loading,
       error,
       scoreToast,
+      achievementToast,
 
       // Actions
       fetchHealthScore,

@@ -23,6 +23,7 @@ from app.models.gamification import (
     UserDailyChallenge,
 )
 from app.routes.auth import get_current_user
+from app.services.achievement_checker import check_and_award_achievements
 
 router = APIRouter(prefix="/gamification", tags=["gamification"])
 
@@ -151,6 +152,16 @@ class AchievementsListResponse(BaseModel):
     achievements: List[AchievementResponse]
     total_earned: int
     total_available: int
+
+
+class NewlyEarnedAchievement(BaseModel):
+    id: int
+    code: str
+    name: str
+    description: str
+    icon: str
+    xp_reward: int
+    rarity: str
 
 
 # ========================================
@@ -460,7 +471,16 @@ def create_journal_entry(
     db.commit()
     db.refresh(new_entry)
 
-    return new_entry
+    # Check for newly earned achievements
+    new_achievements = check_and_award_achievements(db, current_user.id)
+
+    return {
+        "id": new_entry.id,
+        "content": new_entry.content,
+        "prompt": new_entry.prompt,
+        "created_at": new_entry.created_at,
+        "new_achievements": new_achievements
+    }
 
 
 @router.delete("/journal/{entry_id}")
@@ -529,17 +549,18 @@ def complete_breathing_session(
     db.commit()
     db.refresh(breathing_session)
 
-    # Add score earned to response
-    response = BreathingSessionResponse(
-        id=breathing_session.id,
-        mode=breathing_session.mode,
-        cycles_completed=breathing_session.cycles_completed,
-        duration_seconds=breathing_session.duration_seconds,
-        created_at=breathing_session.created_at,
-        score_earned=score_change + bonus
-    )
+    # Check for newly earned achievements
+    new_achievements = check_and_award_achievements(db, current_user.id)
 
-    return response
+    return {
+        "id": breathing_session.id,
+        "mode": breathing_session.mode,
+        "cycles_completed": breathing_session.cycles_completed,
+        "duration_seconds": breathing_session.duration_seconds,
+        "created_at": breathing_session.created_at,
+        "score_earned": score_change + bonus,
+        "new_achievements": new_achievements
+    }
 
 
 @router.get("/breathing/history")
@@ -616,7 +637,18 @@ def create_mood_checkin(
     db.commit()
     db.refresh(new_checkin)
 
-    return new_checkin
+    # Check for newly earned achievements
+    new_achievements = check_and_award_achievements(db, current_user.id)
+
+    return {
+        "id": new_checkin.id,
+        "mood": new_checkin.mood,
+        "energy_level": new_checkin.energy_level,
+        "note": new_checkin.note,
+        "context": new_checkin.context,
+        "created_at": new_checkin.created_at,
+        "new_achievements": new_achievements
+    }
 
 
 @router.get("/mood/history")
@@ -698,12 +730,16 @@ def perform_daily_checkin(
     db.commit()
     db.refresh(progress)
 
+    # Check for newly earned achievements
+    new_achievements = check_and_award_achievements(db, current_user.id)
+
     return {
         "message": "Check-in complete!",
         "already_checked_in": False,
         "score_earned": score_change + bonus,
         "health_score": progress.health_score,
-        "current_streak": progress.current_streak
+        "current_streak": progress.current_streak,
+        "new_achievements": new_achievements
     }
 
 
