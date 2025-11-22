@@ -132,11 +132,11 @@ def check_count_criteria(
 
     elif target == "coaching_complete":
         # Count completed coaching sessions
-        from app.models.room import Room, RoomParticipant
+        from app.models.room import Room, room_participants
         count = db.query(func.count(Room.id)).join(
-            RoomParticipant
+            room_participants, Room.id == room_participants.c.room_id
         ).filter(
-            RoomParticipant.user_id == user_id,
+            room_participants.c.user_id == user_id,
             Room.phase.in_(["user2_lobby", "user2_coaching", "main_room", "resolved"])
         ).scalar() or 0
         return count >= value
@@ -147,11 +147,11 @@ def check_count_criteria(
 
     elif target == "resolutions":
         # Count resolved mediations
-        from app.models.room import Room, RoomParticipant
+        from app.models.room import Room, room_participants
         count = db.query(func.count(Room.id)).join(
-            RoomParticipant
+            room_participants, Room.id == room_participants.c.room_id
         ).filter(
-            RoomParticipant.user_id == user_id,
+            room_participants.c.user_id == user_id,
             Room.phase == "resolved"
         ).scalar() or 0
         return count >= value
@@ -257,11 +257,11 @@ def check_special_criteria(
 
     elif target == "fast_resolution":
         # Check if any mediation was resolved in under X minutes
-        from app.models.room import Room, RoomParticipant
+        from app.models.room import Room, room_participants
         rooms = db.query(Room).join(
-            RoomParticipant
+            room_participants, Room.id == room_participants.c.room_id
         ).filter(
-            RoomParticipant.user_id == user_id,
+            room_participants.c.user_id == user_id,
             Room.phase == "resolved"
         ).all()
 
