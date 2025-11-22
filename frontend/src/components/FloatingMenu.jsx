@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import SimpleBreathing from "./SimpleBreathing";
+import BreathingExercise from "./BreathingExercise";
 import { GoogleLogin } from '@react-oauth/google';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 import TelegramQRLoginModal from './TelegramQRLoginModal';
@@ -442,39 +442,35 @@ export default function FloatingMenu({
                 </>
               )}
 
-              {onToggleBreathing && (
-                <>
-                  <button
-                    onClick={() => setShowBreathingSection(!showBreathingSection)}
-                    style={{
-                      width: "100%",
-                      padding: "14px 20px",
-                      textAlign: "left",
-                      background: showBreathingSection ? "#f9fafb" : "none",
-                      border: "none",
-                      fontSize: "16px",
-                      color: "#374151",
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                      fontWeight: showBreathingSection ? "600" : "400"
-                    }}
-                    onMouseEnter={(e) => !showBreathingSection && (e.currentTarget.style.background = "#f9fafb")}
-                    onMouseLeave={(e) => !showBreathingSection && (e.currentTarget.style.background = "none")}
-                  >
-                    🫧 Take a Breath
-                  </button>
+              {/* Always show breathing option */}
+              <button
+                onClick={() => setShowBreathingSection(!showBreathingSection)}
+                style={{
+                  width: "100%",
+                  padding: "14px 20px",
+                  textAlign: "left",
+                  background: showBreathingSection ? "#f9fafb" : "none",
+                  border: "none",
+                  fontSize: "16px",
+                  color: "#374151",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                  fontWeight: showBreathingSection ? "600" : "400"
+                }}
+                onMouseEnter={(e) => !showBreathingSection && (e.currentTarget.style.background = "#f9fafb")}
+                onMouseLeave={(e) => !showBreathingSection && (e.currentTarget.style.background = "none")}
+              >
+                🫧 Take a Breath (+5)
+              </button>
 
-                  {showBreathingSection && (
-                    <div style={{
-                      padding: "16px 20px",
-                      background: "#f0f9ff",
-                      borderTop: "1px solid #bae6fd",
-                      borderBottom: "1px solid #bae6fd"
-                    }}>
-                      <SimpleBreathing startCountdown={true} />
-                    </div>
-                  )}
-                </>
+              {showBreathingSection && (
+                <div style={{
+                  padding: "0",
+                  borderTop: "1px solid #bae6fd",
+                  borderBottom: "1px solid #bae6fd"
+                }}>
+                  <BreathingExercise inline={true} />
+                </div>
               )}
 
               {/* Divider if room options exist */}
