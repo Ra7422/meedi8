@@ -3359,8 +3359,8 @@ def get_report_status(
     if room.phase != 'resolved':
         raise HTTPException(status_code=400, detail="Report only available for resolved rooms")
 
-    # Report price ($9.99)
-    report_price = 9.99
+    # Report price ($4.99)
+    report_price = 4.99
 
     # Check if PRO subscriber
     subscription = get_or_create_subscription(db, current_user.id)
@@ -3398,7 +3398,7 @@ def create_report_checkout(
 ):
     """
     Create Stripe checkout session for comprehensive report purchase.
-    One-time payment of $9.99.
+    One-time payment of $4.99.
     """
     import stripe
     from app.config import settings
@@ -3458,7 +3458,7 @@ def create_report_checkout(
         return ReportCheckoutResponse(
             client_secret=checkout_session.client_secret,
             session_id=checkout_session.id,
-            price=9.99
+            price=4.99
         )
 
     except Exception as e:
