@@ -8,7 +8,7 @@ import { HealthScore, StreakCounter } from '../components/gamification';
 export default function Profile() {
   const { user, token, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const { healthScore } = useGamification();
+  const { healthScore, achievements, achievementStats, fetchAchievements } = useGamification();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -136,6 +136,15 @@ export default function Profile() {
         setHealthProfile(healthData);
       } catch (err) {
         console.log('⚠️ No health profile found:', err.message);
+      }
+
+      // Fetch achievements
+      try {
+        console.log('🏆 Fetching achievements...');
+        await fetchAchievements();
+        console.log('🏆 Achievements fetched');
+      } catch (err) {
+        console.log('⚠️ Failed to fetch achievements:', err.message);
       }
     } catch (error) {
       console.error('❌ Error fetching user data:', error);
@@ -912,10 +921,75 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Placeholder for future badges */}
-            <div style={{ marginTop: '20px', padding: '16px', background: '#faf5ff', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', color: '#7c3aed', fontWeight: '500' }}>🏆 Badges Coming Soon</div>
-              <div style={{ fontSize: '12px', color: '#a78bfa', marginTop: '4px' }}>Complete activities to earn achievements</div>
+            {/* Achievements Grid */}
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#6750A4' }}>
+                  Achievements
+                </span>
+                <span style={{ fontSize: '12px', color: '#888' }}>
+                  {achievementStats.earned}/{achievementStats.total} earned
+                </span>
+              </div>
+
+              {achievements.length > 0 ? (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
+                  gap: '8px'
+                }}>
+                  {achievements.slice(0, 12).map((achievement) => (
+                    <div
+                      key={achievement.id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '8px 4px',
+                        borderRadius: '8px',
+                        background: achievement.earned ? '#f0fdf4' : '#f8fafc',
+                        border: achievement.earned
+                          ? '1px solid #86efac'
+                          : '1px solid #e2e8f0',
+                        opacity: achievement.earned ? 1 : 0.5,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      title={`${achievement.name}\n${achievement.description}${achievement.earned ? '\n✓ Earned!' : ''}`}
+                    >
+                      <span style={{ fontSize: '20px' }}>{achievement.icon}</span>
+                      <span style={{
+                        fontSize: '9px',
+                        color: achievement.earned ? '#166534' : '#64748b',
+                        marginTop: '4px',
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        width: '100%'
+                      }}>
+                        {achievement.name.length > 10 ? achievement.name.slice(0, 8) + '...' : achievement.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '16px', background: '#faf5ff', borderRadius: '8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', color: '#7c3aed', fontWeight: '500' }}>🏆 Loading achievements...</div>
+                </div>
+              )}
+
+              {achievements.length > 12 && (
+                <div style={{
+                  marginTop: '8px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: '#6366f1',
+                  cursor: 'pointer'
+                }}>
+                  +{achievements.length - 12} more badges
+                </div>
+              )}
             </div>
           </div>
 

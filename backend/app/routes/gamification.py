@@ -130,6 +130,29 @@ class StreakResponse(BaseModel):
     can_protect: bool
 
 
+class AchievementResponse(BaseModel):
+    id: int
+    code: str
+    name: str
+    description: str
+    icon: str
+    category: str
+    xp_reward: int
+    rarity: str
+    is_hidden: bool
+    earned: bool = False
+    earned_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AchievementsListResponse(BaseModel):
+    achievements: List[AchievementResponse]
+    total_earned: int
+    total_available: int
+
+
 # ========================================
 # SCORING CONSTANTS
 # ========================================
@@ -682,3 +705,65 @@ def perform_daily_checkin(
         "health_score": progress.health_score,
         "current_streak": progress.current_streak
     }
+
+
+# ========================================
+# ACHIEVEMENTS ENDPOINTS
+# ========================================
+
+@router.get("/achievements", response_model=AchievementsListResponse)
+def get_achievements(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all achievements with user's progress."""
+    # Get all achievements
+    all_achievements = db.query(Achievement).filter(
+        Achievement.is_active == True
+    ).order_by(
+        Achievement.category,
+        Achievement.sort_order
+    ).all()
+
+    # Get user's earned achievements
+    user_achievements = db.query(UserAchievement).filter(
+        UserAchievement.user_id == current_user.id
+    ).all()
+
+    # Create lookup dict for earned achievements
+    earned_lookup = {ua.achievement_id: ua for ua in user_achievements}
+
+    # Build response
+    achievements = []
+    total_earned = 0
+
+    for achievement in all_achievements:
+        user_ach = earned_lookup.get(achievement.id)
+        is_earned = user_ach is not None
+
+        if is_earned:
+            total_earned += 1
+
+        # Don't show hidden achievements that haven't been earned
+        if achievement.is_hidden and not is_earned:
+            continue
+
+        achievements.append(AchievementResponse(
+            id=achievement.id,
+            code=achievement.code,
+            name=achievement.name,
+            description=achievement.description,
+            icon=achievement.icon,
+            category=achievement.category,
+            xp_reward=achievement.xp_reward,
+            rarity=achievement.rarity,
+            is_hidden=achievement.is_hidden,
+            earned=is_earned,
+            earned_at=user_ach.earned_at if user_ach else None
+        ))
+
+    return AchievementsListResponse(
+        achievements=achievements,
+        total_earned=total_earned,
+        total_available=len(all_achievements)
+    )

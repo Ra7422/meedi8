@@ -26,6 +26,10 @@ export function GamificationProvider({ children }) {
   // Mood state
   const [moodHistory, setMoodHistory] = useState([]);
 
+  // Achievements state
+  const [achievements, setAchievements] = useState([]);
+  const [achievementStats, setAchievementStats] = useState({ earned: 0, total: 0 });
+
   // Toast notifications for score changes
   const [scoreToast, setScoreToast] = useState(null);
 
@@ -229,6 +233,21 @@ export function GamificationProvider({ children }) {
     }
   }, [token]);
 
+  // Fetch achievements
+  const fetchAchievements = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await apiRequest("/gamification/achievements", "GET", null, token);
+      setAchievements(data.achievements);
+      setAchievementStats({ earned: data.total_earned, total: data.total_available });
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch achievements:", err);
+      throw err;
+    }
+  }, [token]);
+
   // Perform daily check-in
   const performDailyCheckin = useCallback(async () => {
     if (!token) return;
@@ -269,6 +288,8 @@ export function GamificationProvider({ children }) {
       setJournalEntries([]);
       setBreathingHistory([]);
       setMoodHistory([]);
+      setAchievements([]);
+      setAchievementStats({ earned: 0, total: 0 });
     }
   }, [token, user, fetchHealthScore, fetchStreaks]);
 
@@ -300,6 +321,8 @@ export function GamificationProvider({ children }) {
       journalTotalCount,
       breathingHistory,
       moodHistory,
+      achievements,
+      achievementStats,
       loading,
       error,
       scoreToast,
@@ -316,6 +339,7 @@ export function GamificationProvider({ children }) {
       fetchBreathingHistory,
       createMoodCheckin,
       fetchMoodHistory,
+      fetchAchievements,
       performDailyCheckin,
 
       // Helpers
