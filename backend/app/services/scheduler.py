@@ -7,9 +7,38 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from ..database import SessionLocal
+from ..db import SessionLocal
 from ..models.gamification import UserProgress, ScoreEvent
-from .gamification_helpers import get_or_create_progress, update_score
+
+# Import helper functions from gamification routes
+def get_or_create_progress(db: Session, user_id: int) -> UserProgress:
+    """Get existing progress or create new one for user."""
+    progress = db.query(UserProgress).filter(UserProgress.user_id == user_id).first()
+    if not progress:
+        progress = UserProgress(user_id=user_id)
+        db.add(progress)
+        db.commit()
+        db.refresh(progress)
+    return progress
+
+def update_score(db: Session, progress: UserProgress, event_type: str, score_change: int, description: str = "", metadata: dict = None):
+    """Update user's score and log the event."""
+    old_score = progress.current_score
+    new_score = max(0, min(100, old_score + score_change))
+    progress.current_score = new_score
+
+    # Create score event
+    event = ScoreEvent(
+        user_id=progress.user_id,
+        event_type=event_type,
+        score_change=score_change,
+        score_before=old_score,
+        score_after=new_score,
+        description=description,
+        metadata=metadata or {}
+    )
+    db.add(event)
+    db.commit()
 
 # Score penalties for inactivity
 INACTIVITY_PENALTIES = {
