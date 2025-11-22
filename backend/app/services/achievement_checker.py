@@ -113,20 +113,20 @@ def check_count_criteria(
     """Check count-based achievements."""
 
     if target == "messages":
-        # Count total messages sent by user
+        # Count total messages sent by user (user_response kind)
         from app.models.room import Turn
         count = db.query(func.count(Turn.id)).filter(
             Turn.user_id == user_id,
-            Turn.role == "user"
+            Turn.kind == "user_response"
         ).scalar() or 0
         return count >= value
 
     elif target == "voice_messages":
-        # Count voice messages
+        # Count voice messages (those with audio_url set)
         from app.models.room import Turn
         count = db.query(func.count(Turn.id)).filter(
             Turn.user_id == user_id,
-            Turn.is_voice == True
+            Turn.audio_url.isnot(None)
         ).scalar() or 0
         return count >= value
 
