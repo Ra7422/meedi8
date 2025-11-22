@@ -260,11 +260,13 @@ export default function Profile() {
 
   function getTierDisplay(tier) {
     const tiers = {
-      FREE: { label: 'Free', color: '#7DD3C0', bg: '#E8F9F5' },
-      PLUS: { label: 'Plus', color: '#D3C1FF', bg: '#F5EFFF' },
-      PRO: { label: 'Pro', color: '#6750A4', bg: '#EDE7F6' },
+      free: { label: 'Free', color: '#7DD3C0', bg: '#E8F9F5' },
+      plus: { label: 'Plus', color: '#D3C1FF', bg: '#F5EFFF' },
+      pro: { label: 'Pro', color: '#6750A4', bg: '#EDE7F6' },
     };
-    return tiers[tier] || tiers.FREE;
+    // Handle both lowercase (from API) and uppercase (legacy) tier values
+    const normalizedTier = tier?.toLowerCase() || 'free';
+    return tiers[normalizedTier] || tiers.free;
   }
 
   const styles = {
@@ -410,15 +412,18 @@ export default function Profile() {
       color: '#D3C1FF',
       border: '2px solid #D3C1FF',
     },
-    tierBadge: (tier) => ({
-      display: 'inline-block',
-      padding: '8px 16px',
-      borderRadius: '20px',
-      fontWeight: '700',
-      fontSize: '14px',
-      backgroundColor: getTierDisplay(tier).bg,
-      color: getTierDisplay(tier).color,
-    }),
+    tierBadge: (tier) => {
+      const tierInfo = getTierDisplay(tier);
+      return {
+        display: 'inline-block',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        fontWeight: '700',
+        fontSize: '14px',
+        backgroundColor: tierInfo.bg,
+        color: tierInfo.color,
+      };
+    },
     sessionsList: {
       display: 'flex',
       flexDirection: 'column',
