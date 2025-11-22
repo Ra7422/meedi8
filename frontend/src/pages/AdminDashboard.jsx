@@ -2994,7 +2994,7 @@ export default function AdminDashboard() {
                             {a.user_name || a.user_email} earned <strong>{a.achievement_name}</strong>
                           </div>
                           <div style={{ fontSize: "12px", color: "#6B7280" }}>
-                            +{a.xp_reward} XP • {a.rarity} • {new Date(a.earned_at).toLocaleString()}
+                            +{a.xp_reward} XP • {a.rarity} • {new Date(a.unlocked_at).toLocaleString()}
                           </div>
                         </div>
                       </div>

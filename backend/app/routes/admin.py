@@ -2388,9 +2388,9 @@ def get_recent_achievements(
     ).join(
         User, UserAchievement.user_id == User.id
     ).filter(
-        UserAchievement.earned_at >= cutoff_date
+        UserAchievement.unlocked_at >= cutoff_date
     ).order_by(
-        UserAchievement.earned_at.desc()
+        UserAchievement.unlocked_at.desc()
     ).limit(limit).all()
 
     results = []
@@ -2405,7 +2405,7 @@ def get_recent_achievements(
             "achievement_icon": achievement.icon,
             "xp_reward": achievement.xp_reward,
             "rarity": achievement.rarity,
-            "earned_at": ua.earned_at.isoformat() if ua.earned_at else None
+            "unlocked_at": ua.unlocked_at.isoformat() if ua.unlocked_at else None
         })
 
     return {
@@ -2426,10 +2426,8 @@ def get_achievement_stats(
 
     from ..models.gamification import UserAchievement, Achievement
 
-    # Total achievements
-    total_achievements = db.query(func.count(Achievement.id)).filter(
-        Achievement.is_active == True
-    ).scalar() or 0
+    # Total achievements (all defined achievements)
+    total_achievements = db.query(func.count(Achievement.id)).scalar() or 0
 
     # Total earned (all time)
     total_earned = db.query(func.count(UserAchievement.id)).scalar() or 0
@@ -2437,13 +2435,13 @@ def get_achievement_stats(
     # Earned today
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     earned_today = db.query(func.count(UserAchievement.id)).filter(
-        UserAchievement.earned_at >= today_start
+        UserAchievement.unlocked_at >= today_start
     ).scalar() or 0
 
     # Earned this week
     week_start = datetime.utcnow() - timedelta(days=7)
     earned_week = db.query(func.count(UserAchievement.id)).filter(
-        UserAchievement.earned_at >= week_start
+        UserAchievement.unlocked_at >= week_start
     ).scalar() or 0
 
     # Most earned achievements
