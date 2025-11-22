@@ -36,6 +36,9 @@ export function GamificationProvider({ children }) {
   // Achievement toast
   const [achievementToast, setAchievementToast] = useState(null);
 
+  // Streak celebration modal
+  const [streakCelebration, setStreakCelebration] = useState(null);
+
   // Challenges state
   const [challenges, setChallenges] = useState([]);
   const [challengeStats, setChallengeStats] = useState({ completed: 0, total: 0 });
@@ -114,15 +117,46 @@ export function GamificationProvider({ children }) {
     }
   }, [token]);
 
+  // Helper to show streak celebration
+  const showStreakCelebration = useCallback((milestone) => {
+    setStreakCelebration({ milestone });
+  }, []);
+
+  // Helper to dismiss streak celebration
+  const dismissStreakCelebration = useCallback(() => {
+    setStreakCelebration(null);
+  }, []);
+
+  // Check if a streak milestone was reached
+  const checkStreakMilestone = useCallback((oldStreak, newStreak) => {
+    const milestones = [7, 14, 30, 60, 90];
+    for (const milestone of milestones) {
+      if (oldStreak < milestone && newStreak >= milestone) {
+        showStreakCelebration(milestone);
+        return milestone;
+      }
+    }
+    return null;
+  }, [showStreakCelebration]);
+
   // Create journal entry
   const createJournalEntry = useCallback(async (content, prompt = null) => {
     if (!token) return;
 
     try {
+      // Get old streak before action
+      const oldStreak = streakData?.current_streak || 0;
+
       const data = await apiRequest("/gamification/journal", "POST", { content, prompt }, token);
       // Refresh journal and health score
       await fetchJournal();
       await fetchHealthScore();
+      const newStreakData = await fetchStreaks();
+
+      // Check for streak milestone
+      if (newStreakData) {
+        checkStreakMilestone(oldStreak, newStreakData.current_streak);
+      }
 
       // Show score toast
       setScoreToast({
@@ -145,7 +179,7 @@ export function GamificationProvider({ children }) {
       console.error("Failed to create journal entry:", err);
       throw err;
     }
-  }, [token, fetchJournal, fetchHealthScore]);
+  }, [token, fetchJournal, fetchHealthScore, fetchStreaks, checkStreakMilestone, streakData]);
 
   // Delete journal entry
   const deleteJournalEntry = useCallback(async (entryId) => {
@@ -172,14 +206,23 @@ export function GamificationProvider({ children }) {
     if (!token) return;
 
     try {
+      // Get old streak before action
+      const oldStreak = streakData?.current_streak || 0;
+
       const data = await apiRequest("/gamification/breathing/complete", "POST", {
         mode,
         cycles_completed: cyclesCompleted,
         duration_seconds: durationSeconds
       }, token);
 
-      // Refresh health score
+      // Refresh health score and streaks
       await fetchHealthScore();
+      const newStreakData = await fetchStreaks();
+
+      // Check for streak milestone
+      if (newStreakData) {
+        checkStreakMilestone(oldStreak, newStreakData.current_streak);
+      }
 
       // Show score toast
       setScoreToast({
@@ -200,7 +243,7 @@ export function GamificationProvider({ children }) {
       console.error("Failed to log breathing session:", err);
       throw err;
     }
-  }, [token, fetchHealthScore, showAchievementToast]);
+  }, [token, fetchHealthScore, fetchStreaks, showAchievementToast, checkStreakMilestone, streakData]);
 
   // Fetch breathing history
   const fetchBreathingHistory = useCallback(async (limit = 20) => {
@@ -288,11 +331,20 @@ export function GamificationProvider({ children }) {
     if (!token) return;
 
     try {
+      // Get old streak before action
+      const oldStreak = streakData?.current_streak || 0;
+
       const data = await apiRequest("/gamification/daily-checkin", "POST", null, token);
 
       if (!data.already_checked_in) {
-        // Refresh health score
+        // Refresh health score and streaks
         await fetchHealthScore();
+        const newStreakData = await fetchStreaks();
+
+        // Check for streak milestone
+        if (newStreakData) {
+          checkStreakMilestone(oldStreak, newStreakData.current_streak);
+        }
 
         // Show score toast
         setScoreToast({
@@ -316,7 +368,7 @@ export function GamificationProvider({ children }) {
       console.error("Failed to perform daily check-in:", err);
       throw err;
     }
-  }, [token, fetchHealthScore]);
+  }, [token, fetchHealthScore, fetchStreaks, checkStreakMilestone, streakData]);
 
   // Fetch daily challenges
   const fetchChallenges = useCallback(async () => {
@@ -424,6 +476,7 @@ export function GamificationProvider({ children }) {
       error,
       scoreToast,
       achievementToast,
+      streakCelebration,
 
       // Actions
       fetchHealthScore,
@@ -441,6 +494,9 @@ export function GamificationProvider({ children }) {
       performDailyCheckin,
       fetchChallenges,
       claimChallengeReward,
+      dismissStreakCelebration,
+      checkStreakMilestone,
+      showStreakCelebration, // For testing
 
       // Helpers
       getTierColor,

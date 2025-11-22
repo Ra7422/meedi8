@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { GamificationProvider } from "./context/GamificationContext";
-import { ScoreEventToast, AchievementToast } from "./components/gamification";
+import { ScoreEventToast, AchievementToast, StreakCelebrationModal } from "./components/gamification";
 import FloatingMenu from "./components/FloatingMenu";
 import Login from "./pages/LoginNew";
 import Signup from "./pages/Signup";
@@ -79,6 +79,7 @@ export default function App() {
       <GamificationProvider>
         <ScoreEventToast />
         <AchievementToast />
+        <StreakCelebrationModal />
         <Router>
           <GlobalMenu />
           <ScreeningGuard>
