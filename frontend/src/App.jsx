@@ -80,8 +80,8 @@ export default function App() {
         <ScoreEventToast />
         <AchievementToast />
         <StreakCelebrationModal />
-        <MilestoneOfferModal />
         <Router>
+          <MilestoneOfferModal />
           <GlobalMenu />
           <ScreeningGuard>
           <Routes>
