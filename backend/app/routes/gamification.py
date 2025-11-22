@@ -259,6 +259,50 @@ def update_score(
     return event
 
 
+def update_challenge_progress_internal(db: Session, user_id: int, action: str) -> list:
+    """Internal function to update challenge progress. Returns list of updated challenges."""
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_start = today_start + timedelta(days=1)
+
+    # Get today's incomplete challenges
+    user_challenges = db.query(UserDailyChallenge).filter(
+        UserDailyChallenge.user_id == user_id,
+        UserDailyChallenge.assigned_at >= today_start,
+        UserDailyChallenge.expires_at <= tomorrow_start + timedelta(hours=6),
+        UserDailyChallenge.completed_at == None
+    ).all()
+
+    updated = []
+
+    for uc in user_challenges:
+        challenge = db.query(DailyChallenge).filter(
+            DailyChallenge.id == uc.challenge_id
+        ).first()
+
+        if not challenge:
+            continue
+
+        if challenge.requirements.get("action") == action:
+            target = challenge.requirements.get("count", 1)
+            uc.progress += 1
+
+            if uc.progress >= target:
+                uc.completed_at = now
+
+            updated.append({
+                "challenge_id": challenge.id,
+                "code": challenge.code,
+                "title": challenge.title,
+                "progress": uc.progress,
+                "target": target,
+                "completed": uc.completed_at is not None,
+                "score_reward": challenge.score_reward
+            })
+
+    return updated
+
+
 def extend_streak(db: Session, progress: UserProgress) -> int:
     """Extend user's streak if eligible. Returns bonus score earned."""
     now = datetime.now(timezone.utc)
@@ -476,12 +520,16 @@ def create_journal_entry(
     # Check for newly earned achievements
     new_achievements = check_and_award_achievements(db, current_user.id)
 
+    # Update challenge progress
+    updated_challenges = update_challenge_progress_internal(db, current_user.id, "gratitude")
+
     return {
         "id": new_entry.id,
         "content": new_entry.content,
         "prompt": new_entry.prompt,
         "created_at": new_entry.created_at,
-        "new_achievements": new_achievements
+        "new_achievements": new_achievements,
+        "updated_challenges": updated_challenges
     }
 
 
@@ -517,6 +565,15 @@ def complete_breathing_session(
     current_user: User = Depends(get_current_user)
 ):
     """Log a completed breathing exercise session."""
+    # Minimum 55 seconds (60 with grace period) required to earn points
+    MIN_DURATION = 55
+
+    if session.duration_seconds < MIN_DURATION:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Minimum duration is 60 seconds. You completed {session.duration_seconds} seconds."
+        )
+
     progress = get_or_create_progress(db, current_user.id)
 
     # Create session record
@@ -532,12 +589,18 @@ def complete_breathing_session(
     progress.total_breathing_sessions += 1
     progress.total_breathing_minutes += session.duration_seconds // 60
 
-    # Award score
-    score_change = SCORE_VALUES["breathing_exercise"]
+    # Tiered reward: 5 pts at 60s, 8 pts at 120s, 10 pts at 180s
+    if session.duration_seconds >= 180:
+        score_change = 10
+    elif session.duration_seconds >= 120:
+        score_change = 8
+    else:
+        score_change = SCORE_VALUES["breathing_exercise"]  # 5
+
     update_score(
         db, progress, "breathing_exercise", score_change,
-        description=f"Completed {session.mode} breathing ({session.cycles_completed} cycles)",
-        metadata={"mode": session.mode, "cycles": session.cycles_completed}
+        description=f"Completed {session.mode} breathing ({session.cycles_completed} cycles, {session.duration_seconds}s)",
+        metadata={"mode": session.mode, "cycles": session.cycles_completed, "duration": session.duration_seconds}
     )
 
     # Extend streak
@@ -554,6 +617,9 @@ def complete_breathing_session(
     # Check for newly earned achievements
     new_achievements = check_and_award_achievements(db, current_user.id)
 
+    # Update challenge progress
+    updated_challenges = update_challenge_progress_internal(db, current_user.id, "breathing")
+
     return {
         "id": breathing_session.id,
         "mode": breathing_session.mode,
@@ -561,7 +627,8 @@ def complete_breathing_session(
         "duration_seconds": breathing_session.duration_seconds,
         "created_at": breathing_session.created_at,
         "score_earned": score_change + bonus,
-        "new_achievements": new_achievements
+        "new_achievements": new_achievements,
+        "updated_challenges": updated_challenges
     }
 
 
@@ -642,6 +709,9 @@ def create_mood_checkin(
     # Check for newly earned achievements
     new_achievements = check_and_award_achievements(db, current_user.id)
 
+    # Update challenge progress
+    updated_challenges = update_challenge_progress_internal(db, current_user.id, "mood")
+
     return {
         "id": new_checkin.id,
         "mood": new_checkin.mood,
@@ -649,7 +719,8 @@ def create_mood_checkin(
         "note": new_checkin.note,
         "context": new_checkin.context,
         "created_at": new_checkin.created_at,
-        "new_achievements": new_achievements
+        "new_achievements": new_achievements,
+        "updated_challenges": updated_challenges
     }
 
 
@@ -891,4 +962,288 @@ def seed_achievements_endpoint(
     return {
         "message": f"Seeded achievements: {created} created, {updated} updated",
         "total": len(ACHIEVEMENTS)
+    }
+
+
+# ========================================
+# DAILY CHALLENGES ENDPOINTS
+# ========================================
+
+class ChallengeResponse(BaseModel):
+    id: int
+    challenge_id: int
+    code: str
+    title: str
+    description: str
+    requirements: dict
+    score_reward: int
+    progress: int
+    target: int
+    completed: bool
+    claimed: bool
+    expires_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChallengesListResponse(BaseModel):
+    challenges: List[ChallengeResponse]
+    completed_today: int
+    total_today: int
+
+
+@router.get("/challenges", response_model=ChallengesListResponse)
+def get_daily_challenges(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's daily challenges. Assigns new ones if needed."""
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_start = today_start + timedelta(days=1)
+
+    # Get today's assigned challenges
+    user_challenges = db.query(UserDailyChallenge).filter(
+        UserDailyChallenge.user_id == current_user.id,
+        UserDailyChallenge.assigned_at >= today_start,
+        UserDailyChallenge.expires_at <= tomorrow_start + timedelta(hours=6)  # Buffer for timezone
+    ).all()
+
+    # If no challenges today, assign new ones
+    if not user_challenges:
+        user_challenges = assign_daily_challenges(db, current_user.id)
+
+    # Build response
+    challenges = []
+    completed_count = 0
+
+    for uc in user_challenges:
+        challenge = db.query(DailyChallenge).filter(
+            DailyChallenge.id == uc.challenge_id
+        ).first()
+
+        if not challenge:
+            continue
+
+        # Get target value from requirements
+        target = challenge.requirements.get("count", 1)
+        is_completed = uc.completed_at is not None
+
+        if is_completed:
+            completed_count += 1
+
+        challenges.append(ChallengeResponse(
+            id=uc.id,
+            challenge_id=challenge.id,
+            code=challenge.code,
+            title=challenge.title,
+            description=challenge.description,
+            requirements=challenge.requirements,
+            score_reward=challenge.score_reward,
+            progress=uc.progress,
+            target=target,
+            completed=is_completed,
+            claimed=uc.claimed_at is not None,
+            expires_at=uc.expires_at
+        ))
+
+    return ChallengesListResponse(
+        challenges=challenges,
+        completed_today=completed_count,
+        total_today=len(challenges)
+    )
+
+
+def assign_daily_challenges(db: Session, user_id: int) -> List[UserDailyChallenge]:
+    """Assign 3 random challenges to user for today."""
+    import random
+
+    now = datetime.now(timezone.utc)
+    tomorrow = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+
+    # Get all active challenges
+    all_challenges = db.query(DailyChallenge).filter(
+        DailyChallenge.is_active == True
+    ).all()
+
+    if not all_challenges:
+        return []
+
+    # Select 3 random challenges (or fewer if not enough available)
+    num_to_assign = min(3, len(all_challenges))
+    selected = random.sample(all_challenges, num_to_assign)
+
+    # Create user challenge assignments
+    user_challenges = []
+    for challenge in selected:
+        uc = UserDailyChallenge(
+            user_id=user_id,
+            challenge_id=challenge.id,
+            assigned_at=now,
+            expires_at=tomorrow,
+            progress=0
+        )
+        db.add(uc)
+        user_challenges.append(uc)
+
+    db.commit()
+
+    # Refresh to get IDs
+    for uc in user_challenges:
+        db.refresh(uc)
+
+    return user_challenges
+
+
+@router.post("/challenges/{user_challenge_id}/claim")
+def claim_challenge_reward(
+    user_challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Claim reward for a completed challenge."""
+    # Get user's challenge
+    user_challenge = db.query(UserDailyChallenge).filter(
+        UserDailyChallenge.id == user_challenge_id,
+        UserDailyChallenge.user_id == current_user.id
+    ).first()
+
+    if not user_challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+
+    if not user_challenge.completed_at:
+        raise HTTPException(status_code=400, detail="Challenge not completed")
+
+    if user_challenge.claimed_at:
+        raise HTTPException(status_code=400, detail="Reward already claimed")
+
+    # Get challenge details
+    challenge = db.query(DailyChallenge).filter(
+        DailyChallenge.id == user_challenge.challenge_id
+    ).first()
+
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge definition not found")
+
+    # Award score
+    progress = get_or_create_progress(db, current_user.id)
+    score_change = challenge.score_reward
+
+    update_score(
+        db, progress, "challenge_complete", score_change,
+        description=f"Completed challenge: {challenge.title}",
+        metadata={"challenge_code": challenge.code}
+    )
+
+    # Mark as claimed
+    user_challenge.claimed_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(progress)
+
+    # Check for achievements
+    new_achievements = check_and_award_achievements(db, current_user.id)
+
+    return {
+        "message": "Reward claimed!",
+        "score_earned": score_change,
+        "health_score": progress.health_score,
+        "new_achievements": new_achievements
+    }
+
+
+@router.post("/challenges/update-progress")
+def update_challenge_progress(
+    action: str = Query(..., description="The action type that was performed"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update progress on challenges based on action type.
+
+    Called automatically when user performs actions like:
+    - breathing: Completed a breathing exercise
+    - gratitude: Wrote a gratitude entry
+    - mood: Logged mood
+    - voice_message: Sent a voice message
+    """
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_start = today_start + timedelta(days=1)
+
+    # Get today's challenges
+    user_challenges = db.query(UserDailyChallenge).filter(
+        UserDailyChallenge.user_id == current_user.id,
+        UserDailyChallenge.assigned_at >= today_start,
+        UserDailyChallenge.expires_at <= tomorrow_start + timedelta(hours=6),
+        UserDailyChallenge.completed_at == None  # Only incomplete challenges
+    ).all()
+
+    updated = []
+
+    for uc in user_challenges:
+        challenge = db.query(DailyChallenge).filter(
+            DailyChallenge.id == uc.challenge_id
+        ).first()
+
+        if not challenge:
+            continue
+
+        # Check if this action matches the challenge requirement
+        if challenge.requirements.get("action") == action:
+            target = challenge.requirements.get("count", 1)
+            uc.progress += 1
+
+            # Check if completed
+            if uc.progress >= target:
+                uc.completed_at = now
+
+            updated.append({
+                "challenge_id": challenge.id,
+                "code": challenge.code,
+                "progress": uc.progress,
+                "target": target,
+                "completed": uc.completed_at is not None
+            })
+
+    db.commit()
+
+    return {
+        "updated_challenges": updated
+    }
+
+
+@router.post("/challenges/seed")
+def seed_challenges_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Seed daily challenges into database. Admin only."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from app.services.seed_challenges import CHALLENGES
+
+    created = 0
+    updated = 0
+
+    for challenge_data in CHALLENGES:
+        existing = db.query(DailyChallenge).filter(
+            DailyChallenge.code == challenge_data["code"]
+        ).first()
+
+        if existing:
+            for key, value in challenge_data.items():
+                setattr(existing, key, value)
+            updated += 1
+        else:
+            challenge = DailyChallenge(**challenge_data)
+            db.add(challenge)
+            created += 1
+
+    db.commit()
+
+    return {
+        "message": f"Seeded challenges: {created} created, {updated} updated",
+        "total": len(CHALLENGES)
     }

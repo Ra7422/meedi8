@@ -36,6 +36,10 @@ export function GamificationProvider({ children }) {
   // Achievement toast
   const [achievementToast, setAchievementToast] = useState(null);
 
+  // Challenges state
+  const [challenges, setChallenges] = useState([]);
+  const [challengeStats, setChallengeStats] = useState({ completed: 0, total: 0 });
+
   // Fetch health score data
   const fetchHealthScore = useCallback(async () => {
     if (!token) return;
@@ -314,11 +318,61 @@ export function GamificationProvider({ children }) {
     }
   }, [token, fetchHealthScore]);
 
+  // Fetch daily challenges
+  const fetchChallenges = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const data = await apiRequest("/gamification/challenges", "GET", null, token);
+      setChallenges(data.challenges);
+      setChallengeStats({ completed: data.completed_today, total: data.total_today });
+      return data;
+    } catch (err) {
+      console.error("Failed to fetch challenges:", err);
+      throw err;
+    }
+  }, [token]);
+
+  // Claim challenge reward
+  const claimChallengeReward = useCallback(async (userChallengeId) => {
+    if (!token) return;
+
+    try {
+      const data = await apiRequest(`/gamification/challenges/${userChallengeId}/claim`, "POST", null, token);
+
+      // Refresh challenges and health score
+      await fetchChallenges();
+      await fetchHealthScore();
+
+      // Show score toast
+      setScoreToast({
+        message: "Challenge reward claimed!",
+        score: `+${data.score_earned}`,
+        type: "challenge"
+      });
+      setTimeout(() => setScoreToast(null), 3000);
+
+      // Show achievement toast if earned
+      if (data.new_achievements && data.new_achievements.length > 0) {
+        setTimeout(() => {
+          setAchievementToast(data.new_achievements[0]);
+          setTimeout(() => setAchievementToast(null), 5000);
+        }, 3500);
+      }
+
+      return data;
+    } catch (err) {
+      console.error("Failed to claim challenge reward:", err);
+      throw err;
+    }
+  }, [token, fetchChallenges, fetchHealthScore]);
+
   // Auto-fetch data when user logs in
   useEffect(() => {
     if (token && user) {
       fetchHealthScore();
       fetchStreaks();
+      fetchChallenges();
     } else {
       // Clear state on logout
       setHealthScore(null);
@@ -329,8 +383,10 @@ export function GamificationProvider({ children }) {
       setMoodHistory([]);
       setAchievements([]);
       setAchievementStats({ earned: 0, total: 0 });
+      setChallenges([]);
+      setChallengeStats({ completed: 0, total: 0 });
     }
-  }, [token, user, fetchHealthScore, fetchStreaks]);
+  }, [token, user, fetchHealthScore, fetchStreaks, fetchChallenges]);
 
   // Helper to get tier color
   const getTierColor = (tier) => {
@@ -362,6 +418,8 @@ export function GamificationProvider({ children }) {
       moodHistory,
       achievements,
       achievementStats,
+      challenges,
+      challengeStats,
       loading,
       error,
       scoreToast,
@@ -381,6 +439,8 @@ export function GamificationProvider({ children }) {
       fetchMoodHistory,
       fetchAchievements,
       performDailyCheckin,
+      fetchChallenges,
+      claimChallengeReward,
 
       // Helpers
       getTierColor,

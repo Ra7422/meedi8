@@ -16,7 +16,7 @@ export default function FloatingMenu({
   const [isOpen, setIsOpen] = useState(false);
   const [showPerspectives, setShowPerspectives] = useState(false);
   const [showLink, setShowLink] = useState(false);
-  const [showBreathingSection, setShowBreathingSection] = useState(false);
+  const [showBreathingModal, setShowBreathingModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
@@ -442,36 +442,29 @@ export default function FloatingMenu({
                 </>
               )}
 
-              {/* Always show breathing option */}
+              {/* Always show breathing option - opens modal */}
               <button
-                onClick={() => setShowBreathingSection(!showBreathingSection)}
+                onClick={() => {
+                  setShowBreathingModal(true);
+                  setIsOpen(false); // Close menu when opening breathing modal
+                }}
                 style={{
                   width: "100%",
                   padding: "14px 20px",
                   textAlign: "left",
-                  background: showBreathingSection ? "#f9fafb" : "none",
+                  background: "none",
                   border: "none",
                   fontSize: "16px",
                   color: "#374151",
                   cursor: "pointer",
                   transition: "background 0.2s",
-                  fontWeight: showBreathingSection ? "600" : "400"
+                  fontWeight: "400"
                 }}
-                onMouseEnter={(e) => !showBreathingSection && (e.currentTarget.style.background = "#f9fafb")}
-                onMouseLeave={(e) => !showBreathingSection && (e.currentTarget.style.background = "none")}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "none"}
               >
                 🫧 Breathe & Earn Rewards
               </button>
-
-              {showBreathingSection && (
-                <div style={{
-                  padding: "0",
-                  borderTop: "1px solid #bae6fd",
-                  borderBottom: "1px solid #bae6fd"
-                }}>
-                  <BreathingExercise inline={true} />
-                </div>
-              )}
 
               {/* Divider if room options exist */}
               {(summaries || inviteLink || onToggleBreathing) && (
@@ -958,6 +951,93 @@ export default function FloatingMenu({
         onClose={() => setShowTelegramModal(false)}
         onLoginSuccess={handleTelegramQRSuccess}
       />
+
+      {/* Breathing Exercise Modal */}
+      {showBreathingModal && (
+        <>
+          {/* Modal Backdrop */}
+          <div
+            onClick={() => setShowBreathingModal(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.85)",
+              zIndex: 2000,
+              animation: "fadeIn 0.3s ease"
+            }}
+          />
+
+          {/* Modal Content */}
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 2001,
+              width: "90%",
+              maxWidth: "480px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              borderRadius: "16px",
+              animation: "breathingModalIn 0.3s ease"
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowBreathingModal(false)}
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: "#e9e7ff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                transition: "background 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"}
+              aria-label="Close breathing exercise"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+
+            <BreathingExercise
+              inline={false}
+              onSessionComplete={() => {
+                // Optionally close modal after completing session
+                // setShowBreathingModal(false);
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      <style>{`
+        @keyframes breathingModalIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+      `}</style>
     </>
   );
 }

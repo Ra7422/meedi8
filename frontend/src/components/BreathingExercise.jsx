@@ -11,6 +11,7 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
   const [mode, setMode] = useState("box");
   const [currentTheme, setCurrentTheme] = useState("");
   const [showAchievement, setShowAchievement] = useState(null);
+  const [error, setError] = useState(null);
 
   const timerRef = useRef(null);
   const timeCounterRef = useRef(null);
@@ -81,6 +82,7 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
   }, [isActive]);
 
   const handleStart = () => {
+    setError(null);
     if (cyclesCompleted === 0) {
       setCyclesCompleted(1);
     }
@@ -97,6 +99,7 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
 
   const handleComplete = async () => {
     handlePause();
+    setError(null);
 
     if (cyclesCompleted > 0 && totalSeconds > 0) {
       try {
@@ -111,16 +114,26 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
         if (onSessionComplete) {
           onSessionComplete({ mode, cycles: cyclesCompleted, duration: totalSeconds });
         }
+
+        // Reset for next session on success
+        setCyclesCompleted(0);
+        setTotalSeconds(0);
+        setStep(0);
+        setCurrentTheme("");
       } catch (err) {
         console.error("Failed to log breathing session:", err);
+        const message = err.response?.data?.detail || "Failed to save session. Please try again.";
+        setError(message);
+        // Don't reset on error - let user retry
+        return;
       }
+    } else {
+      // Reset for next session if nothing to save
+      setCyclesCompleted(0);
+      setTotalSeconds(0);
+      setStep(0);
+      setCurrentTheme("");
     }
-
-    // Reset for next session
-    setCyclesCompleted(0);
-    setTotalSeconds(0);
-    setStep(0);
-    setCurrentTheme("");
   };
 
   const handleModeChange = (e) => {
@@ -135,6 +148,21 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Minimum 60 seconds (with 5s grace = 55s actual) to earn points
+  const MIN_DURATION = 55;
+  const canEarnPoints = totalSeconds >= MIN_DURATION;
+  const secondsUntilReward = Math.max(0, MIN_DURATION - totalSeconds);
+
+  // Tiered rewards: 5 pts at 60s, 8 pts at 120s, 10 pts at 180s
+  const getPointsEarned = (seconds) => {
+    if (seconds < MIN_DURATION) return 0;
+    if (seconds < 120) return 5;
+    if (seconds < 180) return 8;
+    return 10;
+  };
+
+  const pointsToEarn = getPointsEarned(totalSeconds);
 
   const getScale = () => {
     if (step === 0 || step === 1) return 1.15; // Inhale/hold
@@ -154,7 +182,7 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
         <h1 style={styles.title}>🫧 {inline ? "Breathe & Earn" : "Center Yourself"}</h1>
         {inline ? (
           <p style={styles.encouragement}>
-            Complete a breathing session to earn +5 points. Breathe twice daily to build your streak and unlock bonus rewards!
+            Complete 1 minute of breathing to earn +5 points. Go longer for bonus rewards: 2 min = +8, 3 min = +10!
           </p>
         ) : (
           <>
@@ -202,12 +230,30 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
           </div>
         </div>
 
+        {/* Progress toward earning points */}
+        {!canEarnPoints && totalSeconds > 0 && (
+          <div style={styles.progressHint}>
+            {secondsUntilReward}s until you earn points
+          </div>
+        )}
+        {canEarnPoints && pointsToEarn < 10 && (
+          <div style={{...styles.progressHint, color: "#22c55e"}}>
+            {pointsToEarn === 5 ? "Keep going for +8 pts at 2 min!" : "Keep going for +10 pts at 3 min!"}
+          </div>
+        )}
+
         {showAchievement && (
           <div className="achievement" style={styles.achievement}>
             <p style={styles.achievementText}>{showAchievement.text}</p>
             <p style={{...styles.muted, fontSize: "12px", margin: "4px 0 0"}}>
               {showAchievement.desc}
             </p>
+          </div>
+        )}
+
+        {error && (
+          <div style={styles.errorMessage}>
+            {error}
           </div>
         )}
 
@@ -230,7 +276,7 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
           <button onClick={handlePause} style={{...styles.button, ...styles.mutedButton}}>
             Pause
           </button>
-          {cyclesCompleted > 0 && (
+          {cyclesCompleted > 0 && canEarnPoints && (
             <button
               onClick={handleComplete}
               style={{
@@ -239,7 +285,20 @@ export default function BreathingExercise({ inline = false, onSessionComplete })
                 marginLeft: "8px"
               }}
             >
-              Complete (+5)
+              Complete (+{pointsToEarn})
+            </button>
+          )}
+          {cyclesCompleted > 0 && !canEarnPoints && (
+            <button
+              disabled
+              style={{
+                ...styles.button,
+                opacity: 0.5,
+                cursor: "not-allowed",
+                marginLeft: "8px"
+              }}
+            >
+              {secondsUntilReward}s to earn
             </button>
           )}
         </div>
@@ -349,6 +408,24 @@ const styles = {
   statStrong: {
     color: "#a78bfa",
     fontWeight: 600
+  },
+  progressHint: {
+    fontSize: "13px",
+    color: "#f59e0b",
+    margin: "8px 0",
+    padding: "6px 12px",
+    background: "rgba(245, 158, 11, 0.1)",
+    borderRadius: "6px",
+    display: "inline-block"
+  },
+  errorMessage: {
+    fontSize: "13px",
+    color: "#ef4444",
+    margin: "8px 0",
+    padding: "8px 12px",
+    background: "rgba(239, 68, 68, 0.1)",
+    borderRadius: "6px",
+    border: "1px solid rgba(239, 68, 68, 0.3)"
   },
   achievement: {
     animation: "fadeInUp 0.5s ease",
