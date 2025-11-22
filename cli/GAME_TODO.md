@@ -3,7 +3,8 @@
 This document tracks the phased implementation of gamification features for Meedi8.
 
 **Created:** 2025-11-22
-**Status:** Phase 1 MVP - Core Infrastructure Complete
+**Status:** Phase 1 & 2 Complete - Phase 3 In Progress
+**Last Updated:** 2025-11-22
 
 ---
 
@@ -34,15 +35,15 @@ This document tracks the phased implementation of gamification features for Meed
 - [x] Create `GET /api/gamification/health-score` endpoint
 - [x] Create `GET /api/gamification/health-score/history` endpoint
 - [x] Add score update triggers after:
-  - [ ] Mediation resolution
+  - [x] Mediation resolution
   - [x] Daily check-in
   - [x] Breathing exercise completion
-  - [ ] 7-day inactivity penalty
+  - [x] 7-day inactivity penalty (scheduled job)
 - [x] Implement tier calculation (Bronze/Silver/Gold/Platinum)
 
 **Frontend:**
 - [x] `HealthScore.jsx` - Circular gauge component
-- [ ] `ScoreHistoryChart.jsx` - 30-day trend line
+- [x] `ScoreHistoryChart.jsx` - 30-day trend line
 - [x] `ScoreEventToast.jsx` - Real-time score change notifications
 - [x] Add to SessionsDashboard.jsx
 
@@ -64,14 +65,14 @@ This document tracks the phased implementation of gamification features for Meed
 - [x] Create `POST /api/gamification/streaks/protect` endpoint
 - [x] Implement streak extension on:
   - [x] Daily login/check-in
-  - [ ] Mediation activity
+  - [x] Mediation activity
   - [x] Breathing exercise
-- [ ] Create daily job to break expired streaks (midnight UTC)
+- [x] Create daily job to break expired streaks (midnight UTC)
 - [x] Implement streak milestone bonuses (7, 14, 30, 60, 90 days)
 
 **Frontend:**
 - [x] `StreakCounter.jsx` - Fire emoji with day count
-- [ ] Streak milestone celebration modal
+- [x] Streak milestone celebration modal
 - [x] "Streak at risk" warning notification
 - [x] Add to SessionsDashboard.jsx header
 
@@ -137,24 +138,24 @@ This document tracks the phased implementation of gamification features for Meed
 **Estimate:** 4-5 days | **Priority:** High
 
 **Backend:**
-- [ ] Create `badges` and `user_badges` tables
-- [ ] Seed initial achievements (20-25 badges):
-  - [ ] Communication: First Message, 100 Messages, Voice Pioneer
-  - [ ] Empathy: Listener Badge, Other Perspective, Breakthrough
-  - [ ] Growth: First Resolution, 5 Resolutions, Streak Master
-  - [ ] Commitment: 7-Day Streak, 30-Day Streak, Annual Subscriber
-  - [ ] Mindfulness: Breath Master, Gratitude Champion, Check-in King
-- [ ] Create `GET /api/gamification/achievements` endpoint
-- [ ] Create `POST /api/gamification/achievements/{id}/claim` endpoint
-- [ ] Implement achievement trigger system
-- [ ] Add hidden/secret achievements
+- [x] Create `achievements` and `user_achievements` tables
+- [x] Seed initial achievements (27 badges) via admin endpoint
+  - [x] Communication: First Words, Conversationalist, Eloquent Speaker, Voice Pioneer, Voice Master
+  - [x] Growth: Peacemaker, Conflict Resolver, Master Mediator, NVC Beginner, NVC Expert
+  - [x] Commitment: Getting Started, Week Warrior, Fortnight Fighter, Monthly Master, Dedication Hero, Legendary Streak
+  - [x] Mindfulness: First Breath, Breath Master, Gratitude Starter, Gratitude Guru, Self-Aware
+  - [x] Tier: Rising Star, Golden Path, Platinum Elite
+  - [x] Special: Night Owl, Early Bird, Weekend Warrior
+- [x] Create `GET /api/gamification/achievements` endpoint
+- [x] Implement achievement trigger system (`achievement_checker.py`)
+- [x] Add visibility tiers (visible, silhouette, secret)
 
 **Frontend:**
-- [ ] `AchievementBadge.jsx` - Single badge display
-- [ ] `AchievementGrid.jsx` - Full collection view
-- [ ] `AchievementToast.jsx` - Unlock celebration popup
-- [ ] Achievements page (`/achievements`)
-- [ ] Badge showcase on profile
+- [x] `AchievementToast.jsx` - Unlock celebration popup
+- [x] Achievements page (`/achievements`)
+- [x] Badge showcase on profile (in Profile.jsx)
+- [ ] `AchievementBadge.jsx` - Single badge display (integrated in grid)
+- [ ] `AchievementGrid.jsx` - Full collection view (integrated in page)
 
 **Testing:**
 - [ ] Test each achievement trigger condition
@@ -168,24 +169,23 @@ This document tracks the phased implementation of gamification features for Meed
 **Estimate:** 3-4 days | **Priority:** High
 
 **Backend:**
-- [ ] Create `daily_challenges` and `user_daily_challenges` tables
-- [ ] Seed challenge pool (15-20 challenges):
-  - [ ] "Complete a breathing exercise"
-  - [ ] "Write a gratitude entry"
-  - [ ] "Send a voice message"
-  - [ ] "Log your mood"
-  - [ ] "Maintain your streak"
-- [ ] Create `GET /api/gamification/challenges` endpoint
-- [ ] Create `POST /api/gamification/challenges/{id}/claim` endpoint
-- [ ] Implement daily challenge assignment (3 per day)
-- [ ] Create daily job to rotate challenges at midnight
-- [ ] Track challenge progress in real-time
+- [x] Create `daily_challenges` and `user_daily_challenges` tables
+- [x] Seed challenge pool (8 challenges) via admin endpoint
+  - [x] "Complete a breathing exercise"
+  - [x] "Write a gratitude entry"
+  - [x] "Log your mood"
+  - [x] "Maintain your streak"
+  - [x] "Complete daily check-in"
+- [x] Create `GET /api/gamification/challenges` endpoint
+- [x] Create `POST /api/gamification/challenges/{id}/claim` endpoint
+- [x] Implement daily challenge assignment (3 per day)
+- [x] Create daily job to rotate challenges at midnight
+- [x] Track challenge progress in real-time
 
 **Frontend:**
-- [ ] `ChallengeCard.jsx` - Single challenge with progress
-- [ ] `ChallengeList.jsx` - Today's challenges
-- [ ] Challenge completion celebration
-- [ ] Add to SessionsDashboard.jsx
+- [x] `ChallengeList.jsx` - Today's challenges with progress
+- [x] Challenge completion with claim button
+- [x] Add to SessionsDashboard.jsx
 
 **Testing:**
 - [ ] Test challenge assignment rotation
@@ -199,13 +199,13 @@ This document tracks the phased implementation of gamification features for Meed
 **Estimate:** 1.5 days | **Priority:** Medium
 
 **Backend:**
-- [ ] Create `emotional_checkins` table
-- [ ] Create `POST /api/gamification/mood` endpoint
-- [ ] Create `GET /api/gamification/mood/history` endpoint
-- [ ] Award XP for daily check-ins
+- [x] Create `emotional_checkins` table
+- [x] Create `POST /api/gamification/mood` endpoint
+- [x] Create `GET /api/gamification/mood/history` endpoint
+- [x] Award XP for daily check-ins
 
 **Frontend:**
-- [ ] `MoodSelector.jsx` - Weather emoji picker
+- [x] `MoodSelector.jsx` - Weather emoji picker
 - [ ] `MoodCalendar.jsx` - Monthly mood visualization
 - [ ] `MoodTrend.jsx` - Trend line chart
 - [ ] Quick mood entry from dashboard
@@ -224,17 +224,17 @@ This document tracks the phased implementation of gamification features for Meed
 **Estimate:** 1 day | **Priority:** Critical for Conversion
 
 **Backend:**
-- [ ] Add `streak_protected_until` field to user_health_scores
-- [ ] Create `POST /api/gamification/streaks/protect` endpoint
-- [ ] Check PRO subscription before allowing protection
-- [ ] Limit to one protection per week
-- [ ] Skip streak break if protection active
+- [x] Add `streak_protected_until` field to user_progress
+- [x] Create `POST /api/gamification/streaks/protect` endpoint
+- [x] Check PRO subscription before allowing protection
+- [x] Limit to one protection per week
+- [x] Skip streak break if protection active
 
 **Frontend:**
-- [ ] "Protect Streak" button (PRO badge)
-- [ ] "Streak at risk" modal with upgrade prompt
-- [ ] Protection active indicator
-- [ ] Upgrade CTA when non-PRO tries to protect
+- [x] "Protect Streak" button (PRO badge) in StreakCounter
+- [x] "Streak at risk" warning notification
+- [x] Protection active indicator
+- [x] Upgrade CTA when non-PRO tries to protect
 
 **Testing:**
 - [ ] Test protection blocks streak break
@@ -248,19 +248,19 @@ This document tracks the phased implementation of gamification features for Meed
 **Estimate:** 2 days | **Priority:** High for Conversion
 
 **Backend:**
-- [ ] Create `conversion_events` table
-- [ ] Define milestone thresholds:
+- [x] Create `conversion_events` table
+- [x] Define milestone thresholds:
   - 70 points: 3-day PRO trial offer
   - 80 points: 7-day PRO trial offer
   - 90 points: 50% off first month
-- [ ] Create `POST /api/gamification/milestone-offer/claim` endpoint
-- [ ] Track offer shown/converted
+- [ ] Create `POST /api/gamification/milestone-offer/claim` endpoint (Stripe integration)
+- [ ] Track offer shown/converted in conversion_events
 
 **Frontend:**
-- [ ] Milestone celebration modal with offer
-- [ ] "You've earned a reward!" notification
-- [ ] Clear value proposition display
-- [ ] Seamless trial activation flow
+- [x] `MilestoneOfferModal.jsx` - Celebration modal with offer
+- [x] "Claim Offer" button navigates to subscription page
+- [x] LocalStorage tracking for shown milestones
+- [ ] Seamless trial activation flow (needs Stripe integration)
 
 **Testing:**
 - [ ] Test offer triggers at each threshold
