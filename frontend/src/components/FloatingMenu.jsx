@@ -174,7 +174,6 @@ export default function FloatingMenu({
   const menuItems = [
     { label: "Sessions", path: "/sessions" },
     { label: "New Mediation", path: "/create" },
-    { label: "Solo Coaching", path: "/solo/start" },
     { label: "Pricing", path: "/subscription" },
     { label: "FAQ", path: "/faq" },
     { label: "About Us", path: "/about" },
