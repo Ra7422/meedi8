@@ -410,7 +410,11 @@ export default function SessionsDashboard() {
                     disabled={!status.canEnter}
                     style={{
                       ...styles.primaryButton,
-                      background: status.canEnter ? status.color : "#e5e7eb",
+                      background: status.canEnter
+                        ? `linear-gradient(135deg, ${status.color}44 0%, ${status.color}22 100%)`
+                        : "rgba(100, 100, 100, 0.2)",
+                      borderColor: status.canEnter ? `${status.color}66` : "rgba(100, 100, 100, 0.3)",
+                      boxShadow: status.canEnter ? `0 4px 15px ${status.color}33` : "none",
                       cursor: status.canEnter ? "pointer" : "not-allowed",
                       opacity: status.canEnter ? 1 : 0.5
                     }}
@@ -484,14 +488,15 @@ const styles = {
   },
   newButton: {
     padding: "10px 20px",
-    background: "#8b5cf6",
+    background: "rgba(139, 92, 246, 0.3)",
     color: "white",
-    border: "none",
+    border: "1px solid rgba(139, 92, 246, 0.5)",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
     fontWeight: "600",
-    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.4)"
+    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.3)",
+    backdropFilter: "blur(10px)"
   },
   gamificationBar: {
     display: "flex",
@@ -613,11 +618,12 @@ const styles = {
     minWidth: "150px",
     padding: "12px 20px",
     color: "white",
-    border: "none",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
     borderRadius: "8px",
     fontSize: "15px",
     fontWeight: "600",
-    transition: "opacity 0.2s"
+    transition: "opacity 0.2s",
+    backdropFilter: "blur(10px)"
   },
   secondaryButton: {
     padding: "12px 20px",
@@ -627,7 +633,8 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
-    fontWeight: "600"
+    fontWeight: "600",
+    backdropFilter: "blur(10px)"
   },
   notificationDot: {
     position: "absolute",
@@ -649,13 +656,15 @@ const styles = {
   },
   deleteButton: {
     padding: "10px 20px",
-    background: "#ef4444",
+    background: "rgba(239, 68, 68, 0.3)",
     color: "white",
-    border: "none",
+    border: "1px solid rgba(239, 68, 68, 0.5)",
     borderRadius: "8px",
     fontSize: "15px",
     fontWeight: "600",
-    transition: "opacity 0.2s"
+    transition: "opacity 0.2s",
+    backdropFilter: "blur(10px)",
+    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)"
   },
   deleteIconButton: {
     padding: "12px 16px",
@@ -664,7 +673,8 @@ const styles = {
     border: "1px solid rgba(239, 68, 68, 0.4)",
     borderRadius: "8px",
     fontSize: "18px",
-    transition: "background 0.2s"
+    transition: "background 0.2s",
+    backdropFilter: "blur(10px)"
   },
   selectAllBar: {
     padding: "12px 16px",
