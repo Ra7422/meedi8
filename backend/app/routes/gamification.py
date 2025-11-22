@@ -767,3 +767,40 @@ def get_achievements(
         total_earned=total_earned,
         total_available=len(all_achievements)
     )
+
+
+@router.post("/achievements/seed")
+def seed_achievements_endpoint(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Seed achievements into database. Admin only."""
+    # Simple admin check - you can make this more robust
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from app.services.seed_achievements import ACHIEVEMENTS
+
+    created = 0
+    updated = 0
+
+    for achievement_data in ACHIEVEMENTS:
+        existing = db.query(Achievement).filter(
+            Achievement.code == achievement_data["code"]
+        ).first()
+
+        if existing:
+            for key, value in achievement_data.items():
+                setattr(existing, key, value)
+            updated += 1
+        else:
+            achievement = Achievement(**achievement_data)
+            db.add(achievement)
+            created += 1
+
+    db.commit()
+
+    return {
+        "message": f"Seeded achievements: {created} created, {updated} updated",
+        "total": len(ACHIEVEMENTS)
+    }
