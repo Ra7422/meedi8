@@ -488,14 +488,16 @@ const styles = {
   },
   newButton: {
     padding: "10px 20px",
-    background: "rgba(139, 92, 246, 0.25)",
+    background: "rgba(139, 92, 246, 0.15)",
     color: "white",
-    border: "1px solid rgba(139, 92, 246, 0.6)",
+    border: "1px solid rgba(139, 92, 246, 0.4)",
     borderRadius: "50px",
     cursor: "pointer",
     fontSize: "15px",
     fontWeight: "600",
-    boxShadow: "0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    boxShadow: "0 0 20px rgba(139, 92, 246, 0.4), 0 0 40px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
   },
   gamificationBar: {
     display: "flex",
@@ -620,23 +622,27 @@ const styles = {
   primaryButton: {
     padding: "10px 18px",
     color: "white",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
     borderRadius: "50px",
     fontSize: "14px",
     fontWeight: "600",
     transition: "opacity 0.2s",
-    backdropFilter: "blur(10px)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)"
   },
   secondaryButton: {
     padding: "10px 18px",
-    background: "rgba(139, 92, 246, 0.2)",
+    background: "rgba(139, 92, 246, 0.1)",
     color: "white",
-    border: "1px solid rgba(139, 92, 246, 0.5)",
+    border: "1px solid rgba(139, 92, 246, 0.3)",
     borderRadius: "50px",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "600",
-    boxShadow: "0 0 15px rgba(139, 92, 246, 0.4)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    boxShadow: "0 0 15px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
   },
   notificationDot: {
     position: "absolute",
@@ -658,25 +664,28 @@ const styles = {
   },
   deleteButton: {
     padding: "10px 20px",
-    background: "rgba(239, 68, 68, 0.3)",
+    background: "rgba(239, 68, 68, 0.15)",
     color: "white",
-    border: "1px solid rgba(239, 68, 68, 0.5)",
+    border: "1px solid rgba(239, 68, 68, 0.35)",
     borderRadius: "50px",
     fontSize: "15px",
     fontWeight: "600",
     transition: "opacity 0.2s",
-    backdropFilter: "blur(10px)",
-    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
   },
   deleteIconButton: {
     padding: "12px 16px",
-    background: "rgba(239, 68, 68, 0.2)",
+    background: "rgba(239, 68, 68, 0.1)",
     color: "#fca5a5",
-    border: "1px solid rgba(239, 68, 68, 0.4)",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
     borderRadius: "50px",
     fontSize: "18px",
     transition: "background 0.2s",
-    backdropFilter: "blur(10px)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)"
   },
   selectAllBar: {
     padding: "12px 16px",
