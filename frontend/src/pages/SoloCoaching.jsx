@@ -6,6 +6,7 @@ import VoiceRecorder from "../components/VoiceRecorder";
 import AttachmentMenu from "../components/AttachmentMenu";
 import TelegramImportModal from "../components/TelegramImportModal";
 import GuestConversionModal from "../components/GuestConversionModal";
+import FloatingMenu from "../components/FloatingMenu";
 
 export default function SoloCoaching() {
   const { roomId } = useParams();
@@ -256,6 +257,8 @@ export default function SoloCoaching() {
       display: "flex",
       flexDirection: "column"
     }}>
+      <FloatingMenu />
+
       {/* Header */}
       <h2 className="coaching-header" style={{
         margin: 0,
