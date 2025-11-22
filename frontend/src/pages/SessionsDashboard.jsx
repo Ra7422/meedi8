@@ -550,14 +550,17 @@ const styles = {
     position: "relative",
     background: "rgba(139, 92, 246, 0.08)",
     border: "1px solid rgba(139, 92, 246, 0.4)",
-    borderRadius: "12px",
+    borderRadius: "16px",
     padding: "20px",
     boxShadow: "0 0 25px rgba(139, 92, 246, 0.3), 0 0 50px rgba(139, 92, 246, 0.15)",
     transition: "box-shadow 0.2s",
-    cursor: "pointer"
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px"
   },
   roomHeader: {
-    marginBottom: "16px"
+    marginBottom: "8px"
   },
   roomTitle: {
     display: "flex",
@@ -591,7 +594,7 @@ const styles = {
   roomInfo: {
     display: "flex",
     gap: "24px",
-    marginBottom: "16px",
+    marginBottom: "8px",
     flexWrap: "wrap"
   },
   infoItem: {
@@ -609,29 +612,29 @@ const styles = {
   },
   roomActions: {
     display: "flex",
-    gap: "12px",
-    flexWrap: "wrap"
+    gap: "10px",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    alignItems: "center"
   },
   primaryButton: {
-    flex: 1,
-    minWidth: "150px",
-    padding: "12px 20px",
+    padding: "10px 18px",
     color: "white",
     border: "1px solid rgba(255, 255, 255, 0.2)",
     borderRadius: "50px",
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: "600",
     transition: "opacity 0.2s",
     backdropFilter: "blur(10px)"
   },
   secondaryButton: {
-    padding: "12px 20px",
+    padding: "10px 18px",
     background: "rgba(139, 92, 246, 0.2)",
     color: "white",
     border: "1px solid rgba(139, 92, 246, 0.5)",
     borderRadius: "50px",
     cursor: "pointer",
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: "600",
     boxShadow: "0 0 15px rgba(139, 92, 246, 0.4)"
   },
