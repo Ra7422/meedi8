@@ -294,9 +294,10 @@ export default function Profile() {
     title: {
       fontSize: '36px',
       fontWeight: '400',
-      color: 'white',
+      color: '#a78bfa',
       marginBottom: '8px',
       fontFamily: "'Nunito', sans-serif",
+      textShadow: '0 0 30px rgba(139, 92, 246, 0.5)',
     },
     titleBold: {
       fontWeight: '700',
@@ -315,20 +316,22 @@ export default function Profile() {
       width: '80px',
       height: '80px',
       borderRadius: '50%',
-      border: '3px solid #D3C1FF',
+      border: '3px solid rgba(139, 92, 246, 0.6)',
       objectFit: 'cover',
+      boxShadow: '0 0 25px rgba(139, 92, 246, 0.5)',
     },
     headerProfilePicturePlaceholder: {
       width: '80px',
       height: '80px',
       borderRadius: '50%',
-      border: '3px solid #D3C1FF',
-      backgroundColor: '#F5EFFF',
+      border: '3px solid rgba(139, 92, 246, 0.6)',
+      backgroundColor: 'rgba(139, 92, 246, 0.15)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: '36px',
-      color: '#D3C1FF',
+      color: '#a78bfa',
+      boxShadow: '0 0 25px rgba(139, 92, 246, 0.5)',
     },
     profilePictureOverlay: {
       position: 'absolute',
@@ -337,15 +340,15 @@ export default function Profile() {
       width: '28px',
       height: '28px',
       borderRadius: '50%',
-      backgroundColor: '#D3C1FF',
+      backgroundColor: 'rgba(139, 92, 246, 0.8)',
       color: 'white',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontSize: '18px',
       fontWeight: '700',
-      border: '2px solid white',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+      border: '2px solid rgba(10, 8, 20, 0.9)',
+      boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)',
     },
     grid: {
       display: 'grid',
@@ -655,9 +658,9 @@ export default function Profile() {
           <div style={{ display: 'flex', gap: '40px', alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Pie Chart */}
             <div style={styles.chartContainer}>
-              <svg width="200" height="200" viewBox="0 0 200 200">
+              <svg width="200" height="200" viewBox="0 0 200 200" style={{ filter: 'drop-shadow(0 0 15px rgba(139, 92, 246, 0.4))' }}>
                 {/* Background circle */}
-                <circle cx="100" cy="100" r="80" fill="rgba(139, 92, 246, 0.1)" />
+                <circle cx="100" cy="100" r="80" fill="rgba(139, 92, 246, 0.1)" stroke="rgba(139, 92, 246, 0.3)" strokeWidth="2" />
 
                 {sessions.length > 0 ? (
                   <>
@@ -909,23 +912,25 @@ export default function Profile() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', marginBottom: '20px' }}>
-              <HealthScore size={100} showTier={true} showLabel={true} />
+              <div style={{ filter: 'drop-shadow(0 0 15px rgba(139, 92, 246, 0.4))' }}>
+                <HealthScore size={100} showTier={true} showLabel={true} />
+              </div>
               <StreakCounter compact={false} showProtect={true} />
             </div>
 
             {healthScore && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
-                <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
+                <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>
                     {healthScore.total_breathing_sessions}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>Breathing Sessions</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>Breathing Sessions</div>
                 </div>
-                <div style={{ textAlign: 'center', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
+                <div style={{ textAlign: 'center', padding: '12px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>
                     {healthScore.total_breathing_minutes}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>Minutes Breathed</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>Minutes Breathed</div>
                 </div>
               </div>
             )}
@@ -933,10 +938,10 @@ export default function Profile() {
             {/* Achievements Grid */}
             <div style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#6750A4' }}>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#a78bfa' }}>
                   Achievements
                 </span>
-                <span style={{ fontSize: '12px', color: '#888' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
                   {achievementStats.earned}/{achievementStats.total} earned
                 </span>
               </div>
@@ -956,10 +961,10 @@ export default function Profile() {
                         alignItems: 'center',
                         padding: '8px 4px',
                         borderRadius: '8px',
-                        background: achievement.earned ? '#f0fdf4' : '#f8fafc',
+                        background: achievement.earned ? 'rgba(34, 197, 94, 0.15)' : 'rgba(139, 92, 246, 0.1)',
                         border: achievement.earned
-                          ? '1px solid #86efac'
-                          : '1px solid #e2e8f0',
+                          ? '1px solid rgba(34, 197, 94, 0.4)'
+                          : '1px solid rgba(139, 92, 246, 0.3)',
                         opacity: achievement.earned ? 1 : 0.5,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
@@ -969,7 +974,7 @@ export default function Profile() {
                       <span style={{ fontSize: '20px' }}>{achievement.icon}</span>
                       <span style={{
                         fontSize: '9px',
-                        color: achievement.earned ? '#166534' : '#64748b',
+                        color: achievement.earned ? '#86efac' : 'rgba(255, 255, 255, 0.5)',
                         marginTop: '4px',
                         textAlign: 'center',
                         overflow: 'hidden',
@@ -983,8 +988,8 @@ export default function Profile() {
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: '16px', background: '#faf5ff', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '14px', color: '#7c3aed', fontWeight: '500' }}>🏆 Loading achievements...</div>
+                <div style={{ padding: '16px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                  <div style={{ fontSize: '14px', color: '#a78bfa', fontWeight: '500' }}>🏆 Loading achievements...</div>
                 </div>
               )}
 
@@ -994,7 +999,7 @@ export default function Profile() {
                   marginTop: '12px',
                   textAlign: 'center',
                   fontSize: '12px',
-                  color: '#6366f1',
+                  color: '#a78bfa',
                   cursor: 'pointer',
                   fontWeight: '500',
                 }}
