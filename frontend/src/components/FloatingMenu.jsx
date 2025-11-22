@@ -792,14 +792,16 @@ export default function FloatingMenu({
                   style={{
                     width: "100%",
                     padding: "12px",
-                    background: "rgba(239, 68, 68, 0.8)",
+                    background: "rgba(239, 68, 68, 0.15)",
                     color: "white",
-                    border: "1px solid rgba(239, 68, 68, 0.5)",
-                    borderRadius: "8px",
+                    border: "1px solid rgba(239, 68, 68, 0.4)",
+                    borderRadius: "50px",
                     fontSize: "15px",
                     fontWeight: "600",
                     cursor: "pointer",
-                    boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)"
+                    boxShadow: "0 0 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)"
                   }}
                 >
                   Logout
@@ -884,13 +886,16 @@ export default function FloatingMenu({
                     style={{
                       width: "100%",
                       padding: "10px",
-                      background: "transparent",
-                      color: "rgba(255, 255, 255, 0.7)",
+                      background: "rgba(139, 92, 246, 0.1)",
+                      color: "rgba(255, 255, 255, 0.8)",
                       border: "1px solid rgba(139, 92, 246, 0.4)",
-                      borderRadius: "8px",
+                      borderRadius: "50px",
                       fontSize: "13px",
                       fontWeight: "500",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      boxShadow: "0 0 15px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                      backdropFilter: "blur(12px)",
+                      WebkitBackdropFilter: "blur(12px)"
                     }}
                   >
                     Login with email
