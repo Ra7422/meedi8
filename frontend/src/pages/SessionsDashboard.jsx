@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import { useGamification } from "../context/GamificationContext";
-import { HealthScore, StreakCounter, ChallengeList } from "../components/gamification";
+import { HealthScore, StreakCounter, ChallengeList, ScoreHistoryChart } from "../components/gamification";
 
 export default function SessionsDashboard() {
   const navigate = useNavigate();
@@ -314,6 +314,11 @@ export default function SessionsDashboard() {
         <div style={styles.gamificationRight}>
           <StreakCounter compact={true} />
         </div>
+      </div>
+
+      {/* Score History Chart */}
+      <div style={{ marginBottom: "16px" }}>
+        <ScoreHistoryChart height={140} />
       </div>
 
       {/* Daily Challenges */}

@@ -5,3 +5,4 @@ export { default as AchievementToast } from './AchievementToast';
 export { default as MoodSelector } from './MoodSelector';
 export { default as GratitudeJournal } from './GratitudeJournal';
 export { default as ChallengeList } from './ChallengeList';
+export { default as ScoreHistoryChart } from './ScoreHistoryChart';
