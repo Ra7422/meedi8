@@ -488,15 +488,14 @@ const styles = {
   },
   newButton: {
     padding: "10px 20px",
-    background: "rgba(139, 92, 246, 0.3)",
+    background: "rgba(139, 92, 246, 0.25)",
     color: "white",
-    border: "1px solid rgba(139, 92, 246, 0.5)",
+    border: "1px solid rgba(139, 92, 246, 0.6)",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
     fontWeight: "600",
-    boxShadow: "0 4px 15px rgba(139, 92, 246, 0.3)",
-    backdropFilter: "blur(10px)"
+    boxShadow: "0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3)"
   },
   gamificationBar: {
     display: "flex",
@@ -506,8 +505,8 @@ const styles = {
     background: "rgba(139, 92, 246, 0.1)",
     borderRadius: "16px",
     marginBottom: "24px",
-    border: "1px solid rgba(139, 92, 246, 0.3)",
-    boxShadow: "0 4px 20px rgba(139, 92, 246, 0.2)"
+    border: "1px solid rgba(139, 92, 246, 0.4)",
+    boxShadow: "0 0 30px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2)"
   },
   gamificationLeft: {
     display: "flex",
@@ -549,11 +548,11 @@ const styles = {
   },
   roomCard: {
     position: "relative",
-    background: "rgba(139, 92, 246, 0.1)",
-    border: "1px solid rgba(139, 92, 246, 0.3)",
+    background: "rgba(139, 92, 246, 0.08)",
+    border: "1px solid rgba(139, 92, 246, 0.4)",
     borderRadius: "12px",
     padding: "20px",
-    boxShadow: "0 4px 20px rgba(139, 92, 246, 0.15)",
+    boxShadow: "0 0 25px rgba(139, 92, 246, 0.3), 0 0 50px rgba(139, 92, 246, 0.15)",
     transition: "box-shadow 0.2s",
     cursor: "pointer"
   },
@@ -629,12 +628,12 @@ const styles = {
     padding: "12px 20px",
     background: "rgba(139, 92, 246, 0.2)",
     color: "white",
-    border: "1px solid rgba(139, 92, 246, 0.4)",
+    border: "1px solid rgba(139, 92, 246, 0.5)",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "15px",
     fontWeight: "600",
-    backdropFilter: "blur(10px)"
+    boxShadow: "0 0 15px rgba(139, 92, 246, 0.4)"
   },
   notificationDot: {
     position: "absolute",
