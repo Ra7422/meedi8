@@ -34,10 +34,8 @@ def check_and_award_achievements(db: Session, user_id: int) -> List[dict]:
     if not progress:
         return newly_awarded
 
-    # Get all active achievements
-    achievements = db.query(Achievement).filter(
-        Achievement.is_active == True
-    ).all()
+    # Get all achievements
+    achievements = db.query(Achievement).all()
 
     # Get already earned achievement IDs
     earned_ids = set(
@@ -56,7 +54,7 @@ def check_and_award_achievements(db: Session, user_id: int) -> List[dict]:
             user_achievement = UserAchievement(
                 user_id=user_id,
                 achievement_id=achievement.id,
-                earned_at=datetime.now(timezone.utc)
+                unlocked_at=datetime.now(timezone.utc)
             )
             db.add(user_achievement)
 
