@@ -232,6 +232,21 @@ app.include_router(screening.router)
 app.include_router(telegram.router, prefix="/telegram", tags=["telegram"])
 app.include_router(gamification.router)
 
+# Start background scheduler for gamification jobs
+from app.services.scheduler import start_scheduler, stop_scheduler
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background scheduler on app startup."""
+    start_scheduler()
+    logger.info("🎮 Gamification scheduler started")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop background scheduler on app shutdown."""
+    stop_scheduler()
+    logger.info("🎮 Gamification scheduler stopped")
+
 @app.get("/health")
 def health():
     return {"ok": True}
