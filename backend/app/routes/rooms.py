@@ -2795,6 +2795,42 @@ def get_solo_turns(
     }
 
 
+@router.post("/{room_id}/solo/finalize")
+def finalize_solo_session(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Finalize solo session and mark as resolved."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Check participant
+    if current_user not in room.participants:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    # Verify this is a solo room
+    if room.room_type != 'solo':
+        raise HTTPException(status_code=400, detail="This endpoint is for Solo mode only")
+
+    # Verify room has clarity summary
+    if not room.clarity_summary:
+        raise HTTPException(status_code=400, detail="Cannot finalize without clarity summary")
+
+    # Mark as resolved
+    from datetime import datetime
+    room.phase = "resolved"
+    room.resolved_at = datetime.utcnow()
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Solo session finalized",
+        "room_phase": room.phase
+    }
+
+
 @router.post("/{room_id}/generate-therapy-report")
 def generate_therapy_report(
     room_id: int,
