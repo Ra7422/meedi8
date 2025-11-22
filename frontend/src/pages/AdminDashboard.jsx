@@ -75,6 +75,8 @@ export default function AdminDashboard() {
   // Achievements
   const [recentAchievements, setRecentAchievements] = useState([]);
   const [achievementStats, setAchievementStats] = useState(null);
+  const [allBadges, setAllBadges] = useState([]);
+  const [showBadgeCatalog, setShowBadgeCatalog] = useState(false);
 
   // Date range for analytics
   const [dateRangePreset, setDateRangePreset] = useState("30d");
@@ -195,7 +197,7 @@ export default function AdminDashboard() {
       const webhooksData = webhooksRes.ok ? await webhooksRes.json() : { events: [] };
 
       // Fetch email templates, system health, AI costs, error logs, audit logs, and announcements
-      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes, announcementsRes, achievementsRecentRes, achievementsStatsRes] = await Promise.all([
+      const [templatesRes, healthRes, aiCostsRes, errorLogsRes, auditLogsRes, announcementsRes, achievementsRecentRes, achievementsStatsRes, allBadgesRes] = await Promise.all([
         fetch(`${API_URL}/admin/email-templates`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
@@ -220,6 +222,9 @@ export default function AdminDashboard() {
         fetch(`${API_URL}/admin/achievements/stats`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
+        fetch(`${API_URL}/admin/achievements/all`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
       ]);
 
       const templatesData = templatesRes.ok ? await templatesRes.json() : { templates: {} };
@@ -230,6 +235,7 @@ export default function AdminDashboard() {
       const announcementsData = announcementsRes.ok ? await announcementsRes.json() : { announcements: [] };
       const achievementsRecentData = achievementsRecentRes.ok ? await achievementsRecentRes.json() : { achievements: [] };
       const achievementsStatsData = achievementsStatsRes.ok ? await achievementsStatsRes.json() : null;
+      const allBadgesData = allBadgesRes.ok ? await allBadgesRes.json() : [];
 
       setUsers(usersData.users || []);
       setSettings(settingsData);
@@ -249,6 +255,7 @@ export default function AdminDashboard() {
       setAnnouncements(announcementsData.announcements || []);
       setRecentAchievements(achievementsRecentData.achievements || []);
       setAchievementStats(achievementsStatsData);
+      setAllBadges(allBadgesData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2904,9 +2911,28 @@ export default function AdminDashboard() {
               {/* Stats Cards */}
               {achievementStats && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
-                  <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                  <div
+                    onClick={() => setShowBadgeCatalog(true)}
+                    style={{
+                      background: "white",
+                      borderRadius: "12px",
+                      padding: "20px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.15)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
                     <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>TOTAL BADGES</div>
                     <div style={{ fontSize: "24px", fontWeight: "700", color: "#374151" }}>{achievementStats.total_achievements}</div>
+                    <div style={{ fontSize: "11px", color: "#9CA3AF", marginTop: "4px" }}>Click to view all</div>
                   </div>
                   <div style={{ background: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
                     <div style={{ fontSize: "12px", color: "#6B7280", fontWeight: "600", marginBottom: "4px" }}>TOTAL EARNED</div>
@@ -3578,6 +3604,148 @@ export default function AdminDashboard() {
                 style={{
                   flex: 1,
                   padding: "10px",
+                  background: "#7DD3C0",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Badge Catalog Modal */}
+      {showBadgeCatalog && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "800px",
+            maxHeight: "85vh",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "#4B5563" }}>
+                All Badges ({allBadges.length})
+              </h3>
+              <button
+                onClick={() => setShowBadgeCatalog(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#6B7280",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ overflow: "auto", flex: 1 }}>
+              {/* Group badges by category */}
+              {Object.entries(
+                allBadges.reduce((acc, badge) => {
+                  const cat = badge.category || "other";
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(badge);
+                  return acc;
+                }, {})
+              ).map(([category, badges]) => (
+                <div key={category} style={{ marginBottom: "24px" }}>
+                  <h4 style={{
+                    margin: "0 0 12px",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    color: "#374151",
+                    textTransform: "capitalize",
+                    borderBottom: "1px solid #e5e7eb",
+                    paddingBottom: "8px",
+                  }}>
+                    {category}
+                  </h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {badges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "12px",
+                          padding: "12px",
+                          background: badge.is_hidden ? "#fef3c7" : "#f9fafb",
+                          borderRadius: "8px",
+                          borderLeft: `3px solid ${
+                            badge.rarity === "legendary" ? "#a855f7" :
+                            badge.rarity === "epic" ? "#8b5cf6" :
+                            badge.rarity === "rare" ? "#3b82f6" : "#22c55e"
+                          }`,
+                        }}
+                      >
+                        <span style={{ fontSize: "28px" }}>{badge.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                            <span style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>
+                              {badge.name}
+                            </span>
+                            {badge.is_hidden && (
+                              <span style={{
+                                fontSize: "10px",
+                                padding: "2px 6px",
+                                background: "#f59e0b",
+                                color: "white",
+                                borderRadius: "4px",
+                              }}>
+                                Hidden
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#6B7280", marginBottom: "6px" }}>
+                            {badge.description}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#9CA3AF", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            <span style={{
+                              color: badge.rarity === "legendary" ? "#a855f7" :
+                                     badge.rarity === "epic" ? "#8b5cf6" :
+                                     badge.rarity === "rare" ? "#3b82f6" : "#22c55e",
+                              fontWeight: "600",
+                            }}>
+                              {badge.rarity}
+                            </span>
+                            <span>+{badge.xp_reward} XP</span>
+                            <span>{badge.earned_count} earned</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: "16px", textAlign: "right" }}>
+              <button
+                onClick={() => setShowBadgeCatalog(false)}
+                style={{
+                  padding: "10px 20px",
                   background: "#7DD3C0",
                   color: "white",
                   border: "none",

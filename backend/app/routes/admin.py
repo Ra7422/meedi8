@@ -2486,3 +2486,49 @@ def get_achievement_stats(
             for u in top_users
         ]
     }
+
+
+@router.get("/achievements/all")
+def get_all_achievements(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all available achievements with details"""
+    check_admin(current_user)
+
+    from ..models.gamification import Achievement, UserAchievement
+
+    # Get all achievements
+    achievements = db.query(Achievement).order_by(
+        Achievement.category,
+        Achievement.sort_order
+    ).all()
+
+    # Get count of users who earned each
+    earned_counts = {}
+    counts = db.query(
+        UserAchievement.achievement_id,
+        func.count(UserAchievement.id).label('count')
+    ).group_by(
+        UserAchievement.achievement_id
+    ).all()
+    for c in counts:
+        earned_counts[c.achievement_id] = c.count
+
+    return [
+        {
+            "id": a.id,
+            "code": a.code,
+            "name": a.name,
+            "description": a.description,
+            "icon": a.icon,
+            "category": a.category,
+            "xp_reward": a.xp_reward,
+            "rarity": a.rarity,
+            "is_hidden": a.is_hidden,
+            "criteria": a.criteria,
+            "earned_count": earned_counts.get(a.id, 0)
+        }
+        for a in achievements
+    ]
