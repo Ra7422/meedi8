@@ -120,17 +120,6 @@ export default function StreakCelebrationModal() {
           animation: "streakPopIn 0.5s ease"
         }}
       >
-        {/* Confetti effect */}
-        <div style={{
-          position: "absolute",
-          top: -20,
-          left: "50%",
-          transform: "translateX(-50%)",
-          animation: "confettiBurst 0.5s ease"
-        }}>
-          <span style={{ fontSize: 24 }}>🎉</span>
-        </div>
-
         {/* Streak badge */}
         <div style={{
           fontSize: 12,
