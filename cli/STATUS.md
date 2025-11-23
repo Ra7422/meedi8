@@ -1,10 +1,10 @@
 # Current Development Status
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-11-23
 
 ## Latest Stable State
 
-**Commit:** `01bdf26` (2025-11-17) - **DEPLOYED AND VERIFIED** ✅
+**Commit:** `c05f74d` (2025-11-23) - **DEPLOYED AND VERIFIED** ✅
 
 **Deployed:**
 - Frontend: Vercel (auto-deploy from `main`)
@@ -56,6 +56,15 @@
 
 ## Recent Updates (Last 30 Days)
 
+### 2025-11-23 - Subscription Strategy Research Complete
+- **Subscription Tier Restructuring:** Full competitor analysis and pricing strategy completed
+- **New Pricing:** FREE (1 med), PLUS £12.99, PRO £24.99, COMPANY £15/seat
+- **Company Tier:** New enterprise offering with team dashboards, challenges, peer recognition
+- **Gamification Psychology:** Comprehensive conversion triggers and retention mechanics designed
+- **Profile Expandable Features:** Subscription card now shows tier features with click-to-expand details
+- **Documentation:** Created `cli/SUBSCRIPTION_STRATEGY.md` with full implementation plan
+- **Solo Mode Disabled:** Removed from routes and menu (future feature)
+
 ### 2025-11-17 - Telegram Message Preview Fixed ✅
 - **Telethon NoneType Fix:** Dynamic kwargs for iter_messages() to avoid offset_id comparison bug (commit `01bdf26`)
 - **Exception Handling:** Added comprehensive Telethon error types and user-friendly messages (commit `95e3769`)
@@ -90,21 +99,28 @@
 ## Pending Work
 
 See `TODO.md` for detailed task list.
+See `SUBSCRIPTION_STRATEGY.md` for subscription restructuring plan.
+
+**Urgent - Subscription Restructuring:**
+- Create detailed implementation plan for new tiers
+- Update Subscription page with new pricing (FREE/PLUS £12.99/PRO £24.99/COMPANY)
+- Design Company tier admin dashboard
+- Update Profile page feature matrix
 
 **High Priority:**
-- Fix Telegram folders display issue
+- Create Stripe product for $4.99 report
 - Configure custom domain DNS (meedi8.com)
 - Enable email notifications after DNS setup
 
 **Medium Priority:**
-- Implement file upload size limits by tier
-- Add frontend 402 payment required handling
-- Professional report limits for PRO tier
+- Complete paywall Phase 2 (file limits, 402 handling)
+- Landing page improvements for conversion
+- Terms of Service & Privacy Policy pages
 
 **Future Enhancements:**
+- Solo mode feature (disabled for now)
 - Telegram group chat monitoring (pending privacy strategy)
 - Browser push notifications (FCM/OneSignal)
-- SMS notifications as premium feature (Twilio)
 
 ## Version History
 

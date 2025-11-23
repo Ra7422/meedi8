@@ -1,56 +1,47 @@
 # Meedi8 TODO List
 
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-11-23
 
-## 🔴 URGENT - Active Blockers
+## 🔴 URGENT - Subscription Restructuring
 
-### Railway Deployment Not Updating (CRITICAL)
-**Status:** **BLOCKING ALL TELEGRAM FIXES**
-**Blocker:** YES - 6 commits stuck, cannot deploy bug fixes
+### Subscription Tier Implementation (NEW)
+**Status:** Planning Complete - Ready for Implementation
+**Reference:** `cli/SUBSCRIPTION_STRATEGY.md` for full details
 
-**Problem:**
-Railway is deploying successfully but NOT pulling latest code from GitHub. The GitHub webhook page in Railway dashboard is **EMPTY**.
+**Phase 1: Core Tier Updates (Week 1-2)**
+- [ ] Update Stripe products with new prices (FREE/PLUS £12.99/PRO £24.99)
+- [ ] Modify subscription limits in backend
+- [ ] Update Subscription page UI with new pricing
+- [ ] Update Profile page feature matrix
+- [ ] Reduce FREE tier to 1 mediation/month
 
-**Impact:**
-- Message preview feature broken (NoneType error)
-- Download feature broken (entity resolution error)
-- Timezone comparison error
-- New download history modal not accessible
-- Cannot test ANY Telegram fixes
+**Phase 2: Conversion Optimization (Week 3-4)**
+- [ ] Implement streak-based conversion modals
+- [ ] Add achievement wall triggers
+- [ ] Enhance milestone offer system with timers
+- [ ] Build Plus-to-Pro trigger points
+- [ ] Add variable reward system
 
-**Required Actions:**
-1. [ ] Go to Railway dashboard → meedi8 service
-2. [ ] Click "New Deployment" or "Redeploy" button
-3. [ ] Verify logs show: `🚀 DEPLOYMENT FIX v3 - Nov 17 2025 10:22 UTC`
-4. [ ] If marker doesn't appear: Settings → GitHub → Reconnect repository
-5. [ ] After successful deploy, test message preview by clicking contact name
+**Phase 3: Company Tier (Week 5-6)**
+- [ ] Design database schema for teams/companies
+- [ ] Build manager dashboard backend
+- [ ] Create team collaboration index
+- [ ] Implement peer recognition system
+- [ ] Build admin console
 
-**Commits Waiting Deployment:**
-- `17a028c` - Deployment marker
-- `42eb6cf` - has_more defensive programming
-- `c1773b0` - has_more fix + entity cache
-- `a77ab4b` - Download history modal
-- `ca40d9c` - Timezone fix
-- `e057791` - Empty commit trigger (failed)
+**Phase 4: Polish & Launch (Week 7-8)**
+- [ ] A/B test conversion triggers
+- [ ] User test enterprise features
+- [ ] Documentation and training
+- [ ] Gradual rollout with monitoring
 
-**Files Modified (Not Deployed):**
-- `backend/app/main.py:1-14`
-- `backend/app/services/telegram_service.py:436-439,470-475,619-645`
-- `backend/app/routes/telegram.py:115-129,515-558`
-- `frontend/src/components/TelegramDownloadHistory.jsx` (new file)
-- `frontend/src/pages/TelegramConnect.jsx`
-
-### Telegram Message Preview Error (PAUSED - Waiting Railway Fix)
-**Status:** Fix ready but not deployed
-**Blocker:** Railway deployment issue (above)
-
-**Error:** `'>' not supported between instances of 'int' and 'NoneType'`
-**Fix:** Initialize `has_more = False` before loop (commits `c1773b0`, `42eb6cf`, `17a028c`)
-
-**Next Steps After Railway Fix:**
-- [ ] Verify `🔧 FIX v3 ACTIVE` appears in Railway logs
-- [ ] Test clicking contact names to preview messages
-- [ ] Verify no NoneType errors in logs
+### Key Pricing Changes
+| Tier | Current | New | Annual |
+|------|---------|-----|--------|
+| FREE | 3 mediations | 1 mediation | - |
+| PLUS | £9.99 | £12.99 | £109 |
+| PRO | £19.99 | £24.99 | £209 |
+| COMPANY | N/A | £15/seat | Custom |
 
 ## 🟡 HIGH PRIORITY - Near-term Work
 
