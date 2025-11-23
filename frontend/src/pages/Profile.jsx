@@ -1054,7 +1054,7 @@ export default function Profile() {
                         { title: 'Priority Support', detail: 'Get faster responses to your questions.' }
                       ],
                       pro: [
-                        { title: 'Everything in Plus', detail: 'All Plus features included.' },
+                        { title: 'Everything in Plus', detail: 'Unlimited mediations, 30 voice messages, file attachments, Telegram import, and priority support.' },
                         { title: 'Unlimited Voice', detail: '300 voice messages per month.' },
                         { title: 'Professional Reports', detail: 'Comprehensive therapist-style PDF reports included free.' },
                         { title: 'Streak Protection', detail: 'Protect your streak once per week when you miss a day.' },
